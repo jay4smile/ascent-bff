@@ -14,7 +14,7 @@
   "scripts": {
     "build": "lb-tsc",
     "build:watch": "lb-tsc --watch",
-    "lint": "yarn run eslint && yarn run prettier:check",
+    "lint": "yarn run eslint",
     "lint:fix": "yarn run eslint:fix && yarn run prettier:fix",
     "prettier:cli": "lb-prettier \"**/*.ts\" \"**/*.js\"",
     "prettier:check": "yarn run prettier:cli -l",
@@ -59,11 +59,11 @@
   },
   "devDependencies": {
     "@loopback/build": "^6.2.9",
-    "source-map-support": "^0.5.19",
+    "@loopback/eslint-config": "^10.0.5",
     "@loopback/testlab": "^3.2.11",
     "@types/node": "^10.17.51",
-    "@loopback/eslint-config": "^10.0.5",
     "eslint": "^7.18.0",
+    "source-map-support": "^0.5.19",
     "typescript": "~4.1.3"
   }
 }
