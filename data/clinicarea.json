@@ -1,0 +1,10 @@
+[
+    {
+      "_id" : "CA01",
+      "code": "001",
+      "contact": "Jim Grey",
+      "location": "Luton",
+      "name": "Orthopedic",
+      "loopback__model__name": "clinicarea"
+    }
+  ]

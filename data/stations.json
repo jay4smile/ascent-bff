@@ -1,0 +1,74 @@
+[
+  {
+    "_id": "S01",
+    "clinicareaid": "CA01",
+    "label": "A",
+    "name": "Assessment",
+    "users": [],
+    "loopback__model__name": "station"
+  },
+  {
+    "_id": "S02",
+    "clinicareaid": "CA01",
+    "label": "S1",
+    "name": "Surgeon 1",
+    "users": [],
+    "loopback__model__name": "station"
+  },
+  {
+    "_id": "S03",
+    "clinicareaid": "CA01",
+    "label": "S2",
+    "name": "Surgeon 2",
+    "users": [],
+    "loopback__model__name": "station"
+  },
+  {
+    "_id": "S04",
+    "clinicareaid": "CA01",
+    "label": "S3",
+    "name": "Surgeon 3",
+    "users": [],
+    "loopback__model__name": "station"
+  },
+  {
+    "_id": "S05",
+    "clinicareaid": "CA01",
+    "label": "X",
+    "name": "Xray",
+    "users": [],
+    "loopback__model__name": "station"
+  },
+  {
+    "_id": "S06",
+    "clinicareaid": "CA01",
+    "label": "P",
+    "name": "Plaster",
+    "users": [],
+    "loopback__model__name": "station"
+  },
+  {
+    "_id": "S07",
+    "clinicareaid": "CA01",
+    "label": "N",
+    "name": "Nurse",
+    "users": [],
+    "loopback__model__name": "station"
+  },
+  {
+    "_id": "S08",
+    "clinicareaid": "CA01",
+    "label": "D",
+    "name": "Dressing",
+    "users": [],
+    "loopback__model__name": "station"
+  },
+  {
+    "_id": "S09",
+    "clinicareaid": "CA01",
+    "label": "R",
+    "name": "Reception",
+    "users": [],
+    "loopback__model__name": "station"
+  }
+]

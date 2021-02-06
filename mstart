@@ -1,0 +1,2 @@
+kubectl port-forward service/mongodb 27017:27017
+#mongod --bind_ip 127.0.0.1 -dbpath ./data/db

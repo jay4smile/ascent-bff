@@ -1,0 +1,26 @@
+{
+  "ids": {
+    "user": 2,
+    "appointment": 1,
+    "station": 1,
+    "patient": 1,
+    "request": 1,
+    "pathway": 1,
+    "note": 1,
+    "clinicarea": 1,
+    "stationdetails": 1
+  },
+  "models": {
+    "user": {
+      "1": "{\"access_token\":\"string\",\"coding\":true,\"complexreporting\":true,\"device_token\":\"string\",\"editstationsnames\":true,\"firstname\":\"string\",\"id\":1,\"is_password_changed\":true,\"lastname\":\"string\",\"notes\":true,\"password\":\"string\",\"pathwayediting\":true,\"pin\":\"string\",\"plasterrequests\":true,\"username\":\"string\"}"
+    },
+    "appointment": {},
+    "station": {},
+    "patient": {},
+    "request": {},
+    "pathway": {},
+    "note": {},
+    "clinicarea": {},
+    "stationdetails": {}
+  }
+}
