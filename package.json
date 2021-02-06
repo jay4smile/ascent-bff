@@ -1,51 +1,69 @@
 {
-  "name": "DASHclinic-API-Server",
-  "version": "1.0.1-pilot",
-  "description": "DASHClinic API Gateway for DASHClinic iOS App",
-  "main": "server/server.js",
-  "scripts": {
-    "start": "node server/server.js",
-    "test": "mocha 'test/fvt/*.js'",
-    "sonarqube:scan": "node test/sonarqube-scan"
-  },
-  "contributors": [
-    {
-      "name": "Matthew Perrins",
-      "email": "mjperrin@us.ibm.com"
-    }
+  "name": "architecture-mapper-bff",
+  "version": "0.0.1",
+  "description": "architecture-mapper-bff",
+  "keywords": [
+    "loopback-application",
+    "loopback"
   ],
-  "license": "DASHclinic 1.0",
-  "devDependencies": {
-    "chai": "^3.5.0",
-    "mocha": "^2.5.3",
-    "strong-error-handler": "^2.3.2",
-    "sonarqube-scanner": "^2.6.0"
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "engines": {
+    "node": ">=10.16"
   },
+  "scripts": {
+    "build": "lb-tsc",
+    "build:watch": "lb-tsc --watch",
+    "lint": "yarn run eslint && yarn run prettier:check",
+    "lint:fix": "yarn run eslint:fix && yarn run prettier:fix",
+    "prettier:cli": "lb-prettier \"**/*.ts\" \"**/*.js\"",
+    "prettier:check": "yarn run prettier:cli -l",
+    "prettier:fix": "yarn run prettier:cli --write",
+    "eslint": "lb-eslint --report-unused-disable-directives .",
+    "eslint:fix": "yarn run eslint --fix",
+    "pretest": "yarn run rebuild",
+    "test": "lb-mocha --allow-console-logs \"dist/__tests__\"",
+    "posttest": "yarn run lint",
+    "test:dev": "lb-mocha --allow-console-logs dist/__tests__/**/*.js && yarn run posttest",
+    "docker:build": "docker build -t architecture-mapper-bff .",
+    "docker:run": "docker run -p 3000:3000 -d architecture-mapper-bff",
+    "premigrate": "yarn run build",
+    "migrate": "node ./dist/migrate",
+    "preopenapi-spec": "yarn run build",
+    "openapi-spec": "node ./dist/openapi-spec",
+    "rebuild": "yarn run clean && yarn run build",
+    "prestart": "yarn run rebuild",
+    "start": "node -r source-map-support/register .",
+    "clean": "lb-clean dist *.tsbuildinfo .eslintcache"
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "author": "Github pipeline <pipeline@github.com>",
+  "license": "",
+  "files": [
+    "README.md",
+    "dist",
+    "src",
+    "!*/__tests__"
+  ],
   "dependencies": {
-    "strong-error-handler": "^3.4.0",
-    "bluebird": "^3.5.1",
-    "colors": "^1.1.2",
-    "compression": "^1.0.3",
-    "cors": "^2.5.2",
-    "handlebars": "^4.7.6",
-    "helmet": "^1.3.0",
-    "lodash": "^4.17.4",
-    "loopback": "^3.27.0",
-    "loopback-boot": "^2.27.1",
-    "loopback-component-explorer": "^6.5.1",
-    "loopback-connector-cloudant": "^2.0.5",
-    "loopback-connector-mongodb": "^3.8.0",
-    "loopback-datasource-juggler": "^3.18.1",
-    "passport": "^0.3.2",
-    "pkgcloud": "^1.3.0",
-    "q": "^1.5.0",
-    "rxjs": "^5.5.9",
-    "serve-favicon": "^2.0.1",
-    "superagent": "^1.8.3",
-    "swagger-ui-dist": "^3.25.1",
-    "swagger-ui-express": "^4.1.4",
-    "underscore": "^1.8.3",
-    "winston": "^2.2.0",
-    "yamljs": "^0.3.0"
+    "@loopback/boot": "^3.2.0",
+    "@loopback/core": "^2.14.0",
+    "@loopback/repository": "^3.4.0",
+    "@loopback/rest": "^9.1.2",
+    "@loopback/rest-explorer": "^3.0.6",
+    "@loopback/service-proxy": "^3.0.6",
+    "tslib": "^2.0.0"
+  },
+  "devDependencies": {
+    "@loopback/build": "^6.2.9",
+    "source-map-support": "^0.5.19",
+    "@loopback/testlab": "^3.2.11",
+    "@types/node": "^10.17.51",
+    "@loopback/eslint-config": "^10.0.5",
+    "eslint": "^7.18.0",
+    "typescript": "~4.1.3"
   }
 }
