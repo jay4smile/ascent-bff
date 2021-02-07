@@ -1,7 +1,7 @@
 {
-  "name": "architecture-mapper-bff",
+  "name": "architecture-builder-bff",
   "version": "0.0.1",
-  "description": "architecture-mapper-bff",
+  "description": "architecture-builder-bff",
   "keywords": [
     "loopback-application",
     "loopback"

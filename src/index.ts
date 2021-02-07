@@ -8,8 +8,11 @@ export async function main(options: ApplicationConfig = {}) {
   await app.start();
 
   const url = app.restServer.url;
+
+  // Add in Figlet
+
   console.log(`Server is running at ${url}`);
-  console.log(`Try ${url}/ping`);
+  console.log(`Try ${url}/health`);
 
   return app;
 }
