@@ -55,6 +55,16 @@ spec:
               path: /
               port: http
           env:
+            - name: AUTHENTICATION
+              valueFrom:
+                secretKeyRef:
+                  name: binding-front-office-authentication
+                  key: binding
+            - name: DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: binding-builder-mongodb
+                  key: binding
             - name: INGRESS_HOST
               value: ""
             - name: PROTOCOLS
