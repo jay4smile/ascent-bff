@@ -1,13 +1,14 @@
 {
-  "name": "architecture-builder-bff",
+  "name": "FS-Cloud-Architectures",
   "version": "0.0.1",
-  "description": "architecture-builder-bff",
+  "description": "Backend for Frontend for managing relationships between architectures, boms, services and automation and fs controls",
   "keywords": [
     "loopback-application",
     "loopback"
   ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "private": true,
   "engines": {
     "node": ">=10.16"
   },

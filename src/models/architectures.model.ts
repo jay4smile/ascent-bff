@@ -62,13 +62,6 @@ export class Architectures extends Entity {
   })
   production_ready?: boolean;
 
-  @hasMany(() => Bom, {keyTo: 'arch_id'})
-  boms: Bom[];
-  /*
-  @hasMany(() => Bom, {keyTo: 'arch_id'})
-  boms: Bom[];
-  */
-
   constructor(data?: Partial<Architectures>) {
     super(data);
   }

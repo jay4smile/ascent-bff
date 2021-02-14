@@ -1,4 +1,5 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, hasOne} from '@loopback/repository';
+import {Bom} from './bom.model';
 
 @model({settings: {strict: false}})
 export class Services extends Entity {
@@ -65,8 +66,10 @@ export class Services extends Entity {
   })
   hybrid_automation_id?: string;
 
-  // Define well-known properties here
-
+  @property({
+    type: 'string',
+  })
+  _id?: string;
   // Indexer property to allow additional data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [prop: string]: any;

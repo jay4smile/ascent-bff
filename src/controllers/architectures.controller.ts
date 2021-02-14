@@ -37,12 +37,12 @@ export class ArchitecturesController {
         'application/json': {
           schema: getModelSchemaRef(Architectures, {
             title: 'NewArchitectures',
-            exclude: ['_id'],
+            
           }),
         },
       },
     })
-    architectures: Omit<Architectures, '_id'>,
+    architectures: Architectures,
   ): Promise<Architectures> {
     return this.architecturesRepository.create(architectures);
   }
