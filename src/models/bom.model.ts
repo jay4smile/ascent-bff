@@ -1,8 +1,7 @@
 import {Entity, model, property} from '@loopback/repository';
 
 @model({settings: {strict: false}})
-export class Controls extends Entity {
-
+export class Bom extends Entity {
   @property({
     type: 'string',
     id: true,
@@ -10,88 +9,94 @@ export class Controls extends Entity {
   })
   _id?: string;
 
-    @property({
-    type: 'string',
-    required: true,
-  })
-  control_family: string;
-
   @property({
     type: 'string',
     required: true,
   })
-  cf_description: string;
-
-  @property({
-    type: 'string',
-    id: true,
-    generated: false,
-    required: true,
-  })
-  control_id: string;
-
-  @property({
-    type: 'boolean',
-    required: true,
-  })
-  base_control: boolean;
+  arch_id: string;
 
   @property({
     type: 'string',
     required: true,
   })
-  control_name: string;
+  service_id: string;
 
   @property({
     type: 'string',
     required: true,
   })
-  control_description: string;
+  ibm_service: string;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  desc: string;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
+  deployment_method: string;
 
   @property({
     type: 'string',
   })
-  guidance?: string;
+  compatibility?: string;
 
   @property({
     type: 'string',
   })
-  parameters?: string;
+  catalog_link?: string;
 
   @property({
     type: 'string',
   })
-  candidate?: string;
+  documentation?: string;
 
   @property({
     type: 'string',
   })
-  comment?: string;
+  hippa_compliance?: string;
 
   @property({
     type: 'string',
   })
-  inherited?: string;
+  availability?: string;
 
   @property({
     type: 'string',
   })
-  platform_responsibility?: string;
+  remarks?: string;
 
   @property({
     type: 'string',
   })
-  app_responsibility?: string;
+  provision?: string;
+
+  @property({
+    type: 'string',
+  })
+  automation?: string;
+
+  @property({
+    type: 'string',
+  })
+  hybrid_option?: string;
 
   // Define well-known properties here
 
-  constructor(data?: Partial<Controls>) {
+  // Indexer property to allow additional data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [prop: string]: any;
+
+  constructor(data?: Partial<Bom>) {
     super(data);
   }
 }
 
-export interface ControlsRelations {
+export interface BomRelations {
   // describe navigational properties here
 }
 
-export type ControlsWithRelations = Controls & ControlsRelations;
+export type BomWithRelations = Bom & BomRelations;
