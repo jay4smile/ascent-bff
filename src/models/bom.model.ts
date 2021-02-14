@@ -1,4 +1,6 @@
-import {Entity, model, property} from '@loopback/repository';
+import {Entity, model, property, hasOne, belongsTo} from '@loopback/repository';
+import {Services} from './services.model';
+import {Architectures} from './architectures.model';
 
 @model({settings: {strict: false}})
 export class Bom extends Entity {
@@ -8,19 +10,6 @@ export class Bom extends Entity {
     generated: true,
   })
   _id?: string;
-
-  @property({
-    type: 'string',
-    required: true,
-  })
-  arch_id: string;
-
-  @property({
-    type: 'string',
-    required: true,
-  })
-  service_id: string;
-
   @property({
     type: 'string',
     required: true,
@@ -83,8 +72,6 @@ export class Bom extends Entity {
     type: 'string',
   })
   hybrid_option?: string;
-
-  // Define well-known properties here
 
   // Indexer property to allow additional data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

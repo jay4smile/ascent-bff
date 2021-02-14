@@ -12,4 +12,4 @@ IMAGE_VER="1.0.0"
 
 echo "Building ${IMAGE_NAME}:${IMAGE_VER}"
 
-../docker build -t ${IMAGE_NAME}:${IMAGE_VER} .
+docker build -t ${IMAGE_NAME}:${IMAGE_VER} .

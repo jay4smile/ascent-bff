@@ -1,21 +1,16 @@
-import {inject, Getter} from '@loopback/core';
-import {DefaultCrudRepository, repository, HasManyRepositoryFactory} from '@loopback/repository';
+import {inject} from '@loopback/core';
+import {DefaultCrudRepository} from '@loopback/repository';
 import {MongodbDataSource} from '../datasources';
-import {Architectures, ArchitecturesRelations, Bom} from '../models';
-import {BomRepository} from './bom.repository';
+import {Architectures, ArchitecturesRelations} from '../models';
 
 export class ArchitecturesRepository extends DefaultCrudRepository<
   Architectures,
   typeof Architectures.prototype._id,
   ArchitecturesRelations
 > {
-
-  public readonly boms: HasManyRepositoryFactory<Bom, typeof Architectures.prototype._id>;
-
   constructor(
-    @inject('datasources.mongodb') dataSource: MongodbDataSource, @repository.getter('BomRepository') protected bomRepositoryGetter: Getter<BomRepository>,
+    @inject('datasources.mongodb') dataSource: MongodbDataSource,
   ) {
     super(Architectures, dataSource);
-    this.boms = this.createHasManyRepositoryFactoryFor('boms', bomRepositoryGetter,);
   }
 }
