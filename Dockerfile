@@ -19,6 +19,9 @@ RUN npm install
 # Bundle app source code
 COPY --chown=node . .
 
+#Copy the Images into the Public folder
+COPY ./data/source/images ./public/images
+
 RUN npm run build
 
 # Bind to all network interfaces so that it can be mapped to the host OS

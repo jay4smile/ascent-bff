@@ -37,12 +37,12 @@ export class ControlsController {
         'application/json': {
           schema: getModelSchemaRef(Controls, {
             title: 'NewControls',
-            
+            exclude: ['_id'],
           }),
         },
       },
     })
-    controls: Controls,
+    controls: Omit<Controls, '_id'>,
   ): Promise<Controls> {
     return this.controlsRepository.create(controls);
   }
