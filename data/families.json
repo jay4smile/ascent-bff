@@ -1,90 +1,25 @@
 [
- {
-   "Control Family": "AC",
-   "Full Name": "Access Control"
- },
- {
-   "Control Family": "AR",
-   "Full Name": "Accountability, Audit, and Risk Management"
- },
- {
-   "Control Family": "AT",
-   "Full Name": "Awareness and Training"
- },
- {
-   "Control Family": "AU",
-   "Full Name": "Audit and Accountability"
- },
- {
-   "Control Family": "CA",
-   "Full Name": "Security Assessment and Authorization"
- },
- {
-   "Control Family": "CM",
-   "Full Name": "Configuration Management"
- },
- {
-   "Control Family": "CP",
-   "Full Name": "Contingency Planning"
- },
- {
-   "Control Family": "EDM",
-   "Full Name": "Extended Data Minimization and Retention"
- },
- {
-   "Control Family": "ESA",
-   "Full Name": "Extended System and Services Acquisition"
- },
- {
-   "Control Family": "IA",
-   "Full Name": "Identification and Authentication"
- },
- {
-   "Control Family": "IR",
-   "Full Name": "Incident Response"
- },
- {
-   "Control Family": "MA",
-   "Full Name": "Maintenance"
- },
- {
-   "Control Family": "MP",
-   "Full Name": "Media Protection"
- },
- {
-   "Control Family": "PE",
-   "Full Name": "Physical and Environmental Protection"
- },
- {
-   "Control Family": "PL",
-   "Full Name": "Planning"
- },
- {
-   "Control Family": "PM",
-   "Full Name": "Program Management"
- },
- {
-   "Control Family": "PS",
-   "Full Name": "Personnel Security"
- },
- {
-   "Control Family": "RA",
-   "Full Name": "Risk Assessment"
- },
- {
-   "Control Family": "SA",
-   "Full Name": "System and Services Acquisition"
- },
- {
-   "Control Family": "SC",
-   "Full Name": "System and Communications Protection"
- },
- {
-   "Control Family": "SI",
-   "Full Name": "System and Information Integrity"
- },
- {
-   "Control Family": "UL",
-   "Full Name": "Use Limitations"
- }
+{"family":"AC","name":"Access Control"},
+{"family":"AR","name":"Accountability, Audit, and Risk Management"},
+{"family":"AT","name":"Awareness and Training"},
+{"family":"AU","name":"Audit and Accountability"},
+{"family":"CA","name":"Security Assessment and Authorization"},
+{"family":"CM","name":"Configuration Management"},
+{"family":"CP","name":"Contingency Planning"},
+{"family":"EDM","name":"Extended Data Minimization and Retention"},
+{"family":"ESA","name":"Extended System and Services Acquisition"},
+{"family":"IA","name":"Identification and Authentication"},
+{"family":"IR","name":"Incident Response"},
+{"family":"MA","name":"Maintenance"},
+{"family":"MP","name":"Media Protection"},
+{"family":"PE","name":"Physical and Environmental Protection"},
+{"family":"PL","name":"Planning"},
+{"family":"PM","name":"Program Management"},
+{"family":"PS","name":"Personnel Security"},
+{"family":"RA","name":"Risk Assessment"},
+{"family":"SA","name":"System and Services Acquisition"},
+{"family":"SC","name":"System and Communications Protection"},
+{"family":"SI","name":"System and Information Integrity"},
+{"family":"UL","name":"Use Limitations"},
+{"family":"","name":""}
 ]
