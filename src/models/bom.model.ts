@@ -73,9 +73,10 @@ export class Bom extends Entity {
   })
   hybrid_option?: string;
 
-  // Indexer property to allow additional data
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [prop: string]: any;
+  @property({
+    type: 'string',
+  })
+  arch_id?: string;
 
   constructor(data?: Partial<Bom>) {
     super(data);
