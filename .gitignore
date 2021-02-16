@@ -3,3 +3,12 @@ node_modules
 .vscode
 .apiconnect
 data/db
+
+data/source/nist-injest-script/*.xml
+yarn-error.log
+
+# Excel temp files
+~$*.xlsx
+
+# MacOS specific
+.DS_Store

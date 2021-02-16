@@ -10,7 +10,7 @@ export class Controls extends Entity {
   })
   _id?: string;
 
-    @property({
+  @property({
     type: 'string',
     required: true,
   })
