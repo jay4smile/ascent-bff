@@ -5,7 +5,7 @@ import assert from 'assert';
 import * as _ from 'lodash';
 import {Services} from '../appenv';
 
-let services = Services.getInstance();
+const services = Services.getInstance();
 
 // The services object is a map named by service so we extract the one for MongoDB
 const mongodbServices:any = services.getService('database');
