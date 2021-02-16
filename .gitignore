@@ -4,6 +4,9 @@ node_modules
 .apiconnect
 data/db
 
+source/nist-injest-script/*.xml
+yarn-error.log
+
 # Excel temp files
 ~$*.xlsx
 
