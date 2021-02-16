@@ -1,12 +1,12 @@
 # FS Cloud Architectures
 
-This application backend will enable the retrieve of APIs that will support the relationship between a 
+This application backend will enable a collection of APIs that will support the relationship between a 
 Reference Architecture and its Bill of Materials(BOM) (list of comprising services). The BOM relationship to 
 the list of FS Ready services. The mapping between the cloud services and the FS Controls. Finally you can 
 view the FS Controls mapping to the Cloud Services and the supporting refernece Architectures.
 
 Once we have this data model in place, we will be able to link it to the Automation Catalog that is being
-built by @seansundberg We will be able to take the BOM and input it into the Solution Builder API they have built
+built by Asset team,  we will be able to take the BOM and input it into the Solution Builder API they have built
 and output a package of consistent terraform.
 
 This will enable the Ecosystem teams including ISVs to have a consistent way of describing reference archtiectures
@@ -17,7 +17,7 @@ This application is generated using [LoopBack 4 CLI](https://loopback.io/doc/en/
 
 ## Supporting Documentation
 
-List of reference documentation
+List of reference documentation that will support the APIs
 
 - [NIST-800-53](https://nvd.nist.gov/800-53)
 - [Cloud Catalog API](https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false&q=is.volume)
@@ -27,9 +27,36 @@ List of reference documentation
 
 ## Overview
 
-This is the data model that is 
+The Architecture builder's goal is to simplify the complexity of the data attributes that surround a
+reference architecture for the FS Cloud. When we review the Financial Controls the number of cloud services
+and the possible reference architectures these can be assembled in. It has become clear
+a tool will help manage this wide range of attributes.
+
+The following diagram helps describes the key entities and their relationships.
 
 ![Data Model](./data/data-model.png)
+
+## Data
+
+To help speed up the data loading a simple ingestion model has been created. The core
+data entities are created in Excel spreadsheets. The first row of the entity holds
+the column name or JSON attribute name. To ingest data save the entity in `csv` file 
+format. into the `data/source` folder. To then convert the into JSON format
+install the following package`
+
+Install the `csvtojson` tool `npm install csvtojson -g`
+
+Then run the script `./convert.sh` this will export the `csv` files into `json` files
+
+### Import to MongoDB
+
+From the `data` folder download the MongoDB certificate into `export DBCERT=~/projects/certs/cloud-mongodb.pem`
+
+From the MongoDB services instance screen in IBM Cloud take the `composed` value and configure
+the `URI` environment variable `export URI="mongodb://ibm_cloud_4..`
+
+You can then run `./mload-cloud` to configure the MongoDB collection with the initial data to 
+feed the API.
 
 ## Install dependencies
 
@@ -38,8 +65,15 @@ Whenever dependencies in `package.json` are changed, run the following command:
 
 Setup the following environment variables before you can run the application
 
+To run this locally you need to take the mongo binding value that is registered as a 
+secret in the OpenShift environment or from the Service Credentials section of a 
+managed MongoDB instance. Take the binding value and configure it as a environment value.
 
+```base
+export DATABASE="{connection....}"
+```
 
+Once this value is set it is now possible to run the application.
 
 ```sh
 yarn install
