@@ -51,6 +51,12 @@ export class Nist extends Entity {
   "supplemental-guidance"?: object;
 
   @property({
+    type: 'object',
+    required: true
+  })
+  "control-enhancements": object;
+
+  @property({
     type: 'object'
   })
   references?: object;
