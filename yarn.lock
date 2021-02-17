@@ -989,7 +989,7 @@ bl@^2.0.1, bl@^2.2.1:
     readable-stream "^2.3.5"
     safe-buffer "^5.1.1"
 
-bluebird@^3.7.2:
+bluebird@^3.5.1, bluebird@^3.7.2:
   version "3.7.2"
   resolved "https://registry.npmjs.org/bluebird/-/bluebird-3.7.2.tgz"
   integrity sha512-XpNj6GDQzdfW+r2Wnn7xiSAd7TM3jzkxGXBGTtWKuSXv1xUV+azxAm8jdWZN06QTQk+2N2XB9jRDkvbmQmcRtg==
@@ -1307,6 +1307,15 @@ crypt@0.0.2:
   version "0.0.2"
   resolved "https://registry.npmjs.org/crypt/-/crypt-0.0.2.tgz"
   integrity sha1-iNf/fsDfuG9xPch7u0LQRNPmxBs=
+
+csvtojson@^2.0.10:
+  version "2.0.10"
+  resolved "https://registry.npmjs.org/csvtojson/-/csvtojson-2.0.10.tgz"
+  integrity sha512-lUWFxGKyhraKCW8Qghz6Z0f2l/PqB1W3AO0HKJzGIQ5JRSlR651ekJDiGJbBT4sRNNv5ddnSGVEnsxP9XRCVpQ==
+  dependencies:
+    bluebird "^3.5.1"
+    lodash "^4.17.3"
+    strip-bom "^2.0.0"
 
 debug@2.6.9:
   version "2.6.9"
@@ -2316,6 +2325,11 @@ is-typedarray@^1.0.0:
   resolved "https://registry.npmjs.org/is-typedarray/-/is-typedarray-1.0.0.tgz"
   integrity sha1-5HnICFjfDBsR3dppQPlgEfzaSpo=
 
+is-utf8@^0.2.0:
+  version "0.2.1"
+  resolved "https://registry.npmjs.org/is-utf8/-/is-utf8-0.2.1.tgz"
+  integrity sha1-Sw2hRCEE0bM2NA6AeX6GXPOffXI=
+
 is-weakmap@^2.0.1:
   version "2.0.1"
   resolved "https://registry.npmjs.org/is-weakmap/-/is-weakmap-2.0.1.tgz"
@@ -2552,7 +2566,7 @@ lodash.get@^4.4.2:
   resolved "https://registry.npmjs.org/lodash.get/-/lodash.get-4.4.2.tgz"
   integrity sha1-LRd/ZS+jHpObRDjVNBSZ36OCXpk=
 
-lodash@^4.17.11, lodash@^4.17.15, lodash@^4.17.19, lodash@^4.17.20, lodash@^4.17.4:
+lodash@^4.17.11, lodash@^4.17.15, lodash@^4.17.19, lodash@^4.17.20, lodash@^4.17.3, lodash@^4.17.4:
   version "4.17.20"
   resolved "https://registry.npmjs.org/lodash/-/lodash-4.17.20.tgz"
   integrity sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==
@@ -3774,6 +3788,13 @@ strip-ansi@^6.0.0:
   integrity sha512-AuvKTrTfQNYNIctbR1K/YGTR1756GycPsg7b9bdV9Duqur4gv6aKqHXah67Z8ImS7WEz5QVcOtlfW2rZEugt6w==
   dependencies:
     ansi-regex "^5.0.0"
+
+strip-bom@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.npmjs.org/strip-bom/-/strip-bom-2.0.0.tgz"
+  integrity sha1-YhmoVhZSBJHzV4i9vxRHqZx+aw4=
+  dependencies:
+    is-utf8 "^0.2.0"
 
 strip-bom@^4.0.0:
   version "4.0.0"

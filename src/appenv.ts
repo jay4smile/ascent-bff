@@ -15,9 +15,9 @@ export class Services {
   private constructor() {
 
     // Validate Env Exists and add to the nconf singleton
-    let secrets:string = conf.get(`secrets`);
+    const secrets:string = conf.get(`secrets`);
 
-    for ( let secret of Object.keys(secrets) ) {
+    for ( const secret of Object.keys(secrets) ) {
 
       // @ts-ignore
       if (_.isUndefined( process.env[secrets[secret]] ) ) {
@@ -64,7 +64,7 @@ export class Services {
   }
   public isLocal() {
     // Check if local
-    let env = process.env.NODE_ENV || 'development';
+    const env = process.env.NODE_ENV || 'development';
     let isLocal = false;
     if (env === 'development' ) {
       isLocal = true;
