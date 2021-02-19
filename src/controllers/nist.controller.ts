@@ -36,13 +36,12 @@ export class NistController {
       content: {
         'application/json': {
           schema: getModelSchemaRef(Nist, {
-            title: 'NewNist',
-            exclude: ['_id'],
+            title: 'NewNist'
           }),
         },
       },
     })
-    nist: Omit<Nist, '_id'>,
+    nist: Nist,
   ): Promise<Nist> {
     return this.nistRepository.create(nist);
   }
