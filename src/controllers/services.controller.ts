@@ -37,7 +37,7 @@ export class ServicesController {
         'application/json': {
           schema: getModelSchemaRef(Services, {
             title: 'NewServices',
-            
+
           }),
         },
       },
