@@ -5,7 +5,9 @@ node_modules
 data/db
 
 data/source/nist-injest-script/*.xml
+dist
 yarn-error.log
+tsconfig.tsbuildinfo
 
 # Excel temp files
 ~$*.xlsx
