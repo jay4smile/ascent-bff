@@ -48,20 +48,6 @@ const config = {
   sslCA: ca,
 };
 
-/*
-const config = {
-  name: 'mongodb',
-  connector: 'mongodb',
-  url: '<mongo_uri>',
-  host: '<mongo_host>',
-  port: 30153,
-  user: '<mongo_user>',
-  password: '<mongo_pwd>',
-  database: 'ibmcloud',
-  useNewUrlParser: true
-};
-*/
-
 // Observe application's life cycle to disconnect the datasource when
 // application is stopped. This allows the application to be shut down
 // gracefully. The `stop()` method is inherited from `juggler.DataSource`.
