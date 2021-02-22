@@ -50,6 +50,7 @@
     "!*/__tests__"
   ],
   "dependencies": {
+    "@cloudnativetoolkit/iascable": "^0.1.0",
     "@loopback/boot": "^3.2.0",
     "@loopback/core": "^2.14.0",
     "@loopback/repository": "^3.4.0",
@@ -57,12 +58,10 @@
     "@loopback/rest-explorer": "^3.0.6",
     "@loopback/service-proxy": "^3.0.6",
     "@types/figlet": "^1.2.1",
-    "@types/lodash": "^4.14.168",
     "@types/nconf": "^0.10.0",
     "asset": "^0.4.13",
     "csvtojson": "^2.0.10",
     "figlet": "^1.5.0",
-    "lodash": "^4.17.20",
     "loopback-connector-mongodb": "^5.5.0",
     "nconf": "^0.11.2",
     "tslib": "^2.0.0"
@@ -71,6 +70,7 @@
     "@loopback/build": "^6.2.9",
     "@loopback/eslint-config": "^10.0.5",
     "@loopback/testlab": "^3.2.11",
+    "@types/lodash": "^4.14.168",
     "@types/node": "^10.17.51",
     "eslint": "^7.18.0",
     "source-map-support": "^0.5.19",
