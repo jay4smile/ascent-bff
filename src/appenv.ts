@@ -17,6 +17,7 @@ export class Services {
     // Validate Env Exists and add to the nconf singleton
     const secrets:string = conf.get(`secrets`);
 
+    /* eslint-disable @typescript-eslint/ban-ts-comment */
     for ( const secret of Object.keys(secrets) ) {
 
       // @ts-ignore
@@ -64,7 +65,7 @@ export class Services {
   }
   public isLocal() {
     // Check if local
-    const env = process.env.NODE_ENV || 'development';
+    const env = process.env.NODE_ENV ?? 'development';
     let isLocal = false;
     if (env === 'development' ) {
       isLocal = true;

@@ -2,6 +2,8 @@
 import {Entity, model, property, hasMany} from '@loopback/repository';
 import {Bom} from './bom.model';
 
+/* eslint-disable @typescript-eslint/naming-convention */
+
 @model()
 export class Architectures extends Entity {
   @property({

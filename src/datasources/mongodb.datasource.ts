@@ -8,6 +8,7 @@ import {Services} from '../appenv';
 const services = Services.getInstance();
 
 // The services object is a map named by service so we extract the one for MongoDB
+/* eslint-disable @typescript-eslint/no-explicit-any*/
 const mongodbServices:any = services.getService('database');
 
 // This check ensures there is a services for MongoDB databases

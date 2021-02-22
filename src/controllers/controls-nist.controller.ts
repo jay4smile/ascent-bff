@@ -1,5 +1,5 @@
 import {repository, Filter} from '@loopback/repository';
-import {get, param, requestBody} from '@loopback/rest';
+import {get, param} from '@loopback/rest';
 import {ControlsRepository} from '../repositories';
 import {Controls, Nist} from '../models';
 

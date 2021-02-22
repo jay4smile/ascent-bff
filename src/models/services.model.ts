@@ -1,5 +1,6 @@
-import {Entity, model, property, hasOne} from '@loopback/repository';
-import {Bom} from './bom.model';
+import {Entity, model, property} from '@loopback/repository';
+
+/* eslint-disable @typescript-eslint/naming-convention */
 
 @model({settings: {strict: false}})
 export class Services extends Entity {
