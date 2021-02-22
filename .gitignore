@@ -8,6 +8,7 @@ data/source/nist-injest-script/*.xml
 dist
 yarn-error.log
 tsconfig.tsbuildinfo
+*.ignore.*
 
 # Excel temp files
 ~$*.xlsx
