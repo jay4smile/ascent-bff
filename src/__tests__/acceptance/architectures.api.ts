@@ -1,4 +1,4 @@
-import {Client, expect} from '@loopback/testlab';
+import {Client} from '@loopback/testlab';
 import {ArchitectureMapperBffApplication} from '../..';
 import {setupApplication} from './test-helper';
 

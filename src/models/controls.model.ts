@@ -1,6 +1,8 @@
 import {hasOne, Entity, model, property} from '@loopback/repository';
 import {Nist, NistWithRelations} from './nist.model';
 
+/* eslint-disable @typescript-eslint/naming-convention */
+
 @model({settings: {strict: false}})
 export class Controls extends Entity {
 
