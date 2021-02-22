@@ -1,14 +1,16 @@
-import {Entity, model, property} from '@loopback/repository';
+import {hasOne, Entity, model, property} from '@loopback/repository';
+import {Nist, NistWithRelations} from './nist.model';
 
 @model({settings: {strict: false}})
 export class Controls extends Entity {
 
   @property({
     type: 'string',
+    required: true,
     id: true,
-    generated: true,
+    generated: false
   })
-  _id?: string;
+  control_id: string;
 
   @property({
     type: 'string',
@@ -21,14 +23,6 @@ export class Controls extends Entity {
     required: true,
   })
   cf_description: string;
-
-  @property({
-    type: 'string',
-    id: true,
-    generated: false,
-    required: true,
-  })
-  control_id: string;
 
   @property({
     type: 'boolean',
@@ -83,7 +77,8 @@ export class Controls extends Entity {
   })
   app_responsibility?: string;
 
-  // Define well-known properties here
+  @hasOne(() => Nist, {keyTo: 'number'})
+  nist: Nist;
 
   constructor(data?: Partial<Controls>) {
     super(data);
@@ -92,6 +87,7 @@ export class Controls extends Entity {
 
 export interface ControlsRelations {
   // describe navigational properties here
+  nist: NistWithRelations;
 }
 
 export type ControlsWithRelations = Controls & ControlsRelations;

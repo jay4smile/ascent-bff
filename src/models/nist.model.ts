@@ -5,22 +5,17 @@ export class Nist extends Entity {
 
   @property({
     type: 'string',
+    required: true,
     id: true,
-    generated: true
+    generated: false
   })
-  _id?: string;
+  number: string;
 
   @property({
     type: 'string',
     required: true
   })
   family: string;
-
-  @property({
-    type: 'string',
-    required: true
-  })
-  number: string;
 
   @property({
     type: 'string',
@@ -54,6 +49,22 @@ export class Nist extends Entity {
     type: 'object'
   })
   references?: object;
+
+  @property({
+    type: 'object'
+  })
+  withdrawn?: object;
+
+  @property({
+    type: 'string',
+    required: true
+  })
+  "base-control"?: string;
+
+  @property({
+    type: 'string'
+  })
+  "parent-control"?: string;
 
   // Define well-known properties here
 

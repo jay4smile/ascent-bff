@@ -36,13 +36,12 @@ export class ControlsController {
       content: {
         'application/json': {
           schema: getModelSchemaRef(Controls, {
-            title: 'NewControls',
-            exclude: ['_id'],
+            title: 'NewControls'
           }),
         },
       },
     })
-    controls: Omit<Controls, '_id'>,
+    controls: Controls,
   ): Promise<Controls> {
     return this.controlsRepository.create(controls);
   }
@@ -65,7 +64,7 @@ export class ControlsController {
       'application/json': {
         schema: {
           type: 'array',
-          items: getModelSchemaRef(Controls, {includeRelations: true}),
+          items: getModelSchemaRef(Controls, {includeRelations: false}),
         },
       },
     },
