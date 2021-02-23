@@ -19,6 +19,7 @@ import {
 } from '@loopback/rest';
 import {Services} from '../models';
 import {ServicesRepository} from '../repositories';
+import { CatalogController } from './catalog.controller';
 
 export class ServicesController {
   constructor(
@@ -146,4 +147,37 @@ export class ServicesController {
   async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.servicesRepository.deleteById(id);
   }
+  
+  @get('services/catelog/{bomId}')
+  @response(200, {
+    description: 'catalog by bomId',
+    content: 'application/json'
+  })
+  async catalogByBomId(
+    @param.path.string('bomId') bomId: string    
+  ): Promise<any[]>  {
+
+  const serv_res = new ServicesController(this.servicesRepository).findById(bomId);
+  const service_id = (await serv_res).service_id;
+
+  if (service_id != bomId){  
+    throw new Error("There is no services id corresponding to this bom id"+bomId);
+  }
+
+  const automation_res = await (new CatalogController).catalogById(bomId);
+  var data = JSON.parse(JSON.stringify(automation_res));  
+  var jsonObj = [];
+  var item = {
+    "id": data.resources[0].id,
+    "name": data.resources[0].name,
+    "description": data.resources[0].overview_ui.en.description,
+    "geo": data.resources[0].geo_tags
+  }
+
+  jsonObj.push(item);
+  
+  return jsonObj;
+
+  }
+     
 }
