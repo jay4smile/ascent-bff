@@ -21,6 +21,9 @@ import {Services} from '../models';
 import {ServicesRepository} from '../repositories';
 import { CatalogController } from './catalog.controller';
 
+/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export class ServicesController {
   constructor(
     @repository(ServicesRepository)
@@ -160,14 +163,14 @@ export class ServicesController {
   const serv_res = new ServicesController(this.servicesRepository).findById(bomId);
   const service_id = (await serv_res).service_id;
 
-  if (service_id != bomId){  
+  if (service_id !== bomId){  
     throw new Error("There is no services id corresponding to this bom id"+bomId);
   }
 
   const automation_res = await (new CatalogController).catalogById(bomId);
-  var data = JSON.parse(JSON.stringify(automation_res));  
-  var jsonObj = [];
-  var item = {
+  const data = JSON.parse(JSON.stringify(automation_res));  
+  const jsonObj = [];
+  const item = {
     "id": data.resources[0].id,
     "name": data.resources[0].name,
     "description": data.resources[0].overview_ui.en.description,

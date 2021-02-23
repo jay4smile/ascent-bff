@@ -14,13 +14,13 @@ import {
     async catalog(): Promise<JSON> {    
          
       const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false');       
-      const response = await fetch( url.toString() );
+      const res = await fetch( url.toString() );
        
-      if (response.status >= 400) {
+      if (res.status >= 400) {
         throw new Error("Bad response from server");
       }
   
-       const data = await response.json();        
+       const data = await res.json();        
        return data;
     }
   
@@ -35,13 +35,13 @@ import {
     ): Promise<JSON> {
       
       const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false&q='+id);      
-      const response = await fetch( url.toString() );
+      const res = await fetch( url.toString() );
        
-      if (response.status >= 400) {
+      if (res.status >= 400) {
         throw new Error("Bad response from server");
       }
   
-       const data = await response.json();        
+       const data = await res.json();        
        return data;    
     }  
   
