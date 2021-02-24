@@ -1,0 +1,7 @@
+{
+  "secrets": {
+    "database": "DATABASE_TEST",
+    "appid" : "AUTHENTICATION",
+    "host" :  "INGRESS_HOST"
+  }
+}
