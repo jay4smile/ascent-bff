@@ -1,6 +1,6 @@
-import {expect} from '@loopback/testlab';
-import {ArchitectureMapperBffApplication} from '../..';
-import {RestServer, RestBindings} from '@loopback/rest';
+import { expect } from '@loopback/testlab';
+import { ArchitectureMapperBffApplication } from '../..';
+import { RestServer, RestBindings } from '@loopback/rest';
 const Dredd = require('dredd');
 
 describe('API (acceptance)', () => {

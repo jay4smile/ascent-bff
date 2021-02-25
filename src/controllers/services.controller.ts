@@ -12,7 +12,6 @@ import {
   get,
   getModelSchemaRef,
   patch,
-  put,
   del,
   requestBody,
   response,
@@ -115,8 +114,13 @@ export class ServicesController {
   }
 
   @patch('/services/{id}')
-  @response(204, {
-    description: 'Services PATCH success',
+  @response(200, {
+    description: 'Controls model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Services),
+      },
+    },
   })
   async updateById(
     @param.path.string('id') id: string,
@@ -128,19 +132,9 @@ export class ServicesController {
       },
     })
     services: Services,
-  ): Promise<void> {
+  ): Promise<Services> {
     await this.servicesRepository.updateById(id, services);
-  }
-
-  @put('/services/{id}')
-  @response(204, {
-    description: 'Services PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() services: Services,
-  ): Promise<void> {
-    await this.servicesRepository.replaceById(id, services);
+    return this.servicesRepository.findById(id);
   }
 
   @del('/services/{id}')
@@ -151,7 +145,7 @@ export class ServicesController {
     await this.servicesRepository.deleteById(id);
   }
   
-  @get('services/catelog/{bomId}')
+  @get('services/catalog/{bomId}')
   @response(200, {
     description: 'catalog by bomId',
     content: 'application/json'

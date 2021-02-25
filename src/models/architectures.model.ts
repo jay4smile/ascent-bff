@@ -9,7 +9,7 @@ export class Architectures extends Entity {
   @property({
     type: 'string',
     id: true,
-    generated: true,
+    generated: false,
   })
   _id?: string;
 

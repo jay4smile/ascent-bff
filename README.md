@@ -80,6 +80,12 @@ Once this value is set it is now possible to run the application.
 yarn install
 ```
 
+For playing around using the test database:
+
+```sh
+NODE_ENV=test yarn install
+```
+
 ## Run the application
 
 ```sh

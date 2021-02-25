@@ -22,7 +22,7 @@ describe('Controls', () => {
       .get('/controls/count')
       .expect(200)
       .expect('Content-Type', /application\/json/)
-      .expect(/{"count":\d+}/gm)
+      .expect(/{"count":\d+}/)
   });
 
   it('GET all controls', async () => {
@@ -83,7 +83,7 @@ describe('Controls', () => {
       })
       .expect(200)
       .expect('Content-Type', /application\/json/)
-      .expect(/{"count":\d+}/gm);
+      .expect(/{"count":\d+}/);
   });
 
 });
