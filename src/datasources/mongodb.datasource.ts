@@ -16,7 +16,7 @@ assert(!_.isUndefined(mongodbServices), 'backend must be bound to mongodb servic
 
 // We now take the first bound MongoDB service and extract it's credentials object
 const mongodbConn = mongodbServices.connection.mongodb;
-const mongodbComposed = mongodbServices.connection.mongodb.composed[0];
+const mongodbComposed = mongodbConn.composed[0];
 
 // Read the CA certificate and assign that to the CA variable
 const ca = [Buffer.from(mongodbConn.certificate.certificate_base64, 'base64')];
@@ -40,7 +40,7 @@ const config = {
   user: username,
   password : password,
   host: connectionPath[0].hostname,
-  database: 'ibmclouddb',
+  database: mongodbConn.database,
   authSource: 'admin',
   useNewUrlParser: true,
   ssl: true,
