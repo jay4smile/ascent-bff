@@ -53,9 +53,10 @@ Then run the script `./convert.sh` this will export the `csv` files into `json` 
 From the `data` folder download the MongoDB certificate into `export DBCERT=~/projects/certs/cloud-mongodb.pem`
 
 From the MongoDB services instance screen in IBM Cloud take the `composed` value and configure
-the `URI` environment variable `export URI="mongodb://ibm_cloud_4..`
+the `URI` environment variable `export URI="mongodb://ibm_cloud_4..`.
+For the test database you want to do the same thing with the `URI_TEST` environment variable `export URI_TEST="mongodb://ibm_cloud_4..`.
 
-You can then run `./mload-cloud` to configure the MongoDB collection with the initial data to 
+You can then run `./mload-cloud { $URI | $URI_TEST }` to configure the MongoDB collection with the initial data to 
 feed the API.
 
 ## Install dependencies
@@ -125,6 +126,7 @@ yarn run lint:fix
 ## Tests
 
 ```sh
+export DATABASE_TEST="{connection....}"
 yarn test
 ```
 

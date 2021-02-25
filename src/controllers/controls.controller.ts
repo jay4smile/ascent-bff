@@ -12,7 +12,6 @@ import {
   get,
   getModelSchemaRef,
   patch,
-  put,
   del,
   requestBody,
   response,
@@ -111,8 +110,13 @@ export class ControlsController {
   }
 
   @patch('/controls/{id}')
-  @response(204, {
-    description: 'Controls PATCH success',
+  @response(200, {
+    description: 'Controls model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Controls, {includeRelations: true}),
+      },
+    },
   })
   async updateById(
     @param.path.string('id') id: string,
@@ -122,21 +126,10 @@ export class ControlsController {
           schema: getModelSchemaRef(Controls, {partial: true}),
         },
       },
-    })
-    controls: Controls,
-  ): Promise<void> {
+    }) controls: Controls,
+  ): Promise<Controls> {
     await this.controlsRepository.updateById(id, controls);
-  }
-
-  @put('/controls/{id}')
-  @response(204, {
-    description: 'Controls PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() controls: Controls,
-  ): Promise<void> {
-    await this.controlsRepository.replaceById(id, controls);
+    return this.controlsRepository.findById(id);
   }
 
   @del('/controls/{id}')

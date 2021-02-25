@@ -23,7 +23,7 @@
     "eslint": "lb-eslint --report-unused-disable-directives .",
     "eslint:fix": "yarn run eslint --fix",
     "pretest": "yarn run rebuild",
-    "test": "lb-mocha --allow-console-logs \"dist/__tests__\"",
+    "test": "NODE_ENV=test lb-mocha --allow-console-logs \"dist/__tests__\"",
     "posttest": "yarn run lint",
     "test:dev": "lb-mocha --allow-console-logs dist/__tests__/**/*.js",
     "docker:build": "docker build -t architecture-mapper-bff .",
@@ -73,6 +73,7 @@
     "@loopback/testlab": "^3.2.11",
     "@types/lodash": "^4.14.168",
     "@types/node": "^10.17.51",
+    "dredd": "^14.0.0",
     "eslint": "^7.18.0",
     "source-map-support": "^0.5.19",
     "typescript": "~4.1.3"
