@@ -2,38 +2,44 @@
 
 // import {inject} from '@loopback/core';
 
-import {
-  IascableApi,
-  IascableOptions,
-  IascableResult
-} from '@cloudnativetoolkit/iascable';
-
 import {Inject} from 'typescript-ioc';
-import {get} from "@loopback/rest";
+
+import {
+  get,
+  HttpErrors,
+  oas,
+  param,
+  Response,
+  RestBindings,
+} from '@loopback/rest';
 
 import {BillOfMaterial, BillOfMaterialModel} from '@cloudnativetoolkit/iascable';
 import {SingleModuleVersion, TerraformComponent} from '@cloudnativetoolkit/iascable';
 import {Tile} from '@cloudnativetoolkit/iascable';
-import {Catalog, CatalogLoaderApi} from '@cloudnativetoolkit/iascable';
+import {Catalog, CatalogLoader} from '@cloudnativetoolkit/iascable';
 
-import {ModuleSelectorApi} from '@cloudnativetoolkit/iascable';
-import {TerraformBuilderApi} from '@cloudnativetoolkit/iascable';
-import {TileBuilderApi} from '@cloudnativetoolkit/iascable';
+import {ModuleSelector} from '@cloudnativetoolkit/iascable';
+import {TerraformBuilder} from '@cloudnativetoolkit/iascable';
+//import {TileBuilder} from '@cloudnativetoolkit/iascable';
+
+import {inject} from "@loopback/core";
+import {FILE} from "dns";
 
 const catalogUrl: string = "https://raw.githubusercontent.com/ibm-garage-cloud/garage-terraform-modules/gh-pages/index.yaml"
 
 export class AutomationCatalogController  {
 
   @Inject
-  loader!: CatalogLoaderApi;
+  loader!: CatalogLoader;
   @Inject
-  moduleSelector!: ModuleSelectorApi;
+  moduleSelector!: ModuleSelector;
   @Inject
-  terraformBuilder!: TerraformBuilderApi;
-  @Inject
-  tileBuilder!: TileBuilderApi;
+  terraformBuilder!: TerraformBuilder;
 
-  @get('/catalog')
+//  @Inject
+//  tileBuilder!: TileBuilder;
+
+  @get('/automation/catalog')
   async catalog(): Promise<object> {
 
     // Retrieve the Catalog and convert it to JSON
@@ -46,8 +52,12 @@ export class AutomationCatalogController  {
 
   }
 
-  @get('/automation/{Bomid}')
-  async automationBuilder(): Promise<object> {
+  @get('/automation/{bomid}')
+  @oas.response.file()
+  async downloadAutomationZip(
+      @param.path.string('bomid') fileName: string,
+      @inject(RestBindings.Http.RESPONSE) response: Response,
+  ) {
 
     // Read Architecture Bill of Materials
 
@@ -60,6 +70,36 @@ export class AutomationCatalogController  {
     // Build Terraform Components
 
     // Write into a Buffer
+
+      //https://www.archiverjs.com/zip-stream/
+
+    // Stream Buffer back
+
+    // Future : Push to Object Store, Git, Create a Tile Dynamically
+
+    const bom: BillOfMaterialModel = new BillOfMaterial("fscloud");
+
+    bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-k8s-ocp-cluster");
+    bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-cp-app-connect")
+
+    const catalog: Catalog = await this.loader.loadCatalog(catalogUrl);
+
+    const filter: {platform?: string; provider?: string} =  {}; // SS explain ?
+
+    //const billOfMaterial: BillOfMaterialModel =  await this.moduleSelector.buildBillOfMaterial(catalog, bom, filter) ;
+
+    //if (!billOfMaterial) {
+    //  throw new Error('Bill of Material is required');
+    //}
+
+    const modules: SingleModuleVersion[] = await this.moduleSelector.resolveBillOfMaterial(catalog, bom);
+
+    const terraformComponent: TerraformComponent = await this.terraformBuilder.buildTerraformComponent(modules);
+
+    // Output the Terraform
+    terraformComponent.files.forEach(file => {
+      console.log(file.name, file.contents);
+    })
 
     // Build Zipfile
     /*
@@ -102,28 +142,10 @@ export class AutomationCatalogController  {
 
     // Future : Push to Object Store, Git, Create a Tile Dynamically
 
-    const bom: BillOfMaterialModel = new BillOfMaterial();
-    const catalog: Catalog = await this.loader.loadCatalog(catalogUrl);
-
-    const filter: {platform?: string; provider?: string} =  {}; // SS explain ?
-
-    const billOfMaterial: BillOfMaterialModel =  await this.moduleSelector.buildBillOfMaterial(catalog, bom, filter) ;
-
-    if (!billOfMaterial) {
-      throw new Error('Bill of Material is required');
-    }
-
-    const modules: SingleModuleVersion[] = await this.moduleSelector.resolveBillOfMaterial(catalog, bom);
-
-    const terraformComponent: TerraformComponent = await this.terraformBuilder.buildTerraformComponent(modules);
-
     //const tile: Tile =  await this.tileBuilder.buildTileMetadata(terraformComponent.baseVariables, undefinedeConfig) : undefined;
 
-    return {
-      billOfMaterial,
-      terraformComponent
-    };
-
+    response.download("TEST", fileName);
+    return response;
   }
 
   @get('/catalog/{id}')

@@ -176,10 +176,10 @@
     lodash "^4.17.19"
     to-fast-properties "^2.0.0"
 
-"@cloudnativetoolkit/iascable@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.npmjs.org/@cloudnativetoolkit/iascable/-/iascable-0.1.0.tgz"
-  integrity sha512-fxeRIOGskmKqOynHR9Zgltu+TDuoPLzqCClZ68pWqP1YNVoqcARu63qJCmmsiNOOsmWP6SkMKQPHopPQO++nfg==
+"@cloudnativetoolkit/iascable@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@cloudnativetoolkit/iascable/-/iascable-0.4.0.tgz#bb5e59df1adb5f066fd66a0cb1df6ea35c37ba9d"
+  integrity sha512-/nBQX0jn6AFNgCtPY41a46e+pvP6E0AUJDzkifvp9EPFFPeacZeELbxWy8Jwqa4mubar7W4sYiSbppvvrSqVyA==
   dependencies:
     compare-versions "^3.6.0"
     inquirer "^7.3.3"
@@ -1363,6 +1363,13 @@ cors@^2.8.5:
   dependencies:
     object-assign "^4"
     vary "^1"
+
+cross-fetch@^3.0.6:
+  version "3.0.6"
+  resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.0.6.tgz#3a4040bc8941e653e0e9cf17f29ebcd177d3365c"
+  integrity sha512-KBPUbqgFjzWlVcURG+Svp9TlhA5uliYtiNx/0r8nv0pdypeQCRJ9IaSIc3q/x3q8t3F75cHuwxVql1HFGHCNJQ==
+  dependencies:
+    node-fetch "2.6.1"
 
 cross-spawn@^7.0.0, cross-spawn@^7.0.2, cross-spawn@^7.0.3:
   version "7.0.3"
@@ -3089,6 +3096,11 @@ node-fetch-h2@^2.3.0:
   integrity sha512-ofRW94Ab0T4AOh5Fk8t0h8OBWrmjb0SSB20xh1H8YnPV9EJ+f5AMoYSUQ2zgJ4Iq2HAK0I2l5/Nequ8YzFS3Hg==
   dependencies:
     http2-client "^1.2.5"
+
+node-fetch@2.6.1:
+  version "2.6.1"
+  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.1.tgz#045bd323631f76ed2e2b55573394416b639a0052"
+  integrity sha512-V4aYg89jEoVRxRb2fJdAg8FHvI7cEyYdVAh94HH0UIK8oJxUfkjlDQN9RbMx+bEjP7+ggMiFRprSti032Oipxw==
 
 node-preload@^0.2.1:
   version "0.2.1"
