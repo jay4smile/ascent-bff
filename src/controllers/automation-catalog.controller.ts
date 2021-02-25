@@ -6,7 +6,6 @@ import {Inject} from 'typescript-ioc';
 
 import {
   get,
-  HttpErrors,
   oas,
   param,
   Response,
@@ -15,7 +14,6 @@ import {
 
 import {BillOfMaterial, BillOfMaterialModel} from '@cloudnativetoolkit/iascable';
 import {SingleModuleVersion, TerraformComponent} from '@cloudnativetoolkit/iascable';
-import {Tile} from '@cloudnativetoolkit/iascable';
 import {Catalog, CatalogLoader} from '@cloudnativetoolkit/iascable';
 
 import {ModuleSelector} from '@cloudnativetoolkit/iascable';
@@ -23,9 +21,8 @@ import {TerraformBuilder} from '@cloudnativetoolkit/iascable';
 //import {TileBuilder} from '@cloudnativetoolkit/iascable';
 
 import {inject} from "@loopback/core";
-import {FILE} from "dns";
 
-const catalogUrl: string = "https://raw.githubusercontent.com/ibm-garage-cloud/garage-terraform-modules/gh-pages/index.yaml"
+const catalogUrl = "https://raw.githubusercontent.com/ibm-garage-cloud/garage-terraform-modules/gh-pages/index.yaml"
 
 export class AutomationCatalogController  {
 
@@ -84,7 +81,7 @@ export class AutomationCatalogController  {
 
     const catalog: Catalog = await this.loader.loadCatalog(catalogUrl);
 
-    const filter: {platform?: string; provider?: string} =  {}; // SS explain ?
+    //const filter: {platform?: string; provider?: string} =  {}; // SS explain ?
 
     //const billOfMaterial: BillOfMaterialModel =  await this.moduleSelector.buildBillOfMaterial(catalog, bom, filter) ;
 
