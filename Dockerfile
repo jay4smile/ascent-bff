@@ -20,7 +20,7 @@ RUN npm install
 COPY --chown=node . .
 
 # Copy the Images into the Public folder
-#COPY ./data/source/images ./public/images
+COPY ./data/source/images ./public/images
 
 RUN npm run build
 
