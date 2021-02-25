@@ -12,7 +12,6 @@ import {
   get,
   getModelSchemaRef,
   patch,
-  put,
   del,
   requestBody,
   response,
@@ -112,8 +111,13 @@ export class BomController {
   }
 
   @patch('/boms/{id}')
-  @response(204, {
-    description: 'Bom PATCH success',
+  @response(200, {
+    description: 'Controls model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Bom),
+      },
+    },
   })
   async updateById(
     @param.path.string('id') id: string,
@@ -125,19 +129,9 @@ export class BomController {
       },
     })
     bom: Bom,
-  ): Promise<void> {
+  ): Promise<Bom> {
     await this.bomRepository.updateById(id, bom);
-  }
-
-  @put('/boms/{id}')
-  @response(204, {
-    description: 'Bom PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() bom: Bom,
-  ): Promise<void> {
-    await this.bomRepository.replaceById(id, bom);
+    return this.bomRepository.findById(id);
   }
 
   @del('/boms/{id}')

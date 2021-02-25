@@ -2,7 +2,7 @@ import { Client } from '@loopback/testlab';
 import { ArchitectureMapperBffApplication } from '../..';
 import { setupApplication } from './test-helper';
 
-describe('HomePage', () => {
+describe('Nists', () => {
   let app: ArchitectureMapperBffApplication;
   let client: Client;
 
@@ -14,18 +14,26 @@ describe('HomePage', () => {
     await app.stop();
   });
 
-  it('exposes a default home page', async () => {
+  it('GET nist count', async () => {
     await client
-      .get('/')
+      .get('/nist/count')
       .expect(200)
-      .expect('Content-Type', /text\/html/);
+      .expect('Content-Type', /application\/json/)
+      .expect(/{"count":\d+}/)
   });
 
-  it('exposes self-hosted explorer', async () => {
+  it('GET all nist', async () => {
     await client
-      .get('/explorer/')
+      .get('/nist')
       .expect(200)
-      .expect('Content-Type', /text\/html/)
-      .expect(/<title>LoopBack API Explorer/);
+      .expect('Content-Type', /application\/json/);
   });
+
+  it('GET nist by id', async () => {
+    await client
+      .get('/nist/SC-12')
+      .expect(200)
+      .expect('Content-Type', /application\/json/);
+  });
+
 });

@@ -12,7 +12,6 @@ import {
   get,
   getModelSchemaRef,
   patch,
-  put,
   del,
   requestBody,
   response,
@@ -112,8 +111,13 @@ export class ArchitecturesController {
   }
 
   @patch('/architectures/{id}')
-  @response(204, {
-    description: 'Architectures PATCH success',
+  @response(200, {
+    description: 'Architectures model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Architectures, {includeRelations: true}),
+      },
+    },
   })
   async updateById(
     @param.path.string('id') id: string,
@@ -125,19 +129,9 @@ export class ArchitecturesController {
       },
     })
     architectures: Architectures,
-  ): Promise<void> {
+  ): Promise<Architectures> {
     await this.architecturesRepository.updateById(id, architectures);
-  }
-
-  @put('/architectures/{id}')
-  @response(204, {
-    description: 'Architectures PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() architectures: Architectures,
-  ): Promise<void> {
-    await this.architecturesRepository.replaceById(id, architectures);
+    return this.architecturesRepository.findById(id);
   }
 
   @del('/architectures/{id}')

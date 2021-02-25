@@ -2,7 +2,7 @@ import { Client } from '@loopback/testlab';
 import { ArchitectureMapperBffApplication } from '../..';
 import { setupApplication } from './test-helper';
 
-describe('HomePage', () => {
+describe('Catalog', () => {
   let app: ArchitectureMapperBffApplication;
   let client: Client;
 
@@ -14,18 +14,18 @@ describe('HomePage', () => {
     await app.stop();
   });
 
-  it('exposes a default home page', async () => {
+  it('GET the catalog', async () => {
     await client
-      .get('/')
+      .get('/catalog')
       .expect(200)
-      .expect('Content-Type', /text\/html/);
+      .expect('Content-Type', /application\/json/);
   });
 
-  it('exposes self-hosted explorer', async () => {
+  it('GET an element of the catalog by id', async () => {
     await client
-      .get('/explorer/')
+      .get('/catalog/is.vpc')
       .expect(200)
-      .expect('Content-Type', /text\/html/)
-      .expect(/<title>LoopBack API Explorer/);
+      .expect('Content-Type', /application\/json/);
   });
+
 });

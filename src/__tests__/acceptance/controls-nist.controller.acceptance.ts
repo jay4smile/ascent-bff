@@ -2,7 +2,7 @@ import { Client, expect } from '@loopback/testlab';
 import { ArchitectureMapperBffApplication } from '../..';
 import { setupApplication } from './test-helper';
 
-describe('PingController', () => {
+describe('Control Nist', () => {
   let app: ArchitectureMapperBffApplication;
   let client: Client;
 
@@ -14,8 +14,14 @@ describe('PingController', () => {
     await app.stop();
   });
 
-  it('invokes GET /ping', async () => {
-    const res = await client.get('/ping?msg=world').expect(200);
-    expect(res.body).to.containEql({ greeting: 'Hello from LoopBack' });
+  it('GET a control nist by control id', async () => {
+    await client
+      .get(`/controls/AC-3/nist`)
+      .expect(200)
+      .expect('Content-Type', /application\/json/)
+      .then((res) => {
+        expect(res.body).to.have.property('number');
+      });
   });
+
 });
