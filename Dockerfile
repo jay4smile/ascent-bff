@@ -19,8 +19,8 @@ RUN npm install
 # Bundle app source code
 COPY --chown=node . .
 
-#Copy the Images into the Public folder
-COPY ./data/source/images ./public/images
+# Copy the Images into the Public folder
+#COPY ./data/source/images ./public/images
 
 RUN npm run build
 
