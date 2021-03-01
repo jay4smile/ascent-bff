@@ -1,0 +1,130 @@
+// NIST
+Table nist {
+  number string [pk]
+  family string // [not null, unique]
+  title string
+  priority string
+  baseline_impact object
+  statement object
+  supplemental_guidance object
+  references object
+  withdrawn object
+  base_control string
+  parent_control object
+}
+
+// CONTROLSCONTROLS
+Enum candidate_enum {
+  High
+  Low
+  Medium
+  No [note: 'Not a candidate']
+}
+Table controls {
+  control_id string [pk]
+  control_family string
+  cf_description string
+  base_control boolean
+  control_name string
+  control_description string
+  guidance string
+  parameters string
+  candidate candidate_enum
+  comment string
+  inherited string
+  platform_responsibility string
+  app_responsibility string
+  nist string [ref: > nist.number]
+  services string
+}
+
+// SERVICES
+Enum grouping_enum {
+  sandi
+  network
+  storage
+  databases
+  compute
+  devtools
+}
+Enum deployment_method_enum {
+  platform
+  managed_service
+}
+Enum quarter_enum {
+  Q1
+  Q2
+  Q3
+  Q4
+}
+Table service {
+  service_id string [pk]
+  grouping grouping_enum
+  ibm_service string
+  desc string
+  deployment_method deployment_method_enum
+  fs_ready boolean
+  quarter quarter_enum
+  date date
+  provision string
+  cloud_automation_id string
+  hybrid_automation_id string
+}
+
+Table evidence {
+  id string [pk]
+  desc string
+  comment string
+  scc_goal string
+}
+
+Table control_mapping {
+  control string [pk, ref: > controls.control_id]
+  resource string [pk, ref: > service.service_id]
+  desc string
+  comment string
+  configuration string
+  evidence_id string [ref: > evidence.id]
+}
+
+Table architecture {
+  id string [pk]
+  name string
+  short_desc string
+  long_desc string
+  diagram_link_drawio string
+  diagram_link_png string
+  fs_compliant boolean
+  partner_name string
+  confidential boolean
+  production_ready boolean
+}
+
+Table bom {
+  service_id string [pk, ref: > service.service_id]
+  arch_id string [pk, ref: > architecture.id]
+  ibm_service string
+  desc string
+  deployment_method deployment_method_enum
+  compatibility boolean
+  catalog_link string
+  documentation string
+  hippa_compliance boolean
+  availability string
+  remarks string
+  provision string
+  automation string
+  hybrid_option string
+}
+
+Table automation {
+  id string [pk, ref: > service.service_id]
+  type string
+  module_name string
+  module_location string
+}
+
+// References
+// > many-to-one; < one-to-many; - one-to-one
+//Ref: services.controls > controls.control_id
+//Ref: controls > countries.code

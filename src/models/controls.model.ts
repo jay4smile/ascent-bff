@@ -1,5 +1,5 @@
-import {hasOne, Entity, model, property} from '@loopback/repository';
-import {Nist, NistWithRelations} from './nist.model';
+import {hasOne, hasMany, Entity, model, property} from '@loopback/repository';
+import {Nist, Services, ControlMapping} from '.';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -82,14 +82,16 @@ export class Controls extends Entity {
   @hasOne(() => Nist, {keyTo: 'number'})
   nist: Nist;
 
+  @hasMany(() => Services, {
+    through: {
+      model: () => ControlMapping,
+      keyFrom: 'control',
+      keyTo: 'resource',
+    }
+  })
+  services: Services[];
+
   constructor(data?: Partial<Controls>) {
     super(data);
   }
 }
-
-export interface ControlsRelations {
-  // describe navigational properties here
-  nist: NistWithRelations;
-}
-
-export type ControlsWithRelations = Controls & ControlsRelations;

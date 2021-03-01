@@ -3,3 +3,4 @@ export * from './nist.model';
 export * from './architectures.model';
 export * from './bom.model';
 export * from './services.model';
+export * from './control-mapping.model';
