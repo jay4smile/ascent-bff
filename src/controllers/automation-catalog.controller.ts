@@ -5,13 +5,18 @@
 import {Inject} from 'typescript-ioc';
 
 import {
-  get,
+  del,
+  get, getModelSchemaRef,
   oas,
-  param,
+  param, response,
   Response,
   RestBindings,
 } from '@loopback/rest';
 
+import * as _ from "lodash"
+import  AdmZip = require("adm-zip");
+
+// Automation Builder
 import {BillOfMaterial, BillOfMaterialModel} from '@cloudnativetoolkit/iascable';
 import {SingleModuleVersion, TerraformComponent} from '@cloudnativetoolkit/iascable';
 import {Catalog, CatalogLoader} from '@cloudnativetoolkit/iascable';
@@ -20,7 +25,13 @@ import {ModuleSelector} from '@cloudnativetoolkit/iascable';
 import {TerraformBuilder} from '@cloudnativetoolkit/iascable';
 //import {TileBuilder} from '@cloudnativetoolkit/iascable';
 
+// FS Architectures Data Models
+import {BomRepository, ArchitecturesRepository} from "../repositories";
+import {Bom} from "../models";
+
 import {inject} from "@loopback/core";
+import {Filter, HasManyRepository, repository} from "@loopback/repository";
+import {Controls} from "../models";
 
 const catalogUrl = "https://raw.githubusercontent.com/ibm-garage-cloud/garage-terraform-modules/gh-pages/index.yaml"
 
@@ -33,53 +44,58 @@ export class AutomationCatalogController  {
   @Inject
   terraformBuilder!: TerraformBuilder;
 
+  catalog: Catalog;
+
+  constructor(
+      @repository(ArchitecturesRepository)
+      public architecturesRepository : ArchitecturesRepository,
+  ) {}
+
 //  @Inject
 //  tileBuilder!: TileBuilder;
 
   @get('/automation/catalog')
-  async catalog(): Promise<object> {
+  async catalogLoader(): Promise<object> {
 
     // Retrieve the Catalog and convert it to JSON
     // https://raw.githubusercontent.com/ibm-garage-cloud/garage-terraform-modules/gh-pages/index.yaml
 
     // Load the Catalog using the Catalog Class
     const catalog: Catalog = await this.loader.loadCatalog(catalogUrl);
-
     return {catalog};
 
   }
 
   @get('/automation/{bomid}')
+  @response(200, {
+    description: 'Download Terraform Package based on the reference architecture BOM',
+  })
   @oas.response.file()
   async downloadAutomationZip(
-      @param.path.string('bomid') fileName: string,
+      @param.path.string('bomid') bomid: string,
       @inject(RestBindings.Http.RESPONSE) response: Response,
   ) {
 
+    // Check if we have a bom ID
+    if (_.isUndefined(bomid)){
+      return response.sendStatus( 404);
+    }
+
     // Read Architecture Bill of Materials
+    let automationBom:HasManyRepository<Bom> = await this.architecturesRepository.boms(bomid);
 
     // Load Service Map to the Bill Materials
 
     // Load Catalog
-
-    // Map Builder BOM to Automation Catalog creating a Automation BOM
-
-    // Build Terraform Components
-
-    // Write into a Buffer
-
-      //https://www.archiverjs.com/zip-stream/
-
-    // Stream Buffer back
+    if (!this.catalog) {
+      this.catalog = await this.loader.loadCatalog(catalogUrl);
+    }
 
     // Future : Push to Object Store, Git, Create a Tile Dynamically
-
     const bom: BillOfMaterialModel = new BillOfMaterial("fscloud");
 
     bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-k8s-ocp-cluster");
     bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-cp-app-connect")
-
-    const catalog: Catalog = await this.loader.loadCatalog(catalogUrl);
 
     //const filter: {platform?: string; provider?: string} =  {}; // SS explain ?
 
@@ -89,60 +105,23 @@ export class AutomationCatalogController  {
     //  throw new Error('Bill of Material is required');
     //}
 
-    const modules: SingleModuleVersion[] = await this.moduleSelector.resolveBillOfMaterial(catalog, bom);
-
+    const modules: SingleModuleVersion[] = await this.moduleSelector.resolveBillOfMaterial(this.catalog, bom);
     const terraformComponent: TerraformComponent = await this.terraformBuilder.buildTerraformComponent(modules);
+
+    // Write into a Buffer
+    // creating archives
+    var zip = new AdmZip();
 
     // Output the Terraform
     terraformComponent.files.forEach(file => {
       console.log(file.name, file.contents);
+      zip.addFile(file.name, Buffer.alloc(file.contents.length, file.contents), "entry comment goes here");
+
     })
 
-    // Build Zipfile
-    /*
-    var wait = require('wait.for');
+    console.log(JSON.stringify(zip.getEntries()));
 
-    var items = wait.for(function (next) {
-        BoxItem.find({box: req.Box}).exec(next)
-    });
-
-    res.set('Content-Type', 'application/zip');
-    res.set('Content-Disposition', 'attachment; filename=' + req.Box.id + '.zip');
-
-    var ZipStream = require('zip-stream');
-    var zip = new ZipStream();
-
-    zip.on('error', function (err) {
-        throw err;
-    });
-
-    zip.pipe(res);
-
-    items.forEach(function (item) {
-
-        wait.for(function (next) {
-
-            var path = storage.getItemPath(req.Box, item);
-            var source = require('fs').createReadStream(path);
-
-            zip.entry(source, { name: item.name }, next);
-        })
-
-    });
-
-    zip.finalize();
-     */
-
-    //https://www.archiverjs.com/zip-stream/
-
-    // Stream Buffer back
-
-    // Future : Push to Object Store, Git, Create a Tile Dynamically
-
-    //const tile: Tile =  await this.tileBuilder.buildTileMetadata(terraformComponent.baseVariables, undefinedeConfig) : undefined;
-
-    response.download("TEST", fileName);
-    return response;
+    return zip.toBuffer()
   }
 
   @get('/catalog/{id}')
