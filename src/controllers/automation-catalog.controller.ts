@@ -43,7 +43,6 @@ export class AutomationCatalogController  {
   moduleSelector!: ModuleSelector;
   @Inject
   terraformBuilder!: TerraformBuilder;
-
   catalog: Catalog;
 
   constructor(
@@ -64,6 +63,23 @@ export class AutomationCatalogController  {
     const catalog: Catalog = await this.loader.loadCatalog(catalogUrl);
     return {catalog};
 
+  }
+
+  @get('/automation/ids')
+  @response(200, {
+    description: 'Get a List of Catalog IDs'
+  })
+  async getCatalogIDs(): Promise<object> {
+
+    if (!this.catalog) {
+      this.catalog = await this.loader.loadCatalog(catalogUrl);
+    }
+    var data = new Array()
+    this.catalog.modules.forEach(module => {
+      data.push({name:module.name,id:module.id});
+    })
+
+    return {data};
   }
 
   @get('/automation/{bomid}')
