@@ -2,11 +2,12 @@
 
 // import {inject} from '@loopback/core';
 
+/* eslint-disable @typescript-eslint/naming-convention */
+
 import {Inject} from 'typescript-ioc';
 
 import {
-  del,
-  get, getModelSchemaRef,
+  get,
   oas,
   param, response,
   Response,
@@ -30,8 +31,7 @@ import {ArchitecturesRepository, ServicesRepository} from "../repositories";
 import {Bom,Services} from "../models";
 
 import {inject} from "@loopback/core";
-import {Filter, HasManyRepository, repository} from "@loopback/repository";
-import {Controls} from "../models";
+import {repository} from "@loopback/repository";
 
 const catalogUrl = "https://raw.githubusercontent.com/ibm-garage-cloud/garage-terraform-modules/gh-pages/index.yaml"
 
@@ -76,7 +76,7 @@ export class AutomationCatalogController  {
     if (!this.catalog) {
       this.catalog = await this.loader.loadCatalog(catalogUrl);
     }
-    var data = new Array()
+    const data:Object[] = []
     this.catalog.modules.forEach(module => {
       data.push({name:module.name,id:module.id});
     })
@@ -91,19 +91,19 @@ export class AutomationCatalogController  {
   @oas.response.file()
   async downloadAutomationZip(
       @param.path.string('bomid') bomid: string,
-      @inject(RestBindings.Http.RESPONSE) response: Response,
+      @inject(RestBindings.Http.RESPONSE) res: Response,
   ) {
 
     // Check if we have a bom ID
     if (_.isUndefined(bomid)){
-      return response.sendStatus( 404);
+      return res.sendStatus( 404);
     }
 
     // Read Architecture Bill of Materials
-    let automationBom:Bom[] = await this.architecturesRepository.boms(bomid).find();
+    const automationBom:Bom[] = await this.architecturesRepository.boms(bomid).find();
 
     // Retrieve the Services
-    let serviceList: Services[] = await this.serviceRepository.find();
+    const serviceList: Services[] = await this.serviceRepository.find();
 
     // Load Catalog
     if (!this.catalog) {
@@ -111,7 +111,8 @@ export class AutomationCatalogController  {
     }
 
     // Get the smaller Catalog data
-    var catids = new Array()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const catids:any[] = []
     this.catalog.modules.forEach(module => {
       catids.push({name:module.name,id:module.id});
     })
@@ -125,9 +126,9 @@ export class AutomationCatalogController  {
     // From the BOM build an Automation BOM
     automationBom.forEach(_bom => {
       // from the bom look up service with id
-      let service = _.find(serviceList, { 'service_id': _bom.service_id });
+      const service = _.find(serviceList, { 'service_id': _bom.service_id });
       if (!_.isUndefined(service)){
-        let catentry = _.find(catids,{name:service.cloud_automation_id});
+        const catentry = _.find(catids,{name:service.cloud_automation_id});
         if(!_.isUndefined(catentry)){
           bom.spec.modules.push(catentry.id);
           console.log(catentry.id);
@@ -155,7 +156,7 @@ export class AutomationCatalogController  {
 
       // Write into a Buffer
       // creating archives
-      var zip = new AdmZip();
+      const zip = new AdmZip();
 
       // Output the Terraform
       terraformComponent.files.forEach(file => {
@@ -167,7 +168,7 @@ export class AutomationCatalogController  {
       return zip.toBuffer()
 
     } catch (e) {
-      return response.status(500);
+      return res.status(500);
     }
 
   }

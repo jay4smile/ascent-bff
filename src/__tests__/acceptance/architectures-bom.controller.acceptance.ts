@@ -24,15 +24,7 @@ describe('Architecture Bom', () => {
         "ibm_service": testBomId,
         "desc": "string",
         "deployment_method": "string",
-        "compatibility": "string",
-        "catalog_link": "string",
-        "documentation": "string",
-        "hippa_compliance": "string",
-        "availability": "string",
-        "remarks": "string",
-        "provision": "string",
-        "automation": "string",
-        "hybrid_option": "string"
+        'service_id': testBomId
       })
       .expect(200)
       .expect('Content-Type', /application\/json/)

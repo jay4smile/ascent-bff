@@ -39,6 +39,7 @@ describe('Architectures', () => {
         "name": "string",
         "short_desc": "string",
         "long_desc": "string",
+        "diagram_folder": "string",
         "diagram_link_drawio": "string",
         "diagram_link_png": "string",
         "fs_compliant": true,
