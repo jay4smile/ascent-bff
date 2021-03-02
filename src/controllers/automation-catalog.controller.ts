@@ -119,6 +119,9 @@ export class AutomationCatalogController  {
     // Future : Push to Object Store, Git, Create a Tile Dynamically
     const bom: BillOfMaterialModel = new BillOfMaterial("fscloud");
 
+    bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-k8s-ocp-cluster");
+    bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-appid")
+
     // From the BOM build an Automation BOM
     automationBom.forEach(_bom => {
       // from the bom look up service with id
@@ -145,23 +148,28 @@ export class AutomationCatalogController  {
     //  throw new Error('Bill of Material is required');
     //}
 
-    const modules: SingleModuleVersion[] = await this.moduleSelector.resolveBillOfMaterial(this.catalog, bom);
-    const terraformComponent: TerraformComponent = await this.terraformBuilder.buildTerraformComponent(modules);
+    try {
 
-    // Write into a Buffer
-    // creating archives
-    var zip = new AdmZip();
+      const modules: SingleModuleVersion[] = await this.moduleSelector.resolveBillOfMaterial(this.catalog, bom);
+      const terraformComponent: TerraformComponent = await this.terraformBuilder.buildTerraformComponent(modules);
 
-    // Output the Terraform
-    terraformComponent.files.forEach(file => {
-      console.log(file.name, file.contents);
-      zip.addFile(file.name, Buffer.alloc(file.contents.length, file.contents), "entry comment goes here");
+      // Write into a Buffer
+      // creating archives
+      var zip = new AdmZip();
 
-    })
+      // Output the Terraform
+      terraformComponent.files.forEach(file => {
+        console.log(file.name, file.contents);
+        zip.addFile(file.name, Buffer.alloc(file.contents.length, file.contents), "entry comment goes here");
 
-    console.log(JSON.stringify(zip.getEntries()));
+      })
+      console.log(JSON.stringify(zip.getEntries()));
+      return zip.toBuffer()
 
-    return zip.toBuffer()
+    } catch (e) {
+      return response.status(500);
+    }
+
   }
 
   @get('/catalog/{id}')
