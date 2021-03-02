@@ -30,6 +30,12 @@ export class Bom extends Entity {
 
   @property({
     type: 'string',
+    required: true,
+  })
+  service_id: string;
+
+  @property({
+    type: 'string',
   })
   compatibility?: string;
 
