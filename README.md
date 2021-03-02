@@ -36,6 +36,10 @@ The following diagram helps describes the key entities and their relationships.
 
 ![Data Model](./data/data-model.png)
 
+The following diagram describes our database model in details:
+
+![Database Model](./data/dbdocs/db-specs.png)
+
 ## Data
 
 To help speed up the data loading a simple ingestion model has been created. The core
@@ -47,10 +51,6 @@ install the following package`
 Install the `csvtojson` tool `npm install csvtojson -g`
 
 Then run the script `./convert.sh` this will export the `csv` files into `json` files
-
-The following diagram describes our database model in details:
-
-![Database Model](./data/dbdocs/db-specs.png)
 
 ### Import to MongoDB
 
