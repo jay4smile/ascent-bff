@@ -26,8 +26,8 @@ import {TerraformBuilder} from '@cloudnativetoolkit/iascable';
 //import {TileBuilder} from '@cloudnativetoolkit/iascable';
 
 // FS Architectures Data Models
-import {BomRepository, ArchitecturesRepository} from "../repositories";
-import {Bom} from "../models";
+import {ArchitecturesRepository, ServicesRepository} from "../repositories";
+import {Bom,Services} from "../models";
 
 import {inject} from "@loopback/core";
 import {Filter, HasManyRepository, repository} from "@loopback/repository";
@@ -48,6 +48,8 @@ export class AutomationCatalogController  {
   constructor(
       @repository(ArchitecturesRepository)
       public architecturesRepository : ArchitecturesRepository,
+      @repository(ServicesRepository)
+      public serviceRepository: ServicesRepository
   ) {}
 
 //  @Inject
@@ -98,24 +100,42 @@ export class AutomationCatalogController  {
     }
 
     // Read Architecture Bill of Materials
-    let automationBom:HasManyRepository<Bom> = await this.architecturesRepository.boms(bomid);
+    let automationBom:Bom[] = await this.architecturesRepository.boms(bomid).find();
 
-    // Load Service Map to the Bill Materials
+    // Retrieve the Services
+    let serviceList: Services[] = await this.serviceRepository.find();
 
     // Load Catalog
     if (!this.catalog) {
       this.catalog = await this.loader.loadCatalog(catalogUrl);
     }
 
+    // Get the smaller Catalog data
+    var catids = new Array()
+    this.catalog.modules.forEach(module => {
+      catids.push({name:module.name,id:module.id});
+    })
+
     // Future : Push to Object Store, Git, Create a Tile Dynamically
     const bom: BillOfMaterialModel = new BillOfMaterial("fscloud");
 
-    bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-resource-group");
-    bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-access-group");
+    // From the BOM build an Automation BOM
+    automationBom.forEach(_bom => {
+      // from the bom look up service with id
+      let service = _.find(serviceList, { 'service_id': _bom.service_id });
+      if (!_.isUndefined(service)){
+        let catentry = _.find(catids,{name:service.cloud_automation_id});
+        if(!_.isUndefined(catentry)){
+          bom.spec.modules.push(catentry.id);
+          console.log(catentry.id);
+        } else {
+          console.log("Catalog entry not found "+service.cloud_automation_id);
+        }
+      } else {
+        console.log("No Services found for "+_bom.service_id)
+      }
 
-    bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-k8s-ocp-cluster");
-    bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-cp-app-connect")
-    bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-appid")
+    })
 
     //const filter: {platform?: string; provider?: string} =  {}; // SS explain ?
 
