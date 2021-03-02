@@ -8,3 +8,4 @@ export * from './services.controller';
 export * from './architectures.controller';
 export * from './bom.controller';
 export * from './architectures-bom.controller';
+export * from './control-mapping.controller';

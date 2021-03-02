@@ -11,7 +11,7 @@ export class Architectures extends Entity {
     id: true,
     generated: false,
   })
-  _id?: string;
+  arch_id?: string;
 
   @property({
     type: 'string',

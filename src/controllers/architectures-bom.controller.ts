@@ -54,7 +54,7 @@ export class ArchitecturesBomController {
     },
   })
   async create(
-    @param.path.string('id') id: typeof Architectures.prototype._id,
+    @param.path.string('id') id: typeof Architectures.prototype.arch_id,
     @requestBody({
       content: {
         'application/json': {

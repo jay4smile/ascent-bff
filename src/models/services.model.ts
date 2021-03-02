@@ -68,10 +68,6 @@ export class Services extends Entity {
   })
   hybrid_automation_id?: string;
 
-  @property({
-    type: 'string',
-  })
-  _id?: string;
   // Indexer property to allow additional data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [prop: string]: any;
@@ -79,11 +75,11 @@ export class Services extends Entity {
   @hasMany(() => Controls, {
     through: {
       model: () => ControlMapping,
-      keyFrom: 'resource',
-      keyTo: 'control',
+      keyFrom: 'service_id',
+      keyTo: 'control_id',
     }
   })
-  services: Controls[];
+  controls: Controls[];
 
   constructor(data?: Partial<Services>) {
     super(data);

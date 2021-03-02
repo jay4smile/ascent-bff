@@ -6,11 +6,11 @@ import {BomRepository} from './bom.repository';
 
 export class ArchitecturesRepository extends DefaultCrudRepository<
   Architectures,
-  typeof Architectures.prototype._id,
+  typeof Architectures.prototype.arch_id,
   ArchitecturesRelations
 > {
 
-  public readonly boms: HasManyRepositoryFactory<Bom, typeof Architectures.prototype._id>;
+  public readonly boms: HasManyRepositoryFactory<Bom, typeof Architectures.prototype.arch_id>;
 
   constructor(
     @inject('datasources.mongodb') dataSource: MongodbDataSource, @repository.getter('BomRepository') protected bomRepositoryGetter: Getter<BomRepository>,

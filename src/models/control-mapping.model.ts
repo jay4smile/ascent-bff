@@ -1,5 +1,8 @@
-import {Entity, property} from '@loopback/repository';
+import {Entity, property, model} from '@loopback/repository';
 
+/* eslint-disable @typescript-eslint/naming-convention */
+
+@model({settings: {strict: false}})
 export class ControlMapping extends Entity {
   // id property and others
 
@@ -13,12 +16,17 @@ export class ControlMapping extends Entity {
   @property({
     type: 'string',
   })
-  control?: string;
+  control_id?: string;
 
   @property({
     type: 'string',
   })
-  resource?: string;
+  service_id?: string;
+
+  @property({
+    type: 'string',
+  })
+  arch_id?: string;
 
   @property({
     type: 'string',
@@ -28,18 +36,12 @@ export class ControlMapping extends Entity {
   @property({
     type: 'string',
   })
-  configuration?: string;
+  comment?: string;
 
   @property({
     type: 'string',
-    attribute: "SCC Goal"
   })
-  sccGoal?: string;
-
-  @property({
-    type: 'string'
-  })
-  comment?: string;
+  evidence_id?: string;
 
   constructor(data: Partial<ControlMapping>) {
     super(data);

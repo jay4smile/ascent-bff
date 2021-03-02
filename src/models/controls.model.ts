@@ -1,5 +1,5 @@
 import {hasOne, hasMany, Entity, model, property} from '@loopback/repository';
-import {Nist, Services, ControlMapping} from '.';
+import {Nist, Services, ControlMapping, Architectures} from '.';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -85,11 +85,20 @@ export class Controls extends Entity {
   @hasMany(() => Services, {
     through: {
       model: () => ControlMapping,
-      keyFrom: 'control',
-      keyTo: 'resource',
+      keyFrom: 'control_id',
+      keyTo: 'service_id',
     }
   })
   services: Services[];
+
+  @hasMany(() => Architectures, {
+    through: {
+      model: () => ControlMapping,
+      keyFrom: 'control_id',
+      keyTo: 'arch_id',
+    }
+  })
+  architectures: Architectures[];
 
   constructor(data?: Partial<Controls>) {
     super(data);

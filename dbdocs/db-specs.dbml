@@ -79,8 +79,9 @@ Table evidence {
 }
 
 Table control_mapping {
-  control string [pk, ref: > controls.control_id]
-  resource string [pk, ref: > service.service_id]
+  control_id string [pk, ref: > controls.control_id]
+  service_id string [pk, ref: > service.service_id]
+  arch_id string [pk, ref: > architecture.id]
   desc string
   comment string
   configuration string

@@ -1,8 +1,8 @@
 import { Getter, inject } from '@loopback/core';
 import { HasOneRepositoryFactory, HasManyThroughRepositoryFactory, DefaultCrudRepository, repository } from '@loopback/repository';
 import { MongodbDataSource } from '../datasources';
-import { Nist, Controls, Services, ControlMapping } from '../models';
-import { NistRepository, ServicesRepository, ControlMappingRepository } from '../repositories';
+import { Nist, Controls, Services, ControlMapping, Architectures } from '../models';
+import { NistRepository, ServicesRepository, ControlMappingRepository, ArchitecturesRepository } from '../repositories';
 
 export class ControlsRepository extends DefaultCrudRepository<
   Controls,
@@ -18,12 +18,21 @@ export class ControlsRepository extends DefaultCrudRepository<
     typeof Controls.prototype.control_id
   >;
 
+  public readonly architectures: HasManyThroughRepositoryFactory<
+  Architectures,
+    typeof Architectures.prototype.arch_id,
+    ControlMapping,
+    typeof Controls.prototype.control_id
+  >;
+
   constructor(
     @inject('datasources.mongodb') dataSource: MongodbDataSource,
     @repository.getter('NistRepository')
     protected nistRepositoryGetter: Getter<NistRepository>,
     @repository.getter('ServicesRepository')
     protected servicesRepositoryGetter: Getter<ServicesRepository>,
+    @repository.getter('ArchitecturesRepository')
+    protected architecturesRepositoryGetter: Getter<ArchitecturesRepository>,
     @repository.getter('ControlMappingRepository')
     protected controlMappingRepositoryGetter: Getter<ControlMappingRepository>
   ) {
@@ -41,5 +50,12 @@ export class ControlsRepository extends DefaultCrudRepository<
       controlMappingRepositoryGetter
     );
     this.registerInclusionResolver('services', this.services.inclusionResolver);
+
+    this.architectures = this.createHasManyThroughRepositoryFactoryFor(
+      'architectures',
+      architecturesRepositoryGetter,
+      controlMappingRepositoryGetter
+    );
+    this.registerInclusionResolver('architectures', this.architectures.inclusionResolver);
   }
 }

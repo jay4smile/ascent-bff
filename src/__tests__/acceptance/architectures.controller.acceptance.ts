@@ -35,7 +35,7 @@ describe('Architectures', () => {
   it('POST a architecture', async () => {
     await client
       .post('/architectures').send({
-        "_id": testArchitectureId,
+        "arch_id": testArchitectureId,
         "name": "string",
         "short_desc": "string",
         "long_desc": "string",
