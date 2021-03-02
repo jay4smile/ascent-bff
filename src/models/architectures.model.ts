@@ -34,6 +34,12 @@ export class Architectures extends Entity {
     type: 'string',
     required: true,
   })
+  diagram_folder: string;
+
+  @property({
+    type: 'string',
+    required: true,
+  })
   diagram_link_drawio: string;
 
   @property({
