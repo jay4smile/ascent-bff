@@ -48,6 +48,10 @@ Install the `csvtojson` tool `npm install csvtojson -g`
 
 Then run the script `./convert.sh` this will export the `csv` files into `json` files
 
+The following diagram describes our database model in details:
+
+![Database Model](./data/dbdocs/db-specs.png)
+
 ### Import to MongoDB
 
 From the `data` folder download the MongoDB certificate into `export DBCERT=~/projects/certs/cloud-mongodb.pem`
