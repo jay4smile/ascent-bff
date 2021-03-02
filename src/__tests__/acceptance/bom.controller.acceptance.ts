@@ -39,16 +39,7 @@ describe('Bom', () => {
         'ibm_service': testBom,
         'desc': 'string',
         'deployment_method': 'string',
-        'compatibility': 'string',
-        'catalog_link': 'string',
-        'documentation': 'string',
-        'hippa_compliance': 'string',
-        'availability': 'string',
-        'remarks': 'string',
-        'provision': 'string',
-        'automation': 'string',
-        'hybrid_option': 'string',
-        'arch_id': 'string'
+        'service_id': testBom
       })
       .expect(200)
       .expect('Content-Type', /application\/json/)

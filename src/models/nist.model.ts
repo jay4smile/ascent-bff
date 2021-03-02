@@ -1,5 +1,7 @@
 import {Entity, model, property} from '@loopback/repository';
 
+/* eslint-disable @typescript-eslint/naming-convention */
+
 @model({settings: {strict: false}})
 export class Nist extends Entity {
 
@@ -32,7 +34,7 @@ export class Nist extends Entity {
   @property({
     type: 'object'
   })
-  "baseline-impact"?: object;
+  baseline_impact?: object;
 
   @property({
     type: 'object',
@@ -43,7 +45,7 @@ export class Nist extends Entity {
   @property({
     type: 'object'
   })
-  "supplemental-guidance"?: object;
+  supplemental_guidance?: object;
 
   @property({
     type: 'object'
@@ -59,12 +61,12 @@ export class Nist extends Entity {
     type: 'string',
     required: true
   })
-  "base-control"?: string;
+  base_control?: string;
 
   @property({
     type: 'string'
   })
-  "parent-control"?: string;
+  parent_control?: string;
 
   // Define well-known properties here
 

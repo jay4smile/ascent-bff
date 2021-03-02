@@ -35,10 +35,11 @@ describe('Architectures', () => {
   it('POST a architecture', async () => {
     await client
       .post('/architectures').send({
-        "_id": testArchitectureId,
+        "arch_id": testArchitectureId,
         "name": "string",
         "short_desc": "string",
         "long_desc": "string",
+        "diagram_folder": "string",
         "diagram_link_drawio": "string",
         "diagram_link_png": "string",
         "fs_compliant": true,

@@ -63,7 +63,7 @@ export class ControlsController {
       'application/json': {
         schema: {
           type: 'array',
-          items: getModelSchemaRef(Controls, {includeRelations: false}),
+          items: getModelSchemaRef(Controls),
         },
       },
     },

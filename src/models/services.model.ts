@@ -1,8 +1,9 @@
-import {Entity, model, property} from '@loopback/repository';
+import { hasMany, Entity, model, property } from '@loopback/repository';
+import { Controls, ControlMapping } from '.';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
-@model({settings: {strict: false}})
+@model({ settings: { strict: false } })
 export class Services extends Entity {
   @property({
     type: 'string',
@@ -67,21 +68,20 @@ export class Services extends Entity {
   })
   hybrid_automation_id?: string;
 
-  @property({
-    type: 'string',
-  })
-  _id?: string;
   // Indexer property to allow additional data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [prop: string]: any;
+
+  @hasMany(() => Controls, {
+    through: {
+      model: () => ControlMapping,
+      keyFrom: 'service_id',
+      keyTo: 'control_id',
+    }
+  })
+  controls: Controls[];
 
   constructor(data?: Partial<Services>) {
     super(data);
   }
 }
-
-export interface ServicesRelations {
-  // describe navigational properties here
-}
-
-export type ServicesWithRelations = Services & ServicesRelations;
