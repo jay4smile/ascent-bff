@@ -16,13 +16,20 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
+import _ from 'lodash';
+import { any } from 'nconf';
+import { ArchitecturesBomController, ServicesController } from '.';
 import {Bom} from '../models';
-import {BomRepository} from '../repositories';
+import {ArchitecturesRepository, BomRepository, ServicesRepository} from '../repositories';
 
 export class BomController {
   constructor(
     @repository(BomRepository)
     public bomRepository : BomRepository,
+    @repository(ServicesRepository)
+    public servicesRepository : ServicesRepository,
+    @repository(ArchitecturesRepository) 
+    protected architecturesRepository: ArchitecturesRepository,
   ) {}
 
   @post('/boms')
@@ -141,4 +148,66 @@ export class BomController {
   async deleteById(@param.path.string('id') id: string): Promise<void> {
     await this.bomRepository.deleteById(id);
   }
+
+  @get('/boms/catalog/{bomId}')
+  @response(200, {
+    description: 'Bom model instance',
+    content: {
+      'application/json': {
+        schema: getModelSchemaRef(Bom, {includeRelations: true}),
+      },
+    },
+  })
+  async compositeCatalogById(
+    @param.path.string('bomId') bomId: string,
+    @param.filter(Bom, {exclude: 'where'}) filter?: FilterExcludingWhere<Bom>
+  ): Promise<any> {
+    var bom_res = await this.bomRepository.findById(bomId, filter);
+    const bom_serv_id = bom_res.service_id;    
+    const bom_data = JSON.parse(JSON.stringify(bom_res));    
+    
+    const serv_res = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).catalogByServiceId(bom_serv_id);    
+    const srvc_data = JSON.parse(JSON.stringify(serv_res));
+  
+    const result = _.merge(bom_data, srvc_data[0]);
+    return result;
+  }
+
+  @get('/boms/services/{archid}')
+  @response(200, {
+    description: 'composit APi with bom + services + catalog',
+    content: {
+      'application/json': {        
+      },
+    },
+  })
+  async compositeCatalogByArchId(
+    @param.path.string('archid') archid: string,    
+  ): Promise<any> {    
+    var arch_bom_res = await (new ArchitecturesBomController(this.architecturesRepository)).find(archid);
+    const arch_bom_data = JSON.parse(JSON.stringify(arch_bom_res));    
+    let jsonObj = [];         
+    for await (const p of arch_bom_data) {            
+      try {     
+        const cat_res = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).catalogByServiceId(p.service_id);    
+        const cat_data = JSON.parse(JSON.stringify(cat_res));
+        const result_1 =  _.merge(p, cat_data[0]);
+            
+        const serv_res = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).findById(p.service_id);    
+        const srvc_data = JSON.parse(JSON.stringify(serv_res));            
+        const result_2 =  _.merge(result_1, srvc_data);
+            
+        jsonObj.push(result_2);            
+      }
+      catch(e) {        
+      }
+    }
+    
+    return jsonObj;
+  }
+  
 }
+
+
+
+
