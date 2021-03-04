@@ -37,7 +37,7 @@ describe('Control Nist', () => {
 
   it('GET architectures impacted by a control', async () => {
     await client
-      .get('/controls/SI-4 (5)/architectures')
+      .get('/controls/SI-11/architectures')
       .expect(200)
       .expect('Content-Type', /application\/json/)
       .then((res) => {
