@@ -103,10 +103,9 @@ export class ControlsController {
     },
   })
   async findById(
-    @param.path.string('id') id: string,
-    @param.filter(Controls, {exclude: 'where'}) filter?: FilterExcludingWhere<Controls>
+    @param.path.string('id') id: string
   ): Promise<Controls> {
-    return this.controlsRepository.findById(id, filter);
+    return this.controlsRepository.findById(id, {include: ['nist', 'services', 'architectures']});
   }
 
   @patch('/controls/{id}')
