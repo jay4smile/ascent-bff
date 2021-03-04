@@ -17,10 +17,12 @@ import {
   response,
 } from '@loopback/rest';
 import _ from 'lodash';
-import { any } from 'nconf';
 import { ArchitecturesBomController, ServicesController } from '.';
 import {Bom} from '../models';
 import {ArchitecturesRepository, BomRepository, ServicesRepository} from '../repositories';
+
+/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export class BomController {
   constructor(
@@ -162,7 +164,7 @@ export class BomController {
     @param.path.string('bomId') bomId: string,
     @param.filter(Bom, {exclude: 'where'}) filter?: FilterExcludingWhere<Bom>
   ): Promise<any> {
-    var bom_res = await this.bomRepository.findById(bomId, filter);
+    const bom_res = await this.bomRepository.findById(bomId, filter);
     const bom_serv_id = bom_res.service_id;    
     const bom_data = JSON.parse(JSON.stringify(bom_res));    
     
@@ -184,9 +186,9 @@ export class BomController {
   async compositeCatalogByArchId(
     @param.path.string('archid') archid: string,    
   ): Promise<any> {    
-    var arch_bom_res = await (new ArchitecturesBomController(this.architecturesRepository)).find(archid);
+    const arch_bom_res = await (new ArchitecturesBomController(this.architecturesRepository)).find(archid);
     const arch_bom_data = JSON.parse(JSON.stringify(arch_bom_res));    
-    let jsonObj = [];         
+    const jsonObj = [];         
     for await (const p of arch_bom_data) {            
       try {     
         const cat_res = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).catalogByServiceId(p.service_id);    
@@ -199,7 +201,8 @@ export class BomController {
             
         jsonObj.push(result_2);            
       }
-      catch(e) {        
+      catch(e) {     
+        console.log(e)   
       }
     }
     
