@@ -71,21 +71,24 @@ Table service {
   hybrid_automation_id string
 }
 
-Table evidence {
-  id string [pk]
-  desc string
-  comment string
-  scc_goal string
-}
+//Table evidence {
+//  id string [pk]
+//  desc string
+//  comment string
+//  scc_goal string
+//}
 
 Table control_mapping {
   control_id string [pk, ref: > controls.control_id]
   service_id string [pk, ref: > service.service_id]
   arch_id string [pk, ref: > architecture.id]
+  compliant string
+  configuration string
+  evidence string
+  scc_goal string
   desc string
   comment string
-  configuration string
-  evidence_id string [ref: > evidence.id]
+  //evidence_id string [ref: > evidence.id]
 }
 
 Table architecture {
