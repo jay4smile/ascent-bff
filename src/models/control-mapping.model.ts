@@ -31,17 +31,32 @@ export class ControlMapping extends Entity {
   @property({
     type: 'string',
   })
+  compliant?: string;
+
+  @property({
+    type: 'string',
+  })
+  configuration?: string;
+
+  @property({
+    type: 'string',
+  })
+  evidence?: string;
+
+  @property({
+    type: 'string',
+  })
+  scc_goal?: string;
+
+  @property({
+    type: 'string',
+  })
   desc?: string;
 
   @property({
     type: 'string',
   })
   comment?: string;
-
-  @property({
-    type: 'string',
-  })
-  evidence_id?: string;
 
   constructor(data: Partial<ControlMapping>) {
     super(data);
