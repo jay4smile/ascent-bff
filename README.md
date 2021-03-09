@@ -82,12 +82,14 @@ Once this value is set it is now possible to run the application.
 
 ```sh
 yarn install
+yarn start
 ```
 
 For playing around using the test database:
 
 ```sh
-NODE_ENV=test yarn install
+export DATABASE_TEST="{connection....}"
+NODE_ENV=test yarn start
 ```
 
 ## Run the application
