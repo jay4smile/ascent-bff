@@ -13,12 +13,12 @@ export class CatalogController {
     @get('/catalog')
     async catalog(
         @inject(RestBindings.Http.RESPONSE) res: Response,
-    ): Promise<any> {
+    ): Promise<void> {
 
         // Fix this to be retrieved from the Environment
         var client =  redis.createClient(6379, "127.0.0.1");
         const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false');
-        const key = "catalog";
+        const key = "catalog1";
 
         //log error to the console if any occurs
         client.on("error", (err) => {
@@ -33,15 +33,18 @@ export class CatalogController {
                     console.log("data retrieved from the cache");
                     res.status(200).send(JSON.parse(data));
                 } else {
-                    fetch(url).then(data=> {
-                        if(data.json()) {
-                            client.setex(key, 28800, JSON.stringify(data.json()));
-                            console.log(data.json())
-                            console.log("cache miss");
-                            res.status(200).send(data.json());
+                    fetch(url).then(async data=> {        
+                        const Jdata = await data.json();                        
+                        if(Jdata) {                            
+                            client.setex(key, 28800, JSON.stringify(Jdata));
+                            //console.log(Jdata)
+                            console.log("cache miss");                            
+                            res.status(200).send(Jdata);                            
+                                                                               
                         } else {
                             res.status(404).send({message: "no data found"});
                         }
+                                     
                     });
                 }
             });
