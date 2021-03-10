@@ -23,7 +23,7 @@ export class Services extends Entity {
     type: 'string',
     required: true,
   })
-  ibm_service: string;
+  ibm_catalog_service: string;
 
   @property({
     type: 'string',
@@ -40,17 +40,12 @@ export class Services extends Entity {
     type: 'boolean',
     required: true,
   })
-  fs_ready: boolean;
+  fs_certified: boolean;
 
   @property({
     type: 'string',
   })
-  quarter?: string;
-
-  @property({
-    type: 'date',
-  })
-  date?: string;
+  compliance_status?: string;
 
   @property({
     type: 'string',
