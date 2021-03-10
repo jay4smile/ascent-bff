@@ -16,7 +16,7 @@ export class CatalogController {
     ): Promise<void> {
 
         // Fix this to be retrieved from the Environment
-        var client =  redis.createClient(6379, "127.0.0.1");
+        var client =  redis.createClient(6379, "localhost");
         const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false');
         const key = "catalog1";
 
