@@ -34,3 +34,12 @@ Install the following extensions:
    suite and lint the code for both programming and style errors. You should run
    this command manually whenever you have new changes to test. Test failures
    and linter errors will be printed to the terminal.
+
+
+### redis (install on mac)
+1) brew install redis
+2) brew services start redis
+3) redis-cli
+4) SET "Key" "value"
+5) GET Key
+6) brew services stop redis

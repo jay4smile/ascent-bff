@@ -2,6 +2,7 @@
   "secrets": {
     "database": "DATABASE",
     "appid" : "AUTHENTICATION",
-    "host" :  "INGRESS_HOST"
+    "host" :  "INGRESS_HOST",
+    "redis" : "REDIS"
   }
 }
