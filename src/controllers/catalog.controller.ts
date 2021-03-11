@@ -1,3 +1,4 @@
+//'use warn'
 import {
     param,
     get,
@@ -6,6 +7,7 @@ import {
 import path from 'path';
 import fetch from 'node-fetch';
 import * as redis from "redis";
+import { Tedis, TedisPool } from "tedis";
 import { any } from 'nconf';
 import {inject} from "@loopback/core";
 export class CatalogController {
@@ -13,44 +15,44 @@ export class CatalogController {
     @get('/catalog')
     async catalog(
         @inject(RestBindings.Http.RESPONSE) res: Response,
-    ): Promise<void> {
+    ): Promise<any> {
 
-        // Fix this to be retrieved from the Environment
-        var client =  redis.createClient(6379, "localhost");
-        const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false');
-        const key = "catalog1";
+        
+        let tedis = new Tedis({
+            port: 6379,
+            host: "127.0.0.1"
+          });
 
-        //log error to the console if any occurs
-        client.on("error", (err) => {
-            console.log(err);
-        });
+          const pool = new TedisPool({
+            port: 6379,
+            host: "127.0.0.1"
+          });
 
-        try {
-            client.get(key, async (err, data) => {
-                if (err) throw err;
+          tedis = await pool.getTedis();           
+          pool.putTedis(tedis);
 
-                if (data) {
-                    console.log("data retrieved from the cache");
-                    res.status(200).send(JSON.parse(data));
-                } else {
-                    fetch(url).then(async data=> {        
-                        const Jdata = await data.json();                        
-                        if(Jdata) {                            
-                            client.setex(key, 28800, JSON.stringify(Jdata));
-                            //console.log(Jdata)
-                            console.log("cache miss");                            
-                            res.status(200).send(Jdata);                            
-                                                                               
-                        } else {
-                            res.status(404).send({message: "no data found"});
-                        }
-                                     
-                    });
-                }
-            });
-        } catch(err) {
-          res.status(500).send({message: err.message});
+          const jsonobj = [];
+          const key = "catalog";        
+          
+          try {            
+          
+          if(await tedis.exists(key) != 0){
+            const data = await tedis.get(key);            
+            console.log("data retrieved from the cache");                                   
+            jsonobj.push(data);            
+          } else{
+            const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false');  
+            const data  = await fetch( url.toString() );
+            await tedis.setex(key, 28800,JSON.stringify(data));                        
+            const jdata = await data.json();                        
+            console.log("cache miss"); 
+            jsonobj.push(data);
+
+          }
+        } catch (error) {
+            res.status(400).send(error);  
         }
+          res.status(200).send(jsonobj);       
 
    }
 
