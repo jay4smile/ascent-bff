@@ -41,7 +41,7 @@ export class CatalogController {
         console.log("data retrieved from the cache");
         jsonobj.push(data);
       } else {
-        const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=&complete=false');
+        const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=1&complete=false');
         const data = await fetch(url.toString());
         //await tedis.setex(key, 28800, JSON.stringify(data));
         const jdata = await data.json();
