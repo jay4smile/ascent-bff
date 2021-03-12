@@ -41,10 +41,11 @@ export class CatalogController {
         console.log("data retrieved from the cache");
         jsonobj.push(data);
       } else {
-        const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false');
+        const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=&complete=false');
         const data = await fetch(url.toString());
-        await tedis.setex(key, 28800, JSON.stringify(data));
+        //await tedis.setex(key, 28800, JSON.stringify(data));
         const jdata = await data.json();
+        await tedis.set(key, JSON.stringify(jdata));
         console.log("cache miss");
         jsonobj.push(jdata);
 
