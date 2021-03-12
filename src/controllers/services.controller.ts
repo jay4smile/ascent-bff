@@ -162,7 +162,7 @@ export class ServicesController {
   const serv_res = new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository).findById(serviceId);
   const service_id = (await serv_res).service_id;
 
-  if (service_id !== serviceId){  
+  if (service_id != serviceId){  
     throw new Error("There is no services id corresponding to this bom id"+serviceId);
   }
 
@@ -199,7 +199,7 @@ export class ServicesController {
   const serv_res = new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository).findById(bomServiceid);
   const serviceid = (await serv_res).service_id;
 
-  if (serviceid !== bomServiceid){  
+  if (serviceid != bomServiceid){  
     throw new Error("There is no services id corresponding to this bom id"+bomId);
   }
 

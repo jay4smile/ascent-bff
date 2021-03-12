@@ -4,11 +4,8 @@ import {
   get,
   response, RestBindings, Response,
 } from '@loopback/rest';
-import path from 'path';
 import fetch from 'node-fetch';
-import * as redis from "redis";
 import { Tedis, TedisPool } from "tedis";
-import { any } from 'nconf';
 import { inject } from "@loopback/core";
 export class CatalogController {
 
