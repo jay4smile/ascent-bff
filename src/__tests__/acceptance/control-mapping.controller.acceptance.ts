@@ -35,7 +35,7 @@ describe('Control Nist', () => {
       .expect('Content-Type', /application\/json/);
   });
 
-  /*it('GET architectures impacted by a control', async () => {
+  it('GET architectures impacted by a control', async () => {
     await client
       .get('/controls/SI-11/architectures')
       .expect(200)
@@ -43,6 +43,6 @@ describe('Control Nist', () => {
       .then((res) => {
         expect(res.body.length).to.equal(1);
       });
-  });*/
+  });
 
 });

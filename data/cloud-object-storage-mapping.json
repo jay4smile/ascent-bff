@@ -38,5 +38,6 @@
 {"control_id":"SI-5","service_id":"cloud-object-storage","arch_id":"","compliant":"UNKNOWN","configuration":"Sysdig for now","evidence":"COS FS-Ready validation","scc_goal":"","desc":"","comment":"COS needs to provide information"},
 {"control_id":"SI-7","service_id":"cloud-object-storage","arch_id":"","compliant":"UNKNOWN","configuration":"","evidence":"COS FS-Ready validation","scc_goal":"","desc":"","comment":"Provided by COS"},
 {"control_id":"SI-10","service_id":"cloud-object-storage","arch_id":"","compliant":"UNKNOWN","configuration":"","evidence":"COS FS-Ready validation","scc_goal":"","desc":"","comment":"Provided by COS"},
-{"control_id":"SI-11","service_id":"cloud-object-storage","arch_id":"","compliant":"UNKNOWN","configuration":"","evidence":"COS FS-Ready validation","scc_goal":"","desc":"","comment":"Provided by COS"}
+{"control_id":"SI-11","service_id":"cloud-object-storage","arch_id":"","compliant":"UNKNOWN","configuration":"","evidence":"COS FS-Ready validation","scc_goal":"","desc":"","comment":"Provided by COS"},
+{"control_id":"SI-11","service_id":"","arch_id":"arch03","compliant":"","configuration":"","evidence":"","scc_goal":"","desc":"","comment":""}
 ]

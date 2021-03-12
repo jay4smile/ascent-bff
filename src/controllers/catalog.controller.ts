@@ -7,6 +7,10 @@ import {
 import fetch from 'node-fetch';
 import { Tedis, TedisPool } from "tedis";
 import { inject } from "@loopback/core";
+
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export class CatalogController {
 
   @get('/catalog')
@@ -33,7 +37,7 @@ export class CatalogController {
 
     try {
 
-      if (await tedis.exists(key) != 0) {
+      if (await tedis.exists(key) !== 0) {
         const data = await tedis.get(key);
         console.log("data retrieved from the cache");
         jsonobj.push(data);
