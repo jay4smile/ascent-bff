@@ -60,12 +60,11 @@ Enum quarter_enum {
 Table service {
   service_id string [pk]
   grouping grouping_enum
-  ibm_service string
+  ibm_catalog_service string
   desc string
   deployment_method deployment_method_enum
-  fs_ready boolean
-  quarter quarter_enum
-  date date
+  fs_certified boolean
+  compliance_status string
   provision string
   cloud_automation_id string
   hybrid_automation_id string
