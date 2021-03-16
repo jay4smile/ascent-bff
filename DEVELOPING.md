@@ -36,10 +36,4 @@ Install the following extensions:
    and linter errors will be printed to the terminal.
 
 
-### redis (install on mac)
-1) brew install redis
-2) brew services start redis
-3) redis-cli
-4) SET "Key" "value"
-5) GET Key
-6) brew services stop redis
+

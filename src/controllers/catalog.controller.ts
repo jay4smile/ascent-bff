@@ -2,61 +2,33 @@
 import {
   param,
   get,
-  response, RestBindings, Response,
+  response, 
 } from '@loopback/rest';
 import fetch from 'node-fetch';
-import { Tedis, TedisPool } from "tedis";
-import { inject } from "@loopback/core";
+import {Tedis} from "tedis";
+
 
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export class CatalogController {
 
-  @get('/catalog')
+  @get('/catalog/{offset}/{limit}')
   async catalog(
-    @inject(RestBindings.Http.RESPONSE) res: Response,
-  ): Promise<any> {
+    @param.path.string('offset') offset: string,
+    @param.path.string('limit') limit: string,
+  ): Promise<JSON> {
 
+    const url = new URL("https://globalcatalog.cloud.ibm.com/api/v1?_offset=" + offset + "&_limit=" + limit + "&complete=false");
+    const res = await fetch(url.toString());
 
-    let tedis = new Tedis({
-      port: 6379,
-      host: "localhost"
-    });
-
-    const pool = new TedisPool({
-      port: 6379,
-      host: "localhost"
-    });
-
-    tedis = await pool.getTedis();
-    pool.putTedis(tedis);
-
-    const jsonobj = [];
-    const key = "catalog";
-
-    try {
-
-      if (await tedis.exists(key) !== 0) {
-        const data = await tedis.get(key);
-        console.log("data retrieved from the cache");
-        jsonobj.push(data);
-      } else {
-        const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=1&complete=false');
-        const data = await fetch(url.toString());
-        //await tedis.setex(key, 28800, JSON.stringify(data));
-        const jdata = await data.json();
-        await tedis.set(key, JSON.stringify(jdata));
-        console.log("cache miss");
-        jsonobj.push(jdata);
-
-      }
-    } catch (error) {
-      res.status(400).send(error);
+    if (res.status >= 400) {
+      throw new Error("Bad response from server");
     }
-    res.status(200).send(jsonobj);
-
+    const data = await res.json();
+    return data;
   }
+
 
   @get('/catalog/{id}')
   @response(200, {
@@ -65,16 +37,29 @@ export class CatalogController {
   })
   async catalogById(
     @param.path.string('id') id: string,
-  ): Promise<JSON> {
+  ): Promise<any> {
 
-    const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false&q=' + id);
-    const res = await fetch(url.toString());
+    const tedis = new Tedis({
+      port: 6379,
+      host: "localhost"
+    });
 
-    if (res.status >= 400) {
-      throw new Error("Bad response from server");
-    }
-    const data = await res.json();
-    return data;
+    const jsonobj = [];  
+
+      if (await tedis.exists(id) !== 0) {
+        const data = await tedis.get(id);
+        console.log("data retrieved from the cache");
+        jsonobj.push(data);
+      } else {
+        const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false&q=' + id);
+        const res = await fetch(url.toString());
+        const data = await res.json();
+        await tedis.set(id, JSON.stringify(data));
+        console.log("cache miss");
+        jsonobj.push(data);
+      }
+
+    return jsonobj;
   }
 
 }
