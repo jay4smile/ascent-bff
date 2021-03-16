@@ -2,10 +2,10 @@
 import {
   param,
   get,
-  response, RestBindings, Response,
+  response, 
 } from '@loopback/rest';
 import fetch from 'node-fetch';
-import { Tedis, TedisPool } from "tedis";
+import {Tedis} from "tedis";
 
 
 
@@ -39,15 +39,12 @@ export class CatalogController {
     @param.path.string('id') id: string,
   ): Promise<any> {
 
-    let tedis = new Tedis({
+    const tedis = new Tedis({
       port: 6379,
       host: "localhost"
     });
 
-    const jsonobj = [];
-    const key = "catalog";
-
-    try {
+    const jsonobj = [];  
 
       if (await tedis.exists(id) !== 0) {
         const data = await tedis.get(id);
@@ -61,9 +58,6 @@ export class CatalogController {
         console.log("cache miss");
         jsonobj.push(data);
       }
-    } catch (error) {
-      throw error;
-    }
 
     return jsonobj;
   }
