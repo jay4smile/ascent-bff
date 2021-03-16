@@ -217,10 +217,10 @@
     lodash "^4.17.19"
     to-fast-properties "^2.0.0"
 
-"@cloudnativetoolkit/iascable@^0.4.0":
-  version "0.4.0"
-  resolved "https://registry.npmjs.org/@cloudnativetoolkit/iascable/-/iascable-0.4.0.tgz"
-  integrity sha512-/nBQX0jn6AFNgCtPY41a46e+pvP6E0AUJDzkifvp9EPFFPeacZeELbxWy8Jwqa4mubar7W4sYiSbppvvrSqVyA==
+"@cloudnativetoolkit/iascable@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@cloudnativetoolkit/iascable/-/iascable-0.5.0.tgz#46026ce5016707e95b53a8c48761e1fd0a6d3bc5"
+  integrity sha512-lXnmsuR0zq748L1J2HtKMm1z4VBBMzkozRjIO5CQ9KNSJw++wCXE5431yLXizCmqYSrLdliNlLqn5DKSFaqkYA==
   dependencies:
     compare-versions "^3.6.0"
     inquirer "^7.3.3"
@@ -3626,6 +3626,11 @@ mute-stream@0.0.8:
   resolved "https://registry.npmjs.org/mute-stream/-/mute-stream-0.0.8.tgz"
   integrity sha512-nnbWWOkoWyUsTjKrhgD0dcz22mdkSnpYqbEjIm2nhwhuxlSkpywJmBo8h0ZqJdkp73mb90SssHkN4rsRaBAfAA==
 
+nan@^2.13.2:
+  version "2.14.2"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.14.2.tgz#f5376400695168f4cc694ac9393d0c9585eeea19"
+  integrity sha512-M2ufzIiINKCuDfBSAUr1vWQ+vuVcA9kqx8JJUsbQi6yf1uGRyb7HfpdfUr5qLXf3B/t8dPvcjhKMmlfnP47EzQ==
+
 nanoid@3.1.12:
   version "3.1.12"
   resolved "https://registry.npmjs.org/nanoid/-/nanoid-3.1.12.tgz"
@@ -4136,6 +4141,13 @@ progress@^2.0.0:
   version "2.0.3"
   resolved "https://registry.npmjs.org/progress/-/progress-2.0.3.tgz"
   integrity sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==
+
+protagonist@^2.1.0:
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/protagonist/-/protagonist-2.2.1.tgz#67d112cf768d6a76c1402f5befdbd08c5efedee4"
+  integrity sha512-tgtsGUiFEDqcPzKOlfX9Y4RgcA/nXBEK5vbumqnEsyuktQCyBM6DPLNRL4BPbpcalHZnCBqOTJD+Oz0PiTjuEg==
+  dependencies:
+    nan "^2.13.2"
 
 proxy-addr@~2.0.5:
   version "2.0.6"
@@ -4953,6 +4965,13 @@ table@^6.0.4:
     lodash "^4.17.20"
     slice-ansi "^4.0.0"
     string-width "^4.2.0"
+
+tedis@^0.1.12:
+  version "0.1.12"
+  resolved "https://registry.yarnpkg.com/tedis/-/tedis-0.1.12.tgz#e3eeccc92a5d068a35e7b16efef3e4d75cc3ef12"
+  integrity sha512-bxOKYWvdF1WsjkBYIfeO+2+xZuiqHmikqTTYPm3j/FYFpxQsX2JTBh6fFSlH6jDiCL4lfPcS2woIdD3FHopS/Q==
+  dependencies:
+    uuid "^3.3.2"
 
 test-exclude@^6.0.0:
   version "6.0.0"
