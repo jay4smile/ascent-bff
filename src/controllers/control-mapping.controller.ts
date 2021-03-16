@@ -4,12 +4,14 @@ import {
 } from '@loopback/repository';
 import {
     get,
+    post,
+    requestBody,
     getModelSchemaRef,
     response,
     param
 } from '@loopback/rest';
 import { Controls, ControlMapping, Services, Architectures } from '../models';
-import { ServicesRepository, ControlsRepository, ControlMappingRepository } from '../repositories';
+import { ServicesRepository, ControlsRepository, ControlMappingRepository, ArchitecturesRepository } from '../repositories';
 
 export class ControlMappingController {
     constructor(
@@ -17,6 +19,8 @@ export class ControlMappingController {
         public controlMappingRepository: ControlMappingRepository,
         @repository(ControlsRepository)
         protected controlsRepository: ControlsRepository,
+        @repository(ArchitecturesRepository)
+        protected architecturesRepository: ArchitecturesRepository,
         @repository(ServicesRepository)
         protected servicesRepository: ServicesRepository
     ) { }
@@ -94,5 +98,36 @@ export class ControlMappingController {
         @param.filter(Services) filter?: Filter<Controls>,
     ): Promise<Controls[]> {
         return this.servicesRepository.controls(id).find(filter);
+    }
+
+    @post('/control-mapping', {
+        responses: {
+            '200': {
+                description: 'Control Mapping model instance',
+                content: { 'application/json': { schema: getModelSchemaRef(ControlMapping) } },
+            },
+        },
+    })
+    async create(
+        @requestBody({
+            content: {
+                'application/json': {
+                    schema: getModelSchemaRef(ControlMapping, {
+                        title: 'NewControlMapping'
+                    }),
+                },
+            },
+        }) cm: ControlMapping,
+    ): Promise<ControlMapping> {
+        if (cm.control_id) {
+            await this.controlsRepository.findById(cm.control_id);
+        }
+        if (cm.service_id) {
+            await this.servicesRepository.findById(cm.service_id);
+        }
+        if (cm.arch_id) {
+            await this.architecturesRepository.findById(cm.arch_id);
+        }
+        return this.controlMappingRepository.create(cm);
     }
 }
