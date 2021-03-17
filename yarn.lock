@@ -217,10 +217,10 @@
     lodash "^4.17.19"
     to-fast-properties "^2.0.0"
 
-"@cloudnativetoolkit/iascable@^0.5.0":
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/@cloudnativetoolkit/iascable/-/iascable-0.5.0.tgz#46026ce5016707e95b53a8c48761e1fd0a6d3bc5"
-  integrity sha512-lXnmsuR0zq748L1J2HtKMm1z4VBBMzkozRjIO5CQ9KNSJw++wCXE5431yLXizCmqYSrLdliNlLqn5DKSFaqkYA==
+"@cloudnativetoolkit/iascable@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@cloudnativetoolkit/iascable/-/iascable-0.4.0.tgz#bb5e59df1adb5f066fd66a0cb1df6ea35c37ba9d"
+  integrity sha512-/nBQX0jn6AFNgCtPY41a46e+pvP6E0AUJDzkifvp9EPFFPeacZeELbxWy8Jwqa4mubar7W4sYiSbppvvrSqVyA==
   dependencies:
     compare-versions "^3.6.0"
     inquirer "^7.3.3"

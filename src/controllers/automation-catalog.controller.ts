@@ -19,7 +19,7 @@ import  AdmZip = require("adm-zip");
 
 // Automation Builder
 import {BillOfMaterial, BillOfMaterialModel} from '@cloudnativetoolkit/iascable';
-import {SingleModuleVersion, TerraformComponent} from '@cloudnativetoolkit/iascable';
+import {SingleModuleVersion, TerraformComponent,OutputFile} from '@cloudnativetoolkit/iascable';
 import {Catalog, CatalogLoader} from '@cloudnativetoolkit/iascable';
 
 import {ModuleSelector} from '@cloudnativetoolkit/iascable';
@@ -159,11 +159,20 @@ export class AutomationCatalogController  {
       const zip = new AdmZip();
 
       // Output the Terraform
-      terraformComponent.files.forEach(file => {
-        console.log(file.name, file.contents);
-        zip.addFile(file.name, Buffer.alloc(file.contents.length, file.contents), "entry comment goes here");
+      /*
+      Promise.all(terraformComponent.files.map(async (file: OutputFile) => {
+        const contents = await file.contents;
+        //zip.addFile(file.name, Buffer.alloc(contents.length, contents), "entry comment goes here");
+        return contents;
+      }));
+      */
 
+      terraformComponent.files.forEach( file => {
+        const contents = file.contents;
+        console.log(file.name, contents);
+        zip.addFile(file.name, Buffer.alloc(contents.length, contents), "entry comment goes here");
       })
+
       console.log(JSON.stringify(zip.getEntries()));
       return zip.toBuffer()
 
