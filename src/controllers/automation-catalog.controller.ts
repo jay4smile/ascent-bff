@@ -19,7 +19,7 @@ import  AdmZip = require("adm-zip");
 
 // Automation Builder
 import {BillOfMaterial, BillOfMaterialModel} from '@cloudnativetoolkit/iascable';
-import {SingleModuleVersion, TerraformComponent,OutputFile} from '@cloudnativetoolkit/iascable';
+import {SingleModuleVersion, TerraformComponent} from '@cloudnativetoolkit/iascable';
 import {Catalog, CatalogLoader} from '@cloudnativetoolkit/iascable';
 
 import {ModuleSelector} from '@cloudnativetoolkit/iascable';
