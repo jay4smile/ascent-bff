@@ -41,7 +41,7 @@ export class CatalogController {
 
     const tedis = new Tedis({
       port: 6379,
-      host: "localhost"
+      host: "127.0.0.1"
     });
 
     const jsonobj = [];  
@@ -54,9 +54,9 @@ export class CatalogController {
         const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false&q=' + id);
         const res = await fetch(url.toString());
         const data = await res.json();
-        await tedis.set(id, JSON.stringify(data));
+        await tedis.set(id, JSON.stringify(data));        
         console.log("cache miss");
-        jsonobj.push(data);
+        jsonobj.push(JSON.stringify(data));
       }
 
     return jsonobj;

@@ -167,7 +167,8 @@ export class ServicesController {
   }
 
   const automation_res = await (new CatalogController).catalogById(serviceId);
-  const data = JSON.parse(JSON.stringify(automation_res));  
+  //const data = JSON.parse(JSON.stringify(automation_res));
+  const data = JSON.parse(automation_res);   
   const jsonObj = [];
   const item = {
     "id": data.resources[0].id,
@@ -204,7 +205,8 @@ export class ServicesController {
   }
 
   const automation_res = await (new CatalogController).catalogById(bomServiceid);
-  const data = JSON.parse(JSON.stringify(automation_res));  
+  //const data = JSON.parse(JSON.stringify(automation_res));
+  const data = JSON.parse(automation_res);  
   const jsonObj = [];
   const item = {
     "id": data.resources[0].id,

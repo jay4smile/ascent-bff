@@ -165,11 +165,11 @@ export class BomController {
     @param.filter(Bom, {exclude: 'where'}) filter?: FilterExcludingWhere<Bom>
   ): Promise<any> {
     const bom_res = await this.bomRepository.findById(bomId, filter);
-    const bom_serv_id = bom_res.service_id;    
+    const bom_serv_id = bom_res.service_id;        
     const bom_data = JSON.parse(JSON.stringify(bom_res));    
-    
+
     const serv_res = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).catalogByServiceId(bom_serv_id);    
-    const srvc_data = JSON.parse(JSON.stringify(serv_res));
+    const srvc_data = JSON.parse(JSON.stringify(serv_res));    
   
     const result = _.merge(bom_data, srvc_data[0]);
     return result;
