@@ -1,8 +1,12 @@
 import {
+    Count,
+    CountSchema,
+    Where,
     repository,
     Filter
 } from '@loopback/repository';
 import {
+    del,
     get,
     post,
     requestBody,
@@ -128,6 +132,33 @@ export class ControlMappingController {
         if (cm.arch_id) {
             await this.architecturesRepository.findById(cm.arch_id);
         }
+        if (!(cm.service_id || cm.arch_id)) {
+            return Promise.reject(new Error("You must set a service ID or an architecture ID."));
+        }
         return this.controlMappingRepository.create(cm);
+    }
+
+    @del('/control-mapping', {
+        responses: {
+            '200': {
+                description: 'Control Mapping DELETE success count',
+                content: { 'application/json': { schema: CountSchema } },
+            },
+        },
+    })
+    async delete(
+        @requestBody({
+            content: {
+              'application/json': {
+                schema: getModelSchemaRef(ControlMapping, {partial: true}),
+              },
+            },
+          }) mapping: Where<ControlMapping>,
+    ): Promise<Count> {
+        // eslint-disable-next-line no-prototype-builtins
+        if (!((mapping.hasOwnProperty('control_id') && mapping.hasOwnProperty('arch_id')) || (mapping.hasOwnProperty('control_id') && mapping.hasOwnProperty('service_id')))) {
+            return Promise.reject(new Error("You must set a control ID and a component ID."));
+        }
+        return this.controlMappingRepository.deleteAll(mapping);
     }
 }
