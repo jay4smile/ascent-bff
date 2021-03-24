@@ -167,7 +167,7 @@ export class BomController {
     const bom_res = await this.bomRepository.findById(bomId, filter);
     const bom_serv_id = bom_res.service_id;        
     const bom_data = JSON.parse(JSON.stringify(bom_res));    
-
+    console.log("*******bom_serv_id*********"+bom_serv_id);
     const serv_res = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).catalogByServiceId(bom_serv_id);    
     const srvc_data = JSON.parse(JSON.stringify(serv_res));    
   
@@ -190,7 +190,8 @@ export class BomController {
     const arch_bom_data = JSON.parse(JSON.stringify(arch_bom_res));    
     const jsonObj = [];         
     for await (const p of arch_bom_data) {            
-      try {     
+      try {
+        console.log("*******p.service_id*********"+p.service_id);     
         const cat_res = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).catalogByServiceId(p.service_id);    
         const cat_data = JSON.parse(JSON.stringify(cat_res));
         const result_1 =  _.merge(p, cat_data[0]);
@@ -207,8 +208,7 @@ export class BomController {
     }
     
     return jsonObj;
-  }
-  
+  }  
 }
 
 
