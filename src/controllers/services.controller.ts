@@ -157,9 +157,9 @@ export class ServicesController {
   })
   async catalogByServiceId(
     @param.path.string('serviceId') serviceId: string
-  ): Promise<any[]> {
+  ): Promise<any> {
 
-    const jsonObj = [];
+    let jsonObj = {};
     try {
 
       const serv_res = new ServicesController(this.servicesRepository, this.bomRepository, this.architecturesRepository).findById(serviceId);
@@ -172,16 +172,7 @@ export class ServicesController {
       const automation_res = await (new CatalogController).catalogById(serviceId);
 
       const data = JSON.parse(automation_res);
-
-      if (data.resources[0] !== undefined) {
-        const item = {
-          "id": data.resources[0].id,
-          "name": data.resources[0].name,
-          "description": data.resources[0].overview_ui.en.description,
-          "geo": data.resources[0].geo_tags
-        }
-        jsonObj.push(item);
-      }
+      jsonObj = data.resources[0];
     } catch (error) {
       return jsonObj;
     }

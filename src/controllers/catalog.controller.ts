@@ -5,9 +5,6 @@ import {
   response, 
 } from '@loopback/rest';
 import fetch from 'node-fetch';
-import {Tedis} from "tedis";
-
-
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -39,30 +36,11 @@ export class CatalogController {
     @param.path.string('id') id: string,
   ): Promise<any> {
 
-    const tedis = new Tedis({
-      port: 6379,
-      host: "localhost"
-    });
-
-    const jsonobj = [];  
-
-      if (await tedis.exists(id) !== 0) {
-        const data = await tedis.get(id);
-        console.log("data retrieved from the cache");
-        jsonobj.push(data);
-      } else {
-        const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false&q=' + id);
-        const res = await fetch(url.toString());
-        const data = await res.json();        
-        if (data.resource_count !== 0){
-          await tedis.set(id, JSON.stringify(data));
-          console.log("cache miss");
-          jsonobj.push(JSON.stringify(data));
-        } else {
-          console.log("There is no catalog service with this id "+ id);
-          jsonobj.push(JSON.stringify(data));
-        }       
-      }
+    const jsonobj = [];
+    const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false&q=' + id);
+    const res = await fetch(url.toString());
+    const data = await res.json();
+    jsonobj.push(JSON.stringify(data));
       
     return jsonobj;
   }

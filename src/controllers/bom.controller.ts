@@ -119,6 +119,36 @@ export class BomController {
     return this.bomRepository.findById(id, filter);
   }
 
+  // @get('/boms/{id}/composite')
+  // @response(200, {
+  //   description: 'composit APi with bom + services + catalog',
+  //   content: {
+  //     'application/json': {        
+  //     },
+  //   },
+  // })
+  // async findCompositeById(
+  //   @param.path.string('id') id: string,
+  //   @param.filter(Bom, {exclude: 'where'}) filter?: FilterExcludingWhere<Bom>
+  // ): Promise<any> {
+  //   let jsonObj = {}
+  //   let bom =  await this.bomRepository.findById(id, filter);
+  //   bom = JSON.parse(JSON.stringify(bom));
+  //   jsonObj.push(bom);
+  //   let catalog = {}
+  //   try {
+  //     catalog = {
+  //       "catalog": await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).catalogByServiceId(jsonObj.service_id)
+  //     };
+  //   } catch (error) {
+  //     catalog = {
+  //       "catalog": {}
+  //     };
+  //   }
+  //   jsonObj.push(catalog);
+  //   return jsonObj;
+  // }
+
   @patch('/boms/{id}')
   @response(200, {
     description: 'Controls model instance',
@@ -187,26 +217,27 @@ export class BomController {
     @param.path.string('archid') archid: string,    
   ): Promise<any> {    
     const arch_bom_res = await (new ArchitecturesBomController(this.architecturesRepository)).find(archid);
-    const arch_bom_data = JSON.parse(JSON.stringify(arch_bom_res));    
-    const jsonObj = [];         
-    for await (const p of arch_bom_data) {            
+    const arch_bom_data = JSON.parse(JSON.stringify(arch_bom_res));
+    const jsonObj = [];
+    for await (const p of arch_bom_data) {
+      console.log("*******p.service_id*********"+p.service_id);
+      // Get service data
       try {
-        console.log("*******p.service_id*********"+p.service_id);     
-        const cat_res = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).catalogByServiceId(p.service_id);    
-        const cat_data = JSON.parse(JSON.stringify(cat_res));
-        const result_1 =  _.merge(p, cat_data[0]);
-            
-        const serv_res = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).findById(p.service_id);    
-        const srvc_data = JSON.parse(JSON.stringify(serv_res));            
-        const result_2 =  _.merge(result_1, srvc_data);
-            
-        jsonObj.push(result_2);            
+        p.service = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).findById(p.service_id);
       }
-      catch(e) {     
-        console.log(e)   
+      catch(e) {
+        console.log(e);
+      }
+      // Get catalog data
+      try {
+        p.catalog = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).catalogByServiceId(p.service_id);
+        jsonObj.push(p);
+      }
+      catch(e) {
+        console.log(e);
+        jsonObj.push(p);
       }
     }
-    
     return jsonObj;
   }  
 }
