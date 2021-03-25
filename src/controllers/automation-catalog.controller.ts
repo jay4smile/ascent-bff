@@ -5,33 +5,34 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
 import {Inject} from 'typescript-ioc';
+import * as Superagent from 'superagent';
 
-import {
-  get,
-  oas,
-  param, response,
-  Response,
-  RestBindings,
-} from '@loopback/rest';
+import {get, oas, param, response, Response, RestBindings,} from '@loopback/rest';
 
 import * as _ from "lodash"
-import  AdmZip = require("adm-zip");
 
 // Automation Builder
-import {BillOfMaterial, BillOfMaterialModel} from '@cloudnativetoolkit/iascable';
-import {SingleModuleVersion, TerraformComponent} from '@cloudnativetoolkit/iascable';
-import {Catalog, CatalogLoader} from '@cloudnativetoolkit/iascable';
-
-import {ModuleSelector} from '@cloudnativetoolkit/iascable';
-import {TerraformBuilder} from '@cloudnativetoolkit/iascable';
+import {
+  BillOfMaterial,
+  BillOfMaterialModel,
+  Catalog,
+  CatalogLoader,
+  ModuleSelector,
+  OutputFile,
+  OutputFileType,
+  SingleModuleVersion,
+  TerraformBuilder,
+  TerraformComponent,
+  UrlFile
+} from '@cloudnativetoolkit/iascable';
 //import {TileBuilder} from '@cloudnativetoolkit/iascable';
-
 // FS Architectures Data Models
 import {ArchitecturesRepository, ServicesRepository} from "../repositories";
-import {Bom,Services} from "../models";
+import {Bom, Services} from "../models";
 
 import {inject} from "@loopback/core";
 import {repository} from "@loopback/repository";
+import  AdmZip = require("adm-zip");
 
 const catalogUrl = "https://raw.githubusercontent.com/ibm-garage-cloud/garage-terraform-modules/gh-pages/index.yaml"
 
@@ -156,22 +157,44 @@ export class AutomationCatalogController  {
       // creating archives
       const zip = new AdmZip();
 
-      // Output the Terraform
-      /*
-      Promise.all(terraformComponent.files.map(async (file: OutputFile) => {
-        const contents = await file.contents;
-        //zip.addFile(file.name, Buffer.alloc(contents.length, contents), "entry comment goes here");
-        return contents;
+      // Load the Core ReadME
+      const readme = new UrlFile({name:'README.MD', type: OutputFileType.documentation, url: "https://raw.githubusercontent.com/ibm-gsi-ecosystem/ibm-enterprise-catalog-tiles/main/BUILD.MD"});
+      //terraformComponent.files.push(readme);
+
+      await Promise.all(terraformComponent.files.map(async (file: OutputFile) => {
+
+        function getContents(url :string) {
+          return new Promise<string>(async (resolve) => {
+            const req: Superagent.Response = await Superagent.get(url);
+
+            resolve(req.text);
+          })
+        };
+
+        var contents = "";
+        console.log(file.name);
+        if (file.type == "documentation") {
+          try {
+            contents = await getContents((file as any).url);
+          } catch (e) {
+            console.log("failed to load contents from ",file.name);
+          }
+        } else {
+          try {
+            contents = await file.contents
+          } catch (e) {
+            console.log("failed to load contents from ",file.name);
+          }
+        }
+        console.log(file.name);
+
+        // Load Contents into the Zip
+        if (contents !== "") {
+          zip.addFile(file.name, Buffer.alloc(contents.length, contents), "entry comment goes here");
+        }
+
       }));
-      */
 
-      terraformComponent.files.forEach( file => {
-        const contents = file.contents;
-        console.log(file.name, contents);
-        zip.addFile(file.name, Buffer.alloc(contents.length, contents), "entry comment goes here");
-      })
-
-      console.log(JSON.stringify(zip.getEntries()));
       return zip.toBuffer()
 
     } catch (e) {
