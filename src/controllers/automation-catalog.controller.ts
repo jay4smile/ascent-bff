@@ -19,11 +19,11 @@ import {
   CatalogLoader,
   ModuleSelector,
   OutputFile,
-  OutputFileType,
+  //OutputFileType,
   SingleModuleVersion,
   TerraformBuilder,
   TerraformComponent,
-  UrlFile
+  //UrlFile
 } from '@cloudnativetoolkit/iascable';
 //import {TileBuilder} from '@cloudnativetoolkit/iascable';
 // FS Architectures Data Models
@@ -158,12 +158,13 @@ export class AutomationCatalogController  {
       const zip = new AdmZip();
 
       // Load the Core ReadME
-      const readme = new UrlFile({name:'README.MD', type: OutputFileType.documentation, url: "https://raw.githubusercontent.com/ibm-gsi-ecosystem/ibm-enterprise-catalog-tiles/main/BUILD.MD"});
+      //const readme = new UrlFile({name:'README.MD', type: OutputFileType.documentation, url: "https://raw.githubusercontent.com/ibm-gsi-ecosystem/ibm-enterprise-catalog-tiles/main/BUILD.MD"});
       //terraformComponent.files.push(readme);
 
       await Promise.all(terraformComponent.files.map(async (file: OutputFile) => {
 
         function getContents(url :string) {
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
           return new Promise<string>(async (resolve) => {
             const req: Superagent.Response = await Superagent.get(url);
 
@@ -171,10 +172,11 @@ export class AutomationCatalogController  {
           })
         };
 
-        var contents = "";
+        let contents = "";
         console.log(file.name);
-        if (file.type == "documentation") {
+        if (file.type === "documentation") {
           try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             contents = await getContents((file as any).url);
           } catch (e) {
             console.log("failed to load contents from ",file.name);
