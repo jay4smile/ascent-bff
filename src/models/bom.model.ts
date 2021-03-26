@@ -1,4 +1,6 @@
-import { Entity, model, property } from '@loopback/repository';
+import { hasOne, Entity, model, property } from '@loopback/repository';
+import { Services } from '.';
+
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -84,13 +86,10 @@ export class Bom extends Entity {
   })
   arch_id?: string;
 
+  @hasOne(() => Services, {keyTo: 'service_id', keyFrom: 'service_id'})
+  service: Services;
+
   constructor(data?: Partial<Bom>) {
     super(data);
   }
 }
-
-export interface BomRelations {
-  // describe navigational properties here
-}
-
-export type BomWithRelations = Bom & BomRelations;

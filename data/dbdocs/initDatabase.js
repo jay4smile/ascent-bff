@@ -19,6 +19,10 @@ MongoClient.connect(mongodbComposed, { ssl: true, sslCA: ca }, (err, client) => 
     db.collection('ControlMapping').createIndex( { control_id: 1, service_id: 1, arch_id: 1 }, { unique: true } );
     db = client.db(maindb);
     db.collection('ControlMapping').createIndex( { control_id: 1, service_id: 1, arch_id: 1 }, { unique: true } );
+    db = client.db(maindb);
+    db.collection('Bom').createIndex( { arch_id: 1, service_id: 1 }, { unique: true } );
+    db = client.db(maindb);
+    db.collection('Bom').createIndex( { arch_id: 1, service_id: 1 }, { unique: true } );
 
     client.close();
 });
