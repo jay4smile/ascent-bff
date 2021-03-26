@@ -18,11 +18,11 @@ import {
   Catalog,
   CatalogLoader,
   ModuleSelector,
-  OutputFile,
+  OutputFile, OutputFileType,
   //OutputFileType,
   SingleModuleVersion,
   TerraformBuilder,
-  TerraformComponent,
+  TerraformComponent, UrlFile,
   //UrlFile
 } from '@cloudnativetoolkit/iascable';
 //import {TileBuilder} from '@cloudnativetoolkit/iascable';
@@ -158,10 +158,12 @@ export class AutomationCatalogController  {
       const zip = new AdmZip();
 
       // Load the Core ReadME
-      //const readme = new UrlFile({name:'README.MD', type: OutputFileType.documentation, url: "https://raw.githubusercontent.com/ibm-gsi-ecosystem/ibm-enterprise-catalog-tiles/main/BUILD.MD"});
-      //terraformComponent.files.push(readme);
+      const readme = new UrlFile({name:'README.MD', type: OutputFileType.documentation, url: "https://raw.githubusercontent.com/ibm-gsi-ecosystem/ibm-enterprise-catalog-tiles/main/BUILD.MD"});
 
-      await Promise.all(terraformComponent.files.map(async (file: OutputFile) => {
+      const newFiles = terraformComponent.files;
+      newFiles.push(readme);
+
+      await Promise.all(newFiles.map(async (file: OutputFile) => {
 
         function getContents(url :string) {
           // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor

@@ -64,5 +64,7 @@ export class MongodbDataSource extends juggler.DataSource
     dsConfig: object = config,
   ) {
     super(dsConfig);
+
+    // Check if indexes exist if not create them
   }
 }
