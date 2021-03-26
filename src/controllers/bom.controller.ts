@@ -119,35 +119,36 @@ export class BomController {
     return this.bomRepository.findById(id, filter);
   }
 
-  // @get('/boms/{id}/composite')
-  // @response(200, {
-  //   description: 'composit APi with bom + services + catalog',
-  //   content: {
-  //     'application/json': {        
-  //     },
-  //   },
-  // })
-  // async findCompositeById(
-  //   @param.path.string('id') id: string,
-  //   @param.filter(Bom, {exclude: 'where'}) filter?: FilterExcludingWhere<Bom>
-  // ): Promise<any> {
-  //   let jsonObj = {}
-  //   let bom =  await this.bomRepository.findById(id, filter);
-  //   bom = JSON.parse(JSON.stringify(bom));
-  //   jsonObj.push(bom);
-  //   let catalog = {}
-  //   try {
-  //     catalog = {
-  //       "catalog": await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).catalogByServiceId(jsonObj.service_id)
-  //     };
-  //   } catch (error) {
-  //     catalog = {
-  //       "catalog": {}
-  //     };
-  //   }
-  //   jsonObj.push(catalog);
-  //   return jsonObj;
-  // }
+  @get('/boms/{id}/composite')
+  @response(200, {
+    description: 'composit APi with bom + services + catalog',
+    content: {
+      'application/json': {        
+      },
+    },
+  })
+  async findCompositeById(
+    @param.path.string('id') id: string,
+    @param.filter(Bom, {exclude: 'where'}) filter?: FilterExcludingWhere<Bom>
+  ): Promise<any> {
+    let bom =  await this.bomRepository.findById(id, filter);
+    let jsonObj:any = JSON.parse(JSON.stringify(bom));
+    // Get service data
+    try {
+      jsonObj.service = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).findById(bom.service_id);
+    }
+    catch(e) {
+      console.error(e);
+    }
+    // Get catalog data
+    try {
+      jsonObj.catalog = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).catalogByServiceId(bom.service_id);
+    }
+    catch(e) {
+      console.error(e);
+    }
+    return jsonObj;
+  }
 
   @patch('/boms/{id}')
   @response(200, {
