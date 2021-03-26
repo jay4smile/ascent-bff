@@ -135,7 +135,7 @@ export class BomController {
     let jsonObj:any = JSON.parse(JSON.stringify(bom));
     // Get service data
     try {
-      jsonObj.service = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).findById(bom.service_id);
+      jsonObj.service = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).findById(bom.service_id, {"include":["controls"]});
     }
     catch(e) {
       console.error(e);

@@ -172,7 +172,17 @@ export class ServicesController {
       const automation_res = await (new CatalogController).catalogById(serviceId);
 
       const data = JSON.parse(automation_res);
-      jsonObj = data.resources[0];
+      let found = false;
+      for (let index = 0; index < data.resources.length; index++) {
+        const element = data.resources[index];
+        if (element.name === serviceId || element.id === serviceId) {
+          jsonObj = element;
+          found = true;
+        }
+      }
+      if (!found) {
+        jsonObj = data.resources[0];
+      }
     } catch (error) {
       return jsonObj;
     }
