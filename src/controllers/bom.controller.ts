@@ -226,7 +226,7 @@ export class BomController {
         p.service = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository)).findById(p.service_id);
       }
       catch(e) {
-        console.log(e);
+        console.error(e);
       }
       // Get catalog data
       try {
@@ -234,7 +234,7 @@ export class BomController {
         jsonObj.push(p);
       }
       catch(e) {
-        console.log(e);
+        console.error(e);
         jsonObj.push(p);
       }
     }
