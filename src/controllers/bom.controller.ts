@@ -131,7 +131,9 @@ export class BomController {
     @param.path.string('id') id: string,
     @param.filter(Bom, {exclude: 'where'}) filter?: FilterExcludingWhere<Bom>
   ): Promise<any> {
+    // eslint-disable-next-line prefer-const
     let bom =  await this.bomRepository.findById(id, filter);
+    // eslint-disable-next-line prefer-const
     let jsonObj:any = JSON.parse(JSON.stringify(bom));
     // Get service data
     try {

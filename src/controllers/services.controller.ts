@@ -173,6 +173,7 @@ export class ServicesController {
 
       const data = JSON.parse(automation_res);
       let found = false;
+      // eslint-disable-next-line @typescript-eslint/prefer-for-of
       for (let index = 0; index < data.resources.length; index++) {
         const element = data.resources[index];
         if (element.name === serviceId || element.id === serviceId) {
