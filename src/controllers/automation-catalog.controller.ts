@@ -28,7 +28,7 @@ import {
 //import {TileBuilder} from '@cloudnativetoolkit/iascable';
 // FS Architectures Data Models
 import {ArchitecturesRepository, ServicesRepository} from "../repositories";
-import {Bom, Services} from "../models";
+import {Architectures, Bom, Services} from "../models";
 
 import {inject} from "@loopback/core";
 import {repository} from "@loopback/repository";
@@ -96,12 +96,24 @@ export class AutomationCatalogController  {
   ) {
 
     // Check if we have a bom ID
-    if (_.isUndefined(bomid)){
-      return res.sendStatus( 404);
+    if (_.isUndefined(bomid)) {
+      return res.sendStatus(404);
+    }
+
+    // Read the Architecture Data
+    const architecture: Architectures = await this.architecturesRepository.findById(bomid);
+
+    if (_.isEmpty(architecture)) {
+      return res.sendStatus(404);
     }
 
     // Read Architecture Bill of Materials
-    const automationBom:Bom[] = await this.architecturesRepository.boms(bomid).find();
+    const automationBom: Bom[] = await this.architecturesRepository.boms(bomid).find();
+
+    if (_.isEmpty(automationBom)) {
+      return res.sendStatus(404);
+    }
+
 
     // Retrieve the Services
     const serviceList: Services[] = await this.serviceRepository.find();
@@ -157,9 +169,21 @@ export class AutomationCatalogController  {
       // creating archives
       const zip = new AdmZip();
 
+      const currentPath = process.cwd();
+
+      // Add the Diagrams from the Architectures
+      zip.addLocalFile(currentPath+"/public/images/"+architecture.diagram_folder+"/"+architecture.diagram_link_png);
+      zip.addLocalFile(currentPath+"/public/images/"+architecture.diagram_folder+"/"+architecture.diagram_link_drawio);
+
+      var mdfiles = "";
+      terraformComponent.files.map(async (file: OutputFile) => {
+        if (file.type === "documentation") {
+            mdfiles += "- ["+file.name+"]("+file.name+")\n";
+        }
+      });
+
       // Load the Core ReadME
       const readme = new UrlFile({name:'README.MD', type: OutputFileType.documentation, url: "https://raw.githubusercontent.com/ibm-gsi-ecosystem/ibm-enterprise-catalog-tiles/main/BUILD.MD"});
-
       const newFiles = terraformComponent.files;
       newFiles.push(readme);
 
@@ -180,6 +204,18 @@ export class AutomationCatalogController  {
           try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             contents = await getContents((file as any).url);
+
+            // Replace Variables and add
+            if (file.name == "README.MD") {
+              // configure details of the reference architecture
+              contents = contents.replace(new RegExp("{name}", "g"), architecture.name);
+              contents = contents.replace(new RegExp("{short_desc}", "g"), architecture.short_desc);
+              //contents = contents.replace(new RegExp("{long_desc}", "g"), architecture.long_desc);
+              contents = contents.replace(new RegExp("{diagram}", "g"), architecture.diagram_link_png);
+              contents = contents.replace(new RegExp("{modules}", "g"), mdfiles);
+
+            }
+
           } catch (e) {
             console.log("failed to load contents from ",file.name);
           }
@@ -199,9 +235,16 @@ export class AutomationCatalogController  {
 
       }));
 
+      // Add a Markdown file that has links to the Docs
+
+
+
+
+
       return zip.toBuffer()
 
     } catch (e) {
+      console.log(e);
       return res.status(500);
     }
 
