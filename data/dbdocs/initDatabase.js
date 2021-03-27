@@ -2,6 +2,9 @@ const mongo = require('mongodb');
 const MongoClient = mongo.MongoClient;
 
 mongodbServices = JSON.parse(process.env.DATABASE_TEST)
+
+console.log("Database Connection"+mongodbServices);
+
 const mongodbConn = mongodbServices.connection.mongodb;
 const mongodbComposed = mongodbConn.composed[0];
 const ca = [Buffer.from(mongodbConn.certificate.certificate_base64, 'base64')];

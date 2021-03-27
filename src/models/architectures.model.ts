@@ -27,6 +27,7 @@ export class Architectures extends Entity {
 
   @property({
     type: 'string',
+    required: true,
   })
   long_desc?: string;
 
