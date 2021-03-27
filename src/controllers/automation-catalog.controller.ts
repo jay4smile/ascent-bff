@@ -34,7 +34,7 @@ import {inject} from "@loopback/core";
 import {repository} from "@loopback/repository";
 import  AdmZip = require("adm-zip");
 
-const catalogUrl = "https://raw.githubusercontent.com/ibm-garage-cloud/garage-terraform-modules/gh-pages/index.yaml"
+const catalogUrl = "https://raw.githubusercontent.com/cloud-native-toolkit/garage-terraform-modules/gh-pages/index.yaml"
 
 export class AutomationCatalogController  {
 
@@ -121,7 +121,7 @@ export class AutomationCatalogController  {
     // Future : Push to Object Store, Git, Create a Tile Dynamically
     const bom: BillOfMaterialModel = new BillOfMaterial("fscloud");
 
-    bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-container-platform");
+    bom.spec.modules.push("github.com/cloud-native-toolkit/terraform-ibm-container-platform");
     //bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-appid")
 
     // From the BOM build an Automation BOM
@@ -174,7 +174,7 @@ export class AutomationCatalogController  {
           })
         };
 
-        let contents = "";
+        let contents : string | Buffer  = "";
         console.log(file.name);
         if (file.type === "documentation") {
           try {
@@ -185,7 +185,7 @@ export class AutomationCatalogController  {
           }
         } else {
           try {
-            contents = await file.contents
+            contents = (await file.contents).toString();
           } catch (e) {
             console.log("failed to load contents from ",file.name);
           }
