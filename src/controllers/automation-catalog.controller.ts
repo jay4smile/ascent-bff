@@ -175,7 +175,7 @@ export class AutomationCatalogController  {
       zip.addLocalFile(currentPath+"/public/images/"+architecture.diagram_folder+"/"+architecture.diagram_link_png);
       zip.addLocalFile(currentPath+"/public/images/"+architecture.diagram_folder+"/"+architecture.diagram_link_drawio);
 
-      var mdfiles = "";
+      let mdfiles = "";
       terraformComponent.files.map(async (file: OutputFile) => {
         if (file.type === "documentation") {
             mdfiles += "- ["+file.name+"]("+file.name+")\n";
@@ -206,7 +206,7 @@ export class AutomationCatalogController  {
             contents = await getContents((file as any).url);
 
             // Replace Variables and add
-            if (file.name == "README.MD") {
+            if (file.name === "README.MD") {
               // configure details of the reference architecture
               contents = contents.replace(new RegExp("{name}", "g"), architecture.name);
               contents = contents.replace(new RegExp("{short_desc}", "g"), architecture.short_desc);
