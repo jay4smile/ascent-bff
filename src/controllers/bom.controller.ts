@@ -52,6 +52,7 @@ export class BomController {
     })
     bom: Omit<Bom, '_id'>,
   ): Promise<Bom> {
+    await this.servicesRepository.findById(bom['service_id']);
     return this.bomRepository.create(bom);
   }
 

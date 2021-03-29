@@ -7,7 +7,7 @@ import { setupApplication } from './test-helper';
 describe('Bom', () => {
   let app: ArchitectureMapperBffApplication;
   let client: Client;
-  const testBom = 'test_service'
+  const testBom = 'logdna'
   let testBomId = '000'
 
   before('setupApplication', async () => {
@@ -36,9 +36,7 @@ describe('Bom', () => {
   it('POST, GET, PATCH, then DELETE a bom', async () => {
     await client
       .post('/boms').send({
-        'ibm_service': testBom,
-        'desc': 'string',
-        'deployment_method': 'string',
+        'arch_id': 'reference',
         'service_id': testBom
       })
       .expect(200)
