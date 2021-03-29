@@ -7,7 +7,7 @@ import { setupApplication } from './test-helper';
 describe('Bom', () => {
   let app: ArchitectureMapperBffApplication;
   let client: Client;
-  const testBom = 'logdna'
+  const testBom = 'argocd'
   let testBomId = '000'
 
   before('setupApplication', async () => {
