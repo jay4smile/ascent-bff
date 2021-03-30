@@ -17,7 +17,7 @@ import {
   response,
 } from '@loopback/rest';
 import { Services } from '../models';
-import { ArchitecturesRepository, BomRepository, ServicesRepository } from '../repositories';
+import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository } from '../repositories';
 import { BomController } from './bom.controller';
 import { CatalogController } from './catalog.controller';
 
@@ -32,6 +32,8 @@ export class ServicesController {
     public bomRepository: BomRepository,
     @repository(ArchitecturesRepository)
     protected architecturesRepository: ArchitecturesRepository,
+    @repository(ControlMappingRepository)
+    protected controlMappingRepository: ControlMappingRepository,
   ) { }
 
   @post('/services')
@@ -147,10 +149,12 @@ export class ServicesController {
     description: 'Services DELETE success',
   })
   async deleteById(@param.path.string('id') id: string): Promise<void> {
+    await this.bomRepository.deleteAll({'service_id': id});
+    await this.controlMappingRepository.deleteAll({'service_id': id});
     await this.servicesRepository.deleteById(id);
   }
 
-  @get('services/catelog/{serviceId}')
+  @get('services/catalog/{serviceId}')
   @response(200, {
     description: 'catalog by serviceId',
     content: 'application/json'
@@ -162,7 +166,7 @@ export class ServicesController {
     let jsonObj = {};
     try {
 
-      const serv_res = new ServicesController(this.servicesRepository, this.bomRepository, this.architecturesRepository).findById(serviceId);
+      const serv_res = this.findById(serviceId);
       const service_id = (await serv_res).service_id;
 
       if (service_id !== serviceId) {
@@ -191,7 +195,7 @@ export class ServicesController {
   }
 
 
-  @get('bom/services/catelog/{bomId}')
+  @get('bom/services/catalog/{bomId}')
   @response(200, {
     description: 'catalog by bomId',
     content: 'application/json'
@@ -200,11 +204,11 @@ export class ServicesController {
     @param.path.string('bomId') bomId: string
   ): Promise<any[]> {
 
-    const bom_res = new BomController(this.bomRepository, this.servicesRepository, this.architecturesRepository).findById(bomId);
+    const bom_res = new BomController(this.bomRepository, this.servicesRepository, this.architecturesRepository, this.controlMappingRepository).findById(bomId);
     const bomServiceid = (await bom_res).service_id;
 
 
-    const serv_res = new ServicesController(this.servicesRepository, this.bomRepository, this.architecturesRepository).findById(bomServiceid);
+    const serv_res = this.findById(bomServiceid);
     const serviceid = (await serv_res).service_id;
 
     if (serviceid !== bomServiceid) {
