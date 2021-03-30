@@ -12,23 +12,12 @@ export class Bom extends Entity {
     generated: true,
   })
   _id?: string;
-  @property({
-    type: 'string',
-    required: true,
-  })
-  ibm_service: string;
 
   @property({
     type: 'string',
     required: true,
   })
-  desc: string;
-
-  @property({
-    type: 'string',
-    required: true,
-  })
-  deployment_method: string;
+  arch_id?: string;
 
   @property({
     type: 'string',
@@ -37,7 +26,22 @@ export class Bom extends Entity {
   service_id: string;
 
   @property({
-    type: 'string',
+    type: 'string'
+  })
+  desc: string;
+
+  @property({
+    type: 'string'
+  })
+  ibm_service: string;
+
+  @property({
+    type: 'string'
+  })
+  deployment_method: string;
+
+  @property({
+    type: 'string'
   })
   compatibility?: string;
 
@@ -80,11 +84,6 @@ export class Bom extends Entity {
     type: 'string',
   })
   hybrid_option?: string;
-
-  @property({
-    type: 'string',
-  })
-  arch_id?: string;
 
   @hasOne(() => Services, {keyTo: 'service_id', keyFrom: 'service_id'})
   service: Services;
