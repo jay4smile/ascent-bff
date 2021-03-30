@@ -37,8 +37,7 @@ export class Services extends Entity {
   deployment_method: string;
 
   @property({
-    type: 'boolean',
-    required: true,
+    type: 'boolean'
   })
   fs_certified: boolean;
 
