@@ -9,6 +9,7 @@ import {
     del,
     get,
     post,
+    patch,
     requestBody,
     getModelSchemaRef,
     response,
@@ -136,6 +137,28 @@ export class ControlMappingController {
             return Promise.reject(new Error("You must set a service ID or an architecture ID."));
         }
         return this.controlMappingRepository.create(cm);
+    }
+
+    @patch('/control-mapping/{id}', {
+        responses: {
+            '200': {
+                description: 'Control Mapping model instance',
+                content: { 'application/json': { schema: getModelSchemaRef(ControlMapping) } },
+            },
+        },
+    })
+    async updateById(
+        @param.path.string('id') id: string,
+        @requestBody({
+            content: {
+                'application/json': {
+                    schema: getModelSchemaRef(ControlMapping, { partial: true }),
+                },
+            },
+        }) cm: ControlMapping,
+    ): Promise<ControlMapping> {
+        await this.controlMappingRepository.updateById(id, cm);
+        return this.controlMappingRepository.findById(id);
     }
 
     @del('/control-mapping', {
