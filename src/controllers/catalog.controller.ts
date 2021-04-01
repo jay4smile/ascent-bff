@@ -5,6 +5,7 @@ import {
   response, 
 } from '@loopback/rest';
 import fetch from 'node-fetch';
+import { createNodeRedisClient } from 'handy-redis';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -27,7 +28,7 @@ export class CatalogController {
   }
 
 
-  @get('/catalog/{id}')
+  /*@get('/catalog/{id}')
   @response(200, {
     description: 'Catalog by id',
     content: 'application/json'
@@ -42,6 +43,44 @@ export class CatalogController {
     const data = await res.json();
     jsonobj.push(JSON.stringify(data));
       
+    return jsonobj;
+  }*/
+
+  @get('/catalog/{id}')
+  @response(200, {
+    description: 'Catalog by id',
+    content: 'application/json'
+  })
+  async catalogById(
+    @param.path.string('id') id: string,
+  ): Promise<any> {
+
+    const client = createNodeRedisClient(6379, "localhost");
+    const jsonobj = [];
+    try {
+      const key = id.trim();
+
+      if (await client.exists(id) !== 0) {
+        
+        const result = await client.get(key);
+        jsonobj.push(result);
+        console.log("data retrieved from the cache");
+      } else {
+        const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false&q=' + key);
+        const res = await fetch(url.toString());
+        const data = await res.json();
+        if (data.resource_count !== 0) {
+          await client.set(key, JSON.stringify(data));
+          jsonobj.push(JSON.stringify(data));
+          console.log("cache miss");
+        } else {
+          console.log("There is no catalog service with this id " + id);
+          jsonobj.push(JSON.stringify(data));
+        }
+      }
+    } catch (error) {
+      return jsonobj;
+    }
     return jsonobj;
   }
 
