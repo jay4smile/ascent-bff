@@ -133,7 +133,7 @@ export class AutomationCatalogController  {
     // Future : Push to Object Store, Git, Create a Tile Dynamically
     const bom: BillOfMaterialModel = new BillOfMaterial("fscloud");
 
-    bom.spec.modules.push("github.com/cloud-native-toolkit/terraform-ibm-container-platform");
+    //bom.spec.modules.push("github.com/cloud-native-toolkit/terraform-ibm-container-platform");
     //bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-appid")
 
     // From the BOM build an Automation BOM
