@@ -75,7 +75,14 @@ secret in the OpenShift environment or from the Service Credentials section of a
 managed MongoDB instance. Take the binding value and configure it as a environment value.
 
 ```base
-export DATABASE="{connection....}"
+export DATABASE="{binding....}"
+```
+
+The BFF integrates with Cloud Object Storage to read Diagrams and other supporting documentations. Export
+a variable for storage
+
+```base
+export STORAGE="{binding....}"
 ```
 
 Once this value is set it is now possible to run the application.

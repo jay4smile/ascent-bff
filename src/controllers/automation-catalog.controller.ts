@@ -51,7 +51,11 @@ export class AutomationCatalogController  {
       public architecturesRepository : ArchitecturesRepository,
       @repository(ServicesRepository)
       public serviceRepository: ServicesRepository
-  ) {}
+  ) {
+
+    console.log("Constructor for Automation Catalog")
+
+  }
 
 //  @Inject
 //  tileBuilder!: TileBuilder;
@@ -114,7 +118,6 @@ export class AutomationCatalogController  {
       return res.sendStatus(404);
     }
 
-
     // Retrieve the Services
     const serviceList: Services[] = await this.serviceRepository.find();
 
@@ -133,7 +136,7 @@ export class AutomationCatalogController  {
     // Future : Push to Object Store, Git, Create a Tile Dynamically
     const bom: BillOfMaterialModel = new BillOfMaterial("fscloud");
 
-    bom.spec.modules.push("github.com/cloud-native-toolkit/terraform-ibm-container-platform");
+    //bom.spec.modules.push("github.com/cloud-native-toolkit/terraform-ibm-container-platform");
     //bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-appid")
 
     // From the BOM build an Automation BOM
@@ -236,10 +239,6 @@ export class AutomationCatalogController  {
       }));
 
       // Add a Markdown file that has links to the Docs
-
-
-
-
 
       return zip.toBuffer()
 
