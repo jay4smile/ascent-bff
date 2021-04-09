@@ -91,6 +91,7 @@ export class AutomationCatalogController  {
   })
   async automationById(
     @param.path.string('id') id: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ): Promise<any> {
 
     const data:Object[] = []
