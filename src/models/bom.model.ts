@@ -33,57 +33,7 @@ export class Bom extends Entity {
   @property({
     type: 'string'
   })
-  ibm_service: string;
-
-  @property({
-    type: 'string'
-  })
-  deployment_method: string;
-
-  @property({
-    type: 'string'
-  })
-  compatibility?: string;
-
-  @property({
-    type: 'string',
-  })
-  catalog_link?: string;
-
-  @property({
-    type: 'string',
-  })
-  documentation?: string;
-
-  @property({
-    type: 'string',
-  })
-  hippa_compliance?: string;
-
-  @property({
-    type: 'string',
-  })
-  availability?: string;
-
-  @property({
-    type: 'string',
-  })
-  remarks?: string;
-
-  @property({
-    type: 'string',
-  })
-  provision?: string;
-
-  @property({
-    type: 'string',
-  })
-  automation?: string;
-
-  @property({
-    type: 'string',
-  })
-  hybrid_option?: string;
+  automation_variables: string;
 
   @hasOne(() => Services, {keyTo: 'service_id', keyFrom: 'service_id'})
   service: Services;

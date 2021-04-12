@@ -42,7 +42,6 @@ describe('Architectures', () => {
         "diagram_folder": "string",
         "diagram_link_drawio": "string",
         "diagram_link_png": "string",
-        "fs_compliant": true,
         "partner_name": "string",
         "confidential": true,
         "production_ready": true
