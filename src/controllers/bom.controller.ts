@@ -17,7 +17,7 @@ import {
   response,
 } from '@loopback/rest';
 import _ from 'lodash';
-import { ArchitecturesBomController, ServicesController } from '.';
+import { ArchitecturesBomController, ServicesController, AutomationCatalogController } from '.';
 import {Bom} from '../models';
 import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository } from '../repositories';
 
@@ -141,6 +141,7 @@ export class BomController {
     // Get service data
     try {
       jsonObj.service = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository)).findById(bom.service_id, {"include":["controls"]});
+      jsonObj.automation = await (new AutomationCatalogController(this.architecturesRepository,this.servicesRepository)).automationById(jsonObj.service.cloud_automation_id);
     }
     catch(e) {
       console.error(e);
@@ -230,6 +231,7 @@ export class BomController {
       // Get service data
       try {
         p.service = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository)).findById(p.service_id);
+        p.automation = await (new AutomationCatalogController(this.architecturesRepository,this.servicesRepository)).automationById(p.service.cloud_automation_id);
       }
       catch(e) {
         console.error(e);
