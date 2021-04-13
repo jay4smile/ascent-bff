@@ -89,6 +89,28 @@ export class AutomationCatalogController  {
     return {data};
   }
 
+  @get('/automation/{id}/details')
+  @response(200, {
+    description: 'Get automation metadata by automation ID'
+  })
+  async automationById(
+    @param.path.string('id') id: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any> {
+
+    const data:Object[] = []
+    if (!this.catalog) {
+      this.catalog = await this.loader.loadCatalog(catalogUrl);
+    }
+    
+    this.catalog.modules.forEach(module => {
+      data.push(module);
+    })
+    const catentry = _.find(data,{name:id});
+
+    return catentry;
+  }
+
   @get('/automation/{bomid}')
   @response(200, {
     description: 'Download Terraform Package based on the reference architecture BOM',

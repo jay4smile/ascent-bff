@@ -50,12 +50,6 @@ export class Architectures extends Entity {
   diagram_link_png: string;
 
   @property({
-    type: 'boolean',
-    required: true,
-  })
-  fs_compliant: boolean;
-
-  @property({
     type: 'string',
   })
   partner_name?: string;
@@ -70,6 +64,11 @@ export class Architectures extends Entity {
     type: 'boolean',
   })
   production_ready?: boolean;
+
+  @property({
+    type: 'string',
+  })
+  automation_variables: string;
 
   @hasMany(() => Bom, {keyTo: 'arch_id'})
   boms: Bom[];

@@ -39,11 +39,15 @@ spec:
       {{- end }}
       containers:
         - name: redis
-          image: redis
+          image: bitnami/redis
+
           ports:
             - containerPort: 6379
               name: redis
               protocol: TCP
+          env:
+            - name: ALLOW_EMPTY_PASSWORD
+              value: "yes"
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}

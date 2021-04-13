@@ -97,27 +97,28 @@ Table architecture {
   long_desc string
   diagram_link_drawio string
   diagram_link_png string
-  fs_compliant boolean
   partner_name string
   confidential boolean
   production_ready boolean
+  automation_variables string
 }
 
 Table bom {
   service_id string [pk, ref: > service.service_id]
   arch_id string [pk, ref: > architecture.id]
-  ibm_service string
+//  ibm_service string
   desc string
-  deployment_method deployment_method_enum
-  compatibility boolean
-  catalog_link string
-  documentation string
-  hippa_compliance boolean
-  availability string
-  remarks string
-  provision string
-  automation string
-  hybrid_option string
+  automation_variables string
+//  deployment_method deployment_method_enum
+//  compatibility boolean
+//  catalog_link string
+//  documentation string
+//  hippa_compliance boolean
+//  availability string
+//  remarks string
+//  provision string
+//  automation string
+//  hybrid_option string
 }
 
 Table automation {

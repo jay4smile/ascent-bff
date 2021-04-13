@@ -58,26 +58,26 @@ export class CatalogController {
     const client = createNodeRedisClient(6379, "localhost");
     const jsonobj = [];
     try {
-      const key = id.trim();
+      const key = id.toString().trim();
 
       if (await client.exists(id) !== 0) {
         
-        const result = await client.get(key);
-        jsonobj.push(result);
-        console.log("data retrieved from the cache");
+      const result = await client.get(key);
+      jsonobj.push(result);
+      console.log("data retrieved from the cache-->"+key);
       } else {
-        const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false&q=' + key);
+        const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false&q=' + key);        
         const res = await fetch(url.toString());
         const data = await res.json();
         if (data.resource_count !== 0) {
           await client.set(key, JSON.stringify(data));
           jsonobj.push(JSON.stringify(data));
-          console.log("cache miss");
+          console.log("cache miss-->"+key);
         } else {
-          console.log("There is no catalog service with this id " + id);
+          console.log("There is no catalog service with this id " + key);
           jsonobj.push(JSON.stringify(data));
         }
-      }
+       }
     } catch (error) {
       return jsonobj;
     }
