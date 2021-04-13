@@ -22,6 +22,8 @@ import {
   //OutputFileType,
   SingleModuleVersion,
   TerraformBuilder,
+  buildBomVariables,
+  buildBomModule,
   TerraformComponent, UrlFile,
   //UrlFile
 } from '@cloudnativetoolkit/iascable';
@@ -161,6 +163,9 @@ export class AutomationCatalogController  {
     //bom.spec.modules.push("github.com/cloud-native-toolkit/terraform-ibm-container-platform");
     //bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-appid")
 
+    // Pass Architecture Varables into the Bom
+    bom.variables = buildBomVariables(architecture.variables);
+
     // From the BOM build an Automation BOM
     automationBom.forEach(_bom => {
       // from the bom look up service with id
@@ -168,7 +173,14 @@ export class AutomationCatalogController  {
       if (!_.isUndefined(service)){
         const catentry = _.find(catids,{name:service.cloud_automation_id});
         if(!_.isUndefined(catentry)){
-          bom.spec.modules.push(catentry.id);
+
+          var _variables = {};
+          if (_.isUndefined(_bom.variables ) {
+
+          }
+
+          bom.spec.modules.push({name: service.cloud_automation_id, variables: _varables });
+
           console.log(catentry.id);
         } else {
           console.log("Catalog entry not found "+service.cloud_automation_id);

@@ -78,6 +78,8 @@ export class ArchitecturesController {
   ) {
 
 
+ /* Retrieve Draw io or PNG diagram from COS instance
+
   @get('/architectures/{id}/diagram')
   @response(200, {
     description: 'Architectures model Diagram',
@@ -114,7 +116,7 @@ export class ArchitecturesController {
 
   }
 
-
+ */
 
   @post('/architectures')
   @response(200, {
