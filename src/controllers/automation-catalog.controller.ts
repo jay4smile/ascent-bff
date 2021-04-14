@@ -169,7 +169,7 @@ export class AutomationCatalogController  {
     bom.spec.variables = buildBomVariables(architecture.automation_variables);
 
     // From the BOM build an Automation BOM
-    let _errors: Array<{id:string,message:string}> = [];
+    const _errors: Array<{id:string,message:string}> = [];
     automationBom.forEach(_bom => {
       // from the bom look up service with id
       const service = _.find(serviceList, { 'service_id': _bom.service_id });

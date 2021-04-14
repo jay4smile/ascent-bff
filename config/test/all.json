@@ -2,6 +2,8 @@
   "secrets": {
     "database": "DATABASE_TEST",
     "appid" : "AUTHENTICATION",
-    "host" :  "INGRESS_HOST"
+    "host" :  "INGRESS_HOST",
+    "redis" : "REDIS",
+    "storage" : "STORAGE"
   }
 }

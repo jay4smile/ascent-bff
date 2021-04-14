@@ -14,7 +14,7 @@ import {
   patch,
   del,
   requestBody,
-  response, oas, RestBindings, Response,
+  response
 } from '@loopback/rest';
 import {Architectures} from '../models';
 import {ArchitecturesRepository} from '../repositories';
@@ -23,7 +23,8 @@ import * as _ from 'lodash';
 import {Services} from '../appenv';
 import * as Storage from "ibm-cos-sdk"
 import assert from "assert";
-import {inject} from "@loopback/core";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export class ArchitecturesController {
 
@@ -51,7 +52,7 @@ export class ArchitecturesController {
     }
 
     // Connect to Object Storage
-    var config = {
+    const config = {
       endpoint: storageServices.endpoints,
       apiKeyId: storageServices.apikey,
       serviceInstanceId: storageServices.resource_instance_id,
