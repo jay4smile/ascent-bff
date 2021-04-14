@@ -20,6 +20,7 @@ import { Services } from '../models';
 import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository } from '../repositories';
 import { BomController } from './bom.controller';
 import { CatalogController } from './catalog.controller';
+import { AutomationCatalogController } from '.';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -83,6 +84,44 @@ export class ServicesController {
     @param.filter(Services) filter?: Filter<Services>,
   ): Promise<Services[]> {
     return this.servicesRepository.find(filter);
+  }
+
+  @get('/services/composite')
+  @response(200, {
+    description: 'Array of Services model instances, with automation and catalog.',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+        },
+      },
+    },
+  })
+  async findComposite(
+    @param.filter(Services) filter?: Filter<Services>,
+  ): Promise<any> {
+    let services = await this.servicesRepository.find(filter);
+    services = JSON.parse(JSON.stringify(services));
+    const jsonObj = [];
+    for await (const p of services) {
+      // Get automation data
+      try {
+        p.automation = await (new AutomationCatalogController(this.architecturesRepository,this.servicesRepository)).automationById(p.cloud_automation_id || '');
+      }
+      catch(e) {
+        console.error(e);
+      }
+      // Get catalog data
+      try {
+        p.catalog = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository)).catalogByServiceId(p.service_id);
+        jsonObj.push(p);
+      }
+      catch(e) {
+        console.error(e);
+        jsonObj.push(p);
+      }
+    }
+    return jsonObj;
   }
 
   @patch('/services')
