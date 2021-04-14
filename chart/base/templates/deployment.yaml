@@ -79,6 +79,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: binding-dev-mapper-storage
+                  key: binding
             - name: INGRESS_HOST
               value: ""
             - name: PROTOCOLS
