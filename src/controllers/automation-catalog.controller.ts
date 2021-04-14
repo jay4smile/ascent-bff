@@ -7,6 +7,8 @@
 import {Inject} from 'typescript-ioc';
 import * as Superagent from 'superagent';
 
+import {default as jsYaml} from 'js-yaml';
+
 import {get, oas, param, response, Response, RestBindings,} from '@loopback/rest';
 
 import * as _ from "lodash"
@@ -104,7 +106,7 @@ export class AutomationCatalogController  {
     if (!this.catalog) {
       this.catalog = await this.loader.loadCatalog(catalogUrl);
     }
-    
+
     this.catalog.modules.forEach(module => {
       data.push(module);
     })
@@ -164,22 +166,24 @@ export class AutomationCatalogController  {
     //bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-appid")
 
     // Pass Architecture Varables into the Bom
-    bom.variables = buildBomVariables(architecture.variables);
+    bom.spec.variables = buildBomVariables(architecture.automation_variables);
 
     // From the BOM build an Automation BOM
+    let _errors: Array<{id:string,message:string}> = [];
     automationBom.forEach(_bom => {
       // from the bom look up service with id
       const service = _.find(serviceList, { 'service_id': _bom.service_id });
       if (!_.isUndefined(service)){
         const catentry = _.find(catids,{name:service.cloud_automation_id});
-        if(!_.isUndefined(catentry)){
+        if(!_.isUndefined(catentry) && !_.isUndefined(service.cloud_automation_id) ){
 
-          var _variables = {};
-          if (_.isUndefined(_bom.variables ) {
-
+          try {
+            bom.spec.modules.push(buildBomModule(this.catalog, service.cloud_automation_id, _bom.automation_variables));
           }
-
-          bom.spec.modules.push({name: service.cloud_automation_id, variables: _varables });
+          catch (e) {
+              // Capture Errors
+              _errors.push({id:service.cloud_automation_id, message:e.message});
+          }
 
           console.log(catentry.id);
         } else {
@@ -191,21 +195,30 @@ export class AutomationCatalogController  {
 
     })
 
-    //const filter: {platform?: string; provider?: string} =  {}; // SS explain ?
-    //const billOfMaterial: BillOfMaterialModel =  await this.moduleSelector.buildBillOfMaterial(catalog, bom, filter) ;
-    //if (!billOfMaterial) {
-    //  throw new Error('Bill of Material is required');
-    //}
+    if (!_.isEmpty(_errors)) {
+      res.status(409);
+      res.send(_errors);
+      return;
+    }
 
     try {
-
-      const modules: SingleModuleVersion[] = await this.moduleSelector.resolveBillOfMaterial(this.catalog, bom);
-      const terraformComponent: TerraformComponent = await this.terraformBuilder.buildTerraformComponent(modules);
 
       // Write into a Buffer
       // creating archives
       const zip = new AdmZip();
 
+      // Lets build a BOM file from the BOM builder
+      const bomContents: string = jsYaml.dump(bom);
+      console.log(bomContents);
+
+      const modules: SingleModuleVersion[] = await this.moduleSelector.resolveBillOfMaterial(this.catalog, bom);
+      const terraformComponent: TerraformComponent = await this.terraformBuilder.buildTerraformComponent(modules);
+
+      if (!_.isUndefined(bomContents)) {
+        zip.addFile("bom.yaml", Buffer.alloc(bomContents.length,bomContents), "BOM Yaml contents");
+      }
+
+      // Add the Diagrams to the Zip Contents
       const currentPath = process.cwd();
 
       // Add the Diagrams from the Architectures
@@ -273,12 +286,13 @@ export class AutomationCatalogController  {
       }));
 
       // Add a Markdown file that has links to the Docs
-
       return zip.toBuffer()
 
     } catch (e) {
       console.log(e);
-      return res.status(500);
+      res.status(409);
+      res.send(e.message);
+      return;
     }
 
   }

@@ -62,6 +62,7 @@ export class ArchitecturesController {
 
   }
 
+  /*
   @get('/architectures/{id}/diagram')
   @response(200, {
     description: 'Download Terraform Package based on the reference architecture BOM',
@@ -76,9 +77,6 @@ export class ArchitecturesController {
       @param.path.string('id') id: string,
       @inject(RestBindings.Http.RESPONSE) res: Response,
   ) {
-
-
- /* Retrieve Draw io or PNG diagram from COS instance
 
   @get('/architectures/{id}/diagram')
   @response(200, {
@@ -109,10 +107,7 @@ export class ArchitecturesController {
           });
     }
 
-
-
     return this.architecturesRepository.findById(id, filter);
-
 
   }
 
