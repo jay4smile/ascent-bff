@@ -3,6 +3,7 @@
     "database": "DATABASE",
     "appid" : "AUTHENTICATION",
     "host" :  "INGRESS_HOST",
-    "redis" : "REDIS"
+    "redis" : "REDIS",
+    "storage" : "STORAGE"
   }
 }

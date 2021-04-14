@@ -40,14 +40,14 @@ spec:
       containers:
         - name: redis
           image: bitnami/redis
-                    
+
           ports:
             - containerPort: 6379
               name: redis
               protocol: TCP
           env:
             - name: ALLOW_EMPTY_PASSWORD
-              value: "yes" 
+              value: "yes"
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -75,6 +75,10 @@ spec:
                 secretKeyRef:
                   name: binding-builder-mongodb
                   key: binding
+            - name: STORAGE
+              valueFrom:
+                secretKeyRef:
+                  name: binding-dev-mapper-storage
             - name: INGRESS_HOST
               value: ""
             - name: PROTOCOLS

@@ -1,4 +1,5 @@
 # Bind the PasS services to the Development Cluster
 NAMESPACE=$1
-ibmcloud ks cluster service bind --cluster front-office-dev-ocp --namespace ${NAMESPACE} --service front-office-authentication
-ibmcloud ks cluster service bind --cluster front-office-dev-ocp --namespace ${NAMESPACE} --service builder-mongodb
+#ibmcloud ks cluster service bind --cluster front-office-development-ocp --namespace ${NAMESPACE} --service front-office-authentication
+#ibmcloud ks cluster service bind --cluster front-office-development-ocp --namespace ${NAMESPACE} --service builder-mongodb
+ibmcloud ks cluster service bind --cluster front-office-development-ocp --namespace ${NAMESPACE} --service dev-mapper-storage

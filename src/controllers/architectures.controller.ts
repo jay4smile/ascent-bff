@@ -14,16 +14,104 @@ import {
   patch,
   del,
   requestBody,
-  response,
+  response, oas, RestBindings, Response,
 } from '@loopback/rest';
 import {Architectures} from '../models';
 import {ArchitecturesRepository} from '../repositories';
 
+import * as _ from 'lodash';
+import {Services} from '../appenv';
+import * as Storage from "ibm-cos-sdk"
+import assert from "assert";
+import {inject} from "@loopback/core";
+
 export class ArchitecturesController {
+
+  private cos : any;
+
   constructor(
     @repository(ArchitecturesRepository)
     public architecturesRepository : ArchitecturesRepository,
-  ) {}
+  ) {
+
+    console.log("Constructor for Architecture API")
+
+    // Load Information from Environment
+    const services = Services.getInstance();
+
+    // The services object is a map named by service so we extract the one for MongoDB
+    const storageServices:any = services.getService('storage');
+
+    // This check ensures there is a services for MongoDB databases
+    assert(!_.isUndefined(storageServices), 'backend must be bound to storage service');
+
+    if (_.isUndefined(storageServices)){
+      console.log("Failed to load Storage sdk")
+      return;
+    }
+
+    // Connect to Object Storage
+    var config = {
+      endpoint: storageServices.endpoints,
+      apiKeyId: storageServices.apikey,
+      serviceInstanceId: storageServices.resource_instance_id,
+      signatureVersion: 'iam',
+    };
+
+    this.cos = new Storage.S3(config);
+
+  }
+
+  /*
+  @get('/architectures/{id}/diagram')
+  @response(200, {
+    description: 'Download Terraform Package based on the reference architecture BOM',
+    content: {
+      'application/png': {
+        schema: getModelSchemaRef(Architectures, {includeRelations: true}),
+      },
+
+    })
+  @oas.response.file()
+  async downloadAutomationZip(
+      @param.path.string('id') id: string,
+      @inject(RestBindings.Http.RESPONSE) res: Response,
+  ) {
+
+  @get('/architectures/{id}/diagram')
+  @response(200, {
+    description: 'Architectures model Diagram',
+    content: {
+      'application/png': {
+        schema: getModelSchemaRef(Architectures, {includeRelations: true}),
+      },
+    },
+  })
+  async findDiagramById(
+      @param.path.string('id') id: string,
+      @param.filter(Architectures, {exclude: 'where'}) filter?: FilterExcludingWhere<Architectures>
+  ): Promise<Architectures> {
+
+      console.log(`Retrieving item from bucket: ${bucketName}, key: ${itemName}`);
+      return this.cos.getObject({
+        Bucket: bucketName,
+        Key: itemName
+      }).promise()
+          .then((data) => {
+            if (data != null) {
+              console.log('File Contents: ' + Buffer.from(data.Body).toString());
+            }
+          })
+          .catch((e) => {
+            console.error(`ERROR: ${e.code} - ${e.message}\n`);
+          });
+    }
+
+    return this.architecturesRepository.findById(id, filter);
+
+  }
+
+ */
 
   @post('/architectures')
   @response(200, {
@@ -36,7 +124,7 @@ export class ArchitecturesController {
         'application/json': {
           schema: getModelSchemaRef(Architectures, {
             title: 'NewArchitectures',
-            
+
           }),
         },
       },
