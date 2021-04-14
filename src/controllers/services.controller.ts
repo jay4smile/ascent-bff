@@ -105,11 +105,13 @@ export class ServicesController {
     const jsonObj = [];
     for await (const p of services) {
       // Get automation data
-      try {
-        p.automation = await (new AutomationCatalogController(this.architecturesRepository,this.servicesRepository)).automationById(p.cloud_automation_id || '');
-      }
-      catch(e) {
-        console.error(e);
+      if (p.cloud_automation_id) {
+        try {
+          p.automation = await (new AutomationCatalogController(this.architecturesRepository,this.servicesRepository)).automationById(p.cloud_automation_id);
+        }
+        catch(e) {
+          console.error(e);
+        }
       }
       // Get catalog data
       try {
