@@ -14,12 +14,12 @@ Table nist {
 }
 
 // CONTROLSCONTROLS
-Enum candidate_enum {
-  High
-  Low
-  Medium
-  No [note: 'Not a candidate']
-}
+// Enum candidate_enum {
+//  High
+//  Low
+//  Medium
+//  No [note: 'Not a candidate']
+//}
 Table controls {
   control_id string [pk]
   control_family string
@@ -27,15 +27,15 @@ Table controls {
   base_control boolean
   control_name string
   control_description string
-  guidance string
-  parameters string
-  candidate candidate_enum
+  //guidance string
+  //parameters string
+  //candidate candidate_enum
   comment string
-  inherited string
-  platform_responsibility string
-  app_responsibility string
+  //inherited string
+  ibm_responsibility string
+  saas_responsibility string
   nist string [ref: > nist.number]
-  services string
+  //services string
 }
 
 // SERVICES
@@ -51,31 +51,17 @@ Enum deployment_method_enum {
   platform
   managed_service
 }
-Enum quarter_enum {
-  Q1
-  Q2
-  Q3
-  Q4
-}
+
 Table service {
   service_id string [pk]
   grouping grouping_enum
   ibm_catalog_service string
   desc string
   deployment_method deployment_method_enum
-  fs_certified boolean
-  compliance_status string
   provision string
-  cloud_automation_id string
-  hybrid_automation_id string
+  automation_id string
+  default_automation_variables string
 }
-
-//Table evidence {
-//  id string [pk]
-//  desc string
-//  comment string
-//  scc_goal string
-//}
 
 Table control_mapping {
   control_id string [pk, ref: > controls.control_id]
@@ -84,10 +70,24 @@ Table control_mapping {
   compliant string
   configuration string
   evidence string
-  scc_goal string
+  scc_goal string [ref: > goal.id]
+  scc_profile string [pk, ref: > profile.id]
   desc string
   comment string
-  //evidence_id string [ref: > evidence.id]
+}
+
+Table goal {
+  id string [pk]
+  description string
+  parameters string
+  parameters_default string
+  comments string
+}
+
+Table profile {
+  id string [pk]
+  mnemonic string
+  description string
 }
 
 Table architecture {
