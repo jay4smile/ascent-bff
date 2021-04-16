@@ -160,7 +160,7 @@ export class AutomationCatalogController  {
     })
 
     // Future : Push to Object Store, Git, Create a Tile Dynamically
-    const bom: BillOfMaterialModel = new BillOfMaterial("fscloud");
+    const bom: BillOfMaterialModel = new BillOfMaterial(architecture.arch_id);
 
     //bom.spec.modules.push("github.com/cloud-native-toolkit/terraform-ibm-container-platform");
     //bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-appid")
@@ -196,8 +196,7 @@ export class AutomationCatalogController  {
     })
 
     if (!_.isEmpty(_errors)) {
-      res.status(409);
-      res.send(_errors);
+      return res.status(409).send(_errors);
       return;
     }
 
@@ -209,7 +208,9 @@ export class AutomationCatalogController  {
 
       // Lets build a BOM file from the BOM builder
       const bomContents: string = jsYaml.dump(bom);
+      console.log('=====');
       console.log(bomContents);
+      console.log('=====');
 
       const modules: SingleModuleVersion[] = await this.moduleSelector.resolveBillOfMaterial(this.catalog, bom);
       const terraformComponent: TerraformComponent = await this.terraformBuilder.buildTerraformComponent(modules);
@@ -290,9 +291,7 @@ export class AutomationCatalogController  {
 
     } catch (e) {
       console.log(e);
-      res.status(409);
-      res.send(e.message);
-      return;
+      return res.status(409).send(e.message);
     }
 
   }
