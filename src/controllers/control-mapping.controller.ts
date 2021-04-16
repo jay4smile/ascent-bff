@@ -61,7 +61,7 @@ export class ControlMappingController {
         },
     })
     async findControlServices(
-        @param.path.string('id') id: typeof Controls.prototype.control_id,
+        @param.path.string('id') id: typeof Controls.prototype.id,
         @param.filter(Services) filter?: Filter<Services>,
     ): Promise<Services[]> {
         return this.controlsRepository.services(id).find(filter);
@@ -80,7 +80,7 @@ export class ControlMappingController {
         },
     })
     async findControlArchitectures(
-        @param.path.string('id') id: typeof Controls.prototype.control_id,
+        @param.path.string('id') id: typeof Controls.prototype.id,
         @param.filter(Architectures) filter?: Filter<Architectures>,
     ): Promise<Architectures[]> {
         return this.controlsRepository.architectures(id).find(filter);

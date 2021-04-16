@@ -6,7 +6,7 @@ import { NistRepository, ServicesRepository, ControlMappingRepository, Architect
 
 export class ControlsRepository extends DefaultCrudRepository<
   Controls,
-  typeof Controls.prototype.control_id
+  typeof Controls.prototype.id
   > {
 
   public readonly nist: HasOneRepositoryFactory<Nist, typeof Nist.prototype.number>;
@@ -15,14 +15,14 @@ export class ControlsRepository extends DefaultCrudRepository<
     Services,
     typeof Services.prototype.service_id,
     ControlMapping,
-    typeof Controls.prototype.control_id
+    typeof Controls.prototype.id
   >;
 
   public readonly architectures: HasManyThroughRepositoryFactory<
   Architectures,
     typeof Architectures.prototype.arch_id,
     ControlMapping,
-    typeof Controls.prototype.control_id
+    typeof Controls.prototype.id
   >;
 
   constructor(

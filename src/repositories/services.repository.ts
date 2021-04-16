@@ -11,7 +11,7 @@ export class ServicesRepository extends DefaultCrudRepository<
 
   public readonly controls: HasManyThroughRepositoryFactory<
     Controls,
-    typeof Controls.prototype.control_id,
+    typeof Controls.prototype.id,
     ControlMapping,
     typeof Services.prototype.service_id
   >;

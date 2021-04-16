@@ -1,4 +1,3 @@
-// NIST
 Table nist {
   number string [pk]
   family string // [not null, unique]
@@ -10,35 +9,20 @@ Table nist {
   references object
   withdrawn object
   base_control string
-  parent_control object
+  parent_control string [ref: > nist.number]
 }
 
-// CONTROLSCONTROLS
-// Enum candidate_enum {
-//  High
-//  Low
-//  Medium
-//  No [note: 'Not a candidate']
-//}
-Table controls {
-  control_id string [pk]
-  control_family string
-  cf_description string
+Table control {
+  id string [pk]
+  name string
+  description string
+  parameters string
+  implementation string
   base_control boolean
-  control_name string
-  control_description string
-  //guidance string
-  //parameters string
-  //candidate candidate_enum
-  comment string
-  //inherited string
-  ibm_responsibility string
-  saas_responsibility string
+  parent_control string [ref: > control.id]
   nist string [ref: > nist.number]
-  //services string
 }
 
-// SERVICES
 Enum grouping_enum {
   sandi
   network
@@ -64,7 +48,7 @@ Table service {
 }
 
 Table control_mapping {
-  control_id string [pk, ref: > controls.control_id]
+  control_id string [pk, ref: > control.id]
   service_id string [pk, ref: > service.service_id]
   arch_id string [pk, ref: > architecture.id]
   compliant string
@@ -106,19 +90,8 @@ Table architecture {
 Table bom {
   service_id string [pk, ref: > service.service_id]
   arch_id string [pk, ref: > architecture.id]
-//  ibm_service string
   desc string
   automation_variables string
-//  deployment_method deployment_method_enum
-//  compatibility boolean
-//  catalog_link string
-//  documentation string
-//  hippa_compliance boolean
-//  availability string
-//  remarks string
-//  provision string
-//  automation string
-//  hybrid_option string
 }
 
 Table automation {
@@ -127,8 +100,3 @@ Table automation {
   module_name string
   module_location string
 }
-
-// References
-// > many-to-one; < one-to-many; - one-to-one
-//Ref: services.controls > controls.control_id
-//Ref: controls > countries.code

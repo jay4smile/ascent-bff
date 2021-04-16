@@ -10,7 +10,7 @@ export class ControlsNistController {
 
   @get('/controls/{id}/nist')
   async findNistFromControlId(
-    @param.path.string('id') id: typeof Controls.prototype.control_id,
+    @param.path.string('id') id: typeof Controls.prototype.id,
     @param.query.object('filter') filter?: Filter<Nist>,
   ): Promise<Nist> {
     return this.controlsRepository.nist(id).get(filter);
