@@ -1,7 +1,5 @@
 import {Entity, model, property} from '@loopback/repository';
 
-/* eslint-disable @typescript-eslint/naming-convention */
-
 @model({settings: {strict: false}})
 export class Profile extends Entity {
 
@@ -16,7 +14,7 @@ export class Profile extends Entity {
   @property({
     type: 'string'
   })
-  mnemonic: string;
+  name: string;
 
   @property({
     type: 'string'

@@ -11,7 +11,7 @@ import path from 'path';
 import {MySequence} from './sequence';
 
 import multer from 'multer';
-import {FILE_UPLOAD_SERVICE, STORAGE_DIRECTORY} from './keys';
+import { FILE_UPLOAD_SERVICE } from './keys';
 
 export {ApplicationConfig};
 
