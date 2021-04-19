@@ -1,5 +1,5 @@
 import {Entity, property, model, hasOne} from '@loopback/repository';
-import {Profile} from '../models';
+import {Profile, Services} from '../models';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -68,6 +68,9 @@ export class ControlMapping extends Entity {
     type: 'string',
   })
   comment?: string;
+
+  @hasOne(() => Services, {keyTo: 'service_id', keyFrom: 'service_id'})
+  service: Services;
 
   @hasOne(() => Profile, {keyTo: 'id', keyFrom: 'scc_profile'})
   profile: Profile;

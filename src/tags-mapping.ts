@@ -107,7 +107,7 @@ export const tagsMapping = [
     },
     {
         "tag": "STORAGE",
-        "service_ids": ["block-storage-group"]
+        "service_ids": ["block-storage-group", "is.volume"]
     },
     {
         "tag": "CLUSTER",
