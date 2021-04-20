@@ -111,12 +111,13 @@ export class ProfileController {
             }
           }
           const error = {message: ""};
-          if (files.length !== 1) error.message += "You must only upload 1 file. ";
+          if (files.length !== 1) error.message += "You must upload 1 file. ";
           if (files.length === 1 && files[0].mimetype !== "text/csv") error.message += "File format must be CSV. ";
           if (files.length === 1 && files[0].size > 102400) error.message += "File too large (must me <= 100Ko) ";
+          if (error.message) return reject(res.status(400).send({error: error}))
           const csv = files[0].buffer.toString().split('"##METAINFO ENDS##"\n')
           if (csv.length !== 2) error.message += "Wrong file fromat, you must import a profile from IBM Security and Compliance Center. ";
-          if (error.message) return resolve(res.status(400).send(error))
+          if (error.message) return reject(res.status(400).send({error: error}))
           let profile = csv[0];
           profile = profile.replace(new RegExp(",","g"), ":");
           profile = profile.replace(/\n"/gi, ',"');

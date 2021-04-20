@@ -45,7 +45,7 @@ export class ControlMappingController {
     async find(
         @param.filter(ControlMapping) filter?: Filter<ControlMapping>,
     ): Promise<ControlMapping[]> {
-        return this.controlMappingRepository.find(filter || {include: ["service", "profile"]});
+        return this.controlMappingRepository.find(filter ?? {include: ["service", "profile"]});
     }
 
     @get('/controls/{id}/services')

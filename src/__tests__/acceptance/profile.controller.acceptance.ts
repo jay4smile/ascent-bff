@@ -29,11 +29,11 @@ describe('Profiles', () => {
       .expect('Content-Type', /application\/json/);
   });
 
-  // it('GET profile by id', async () => {
-  //   await client
-  //     .get('/mapping/profiles/test')
-  //     .expect(200)
-  //     .expect('Content-Type', /application\/json/);
-  // });
+  it('GET profile by id', async () => {
+    await client
+      .get('/mapping/profiles/test')
+      .expect(200)
+      .expect('Content-Type', /application\/json/);
+  });
 
 });

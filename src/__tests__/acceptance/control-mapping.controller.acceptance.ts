@@ -73,12 +73,4 @@ describe('Control Nist', () => {
       .expect(/{"count":\d+}/);
   });
 
-  it('FAIL DELETE a control mapping', async () => {
-    await client
-      .delete('/control-mapping').send({
-        "control_id": "SI-11"
-      })
-      .expect(500);
-  });
-
 });
