@@ -12,72 +12,40 @@ export class Controls extends Entity {
     id: true,
     generated: false
   })
-  control_id: string;
+  id: string;
 
   @property({
     type: 'string',
-    required: true,
+    required: true
   })
-  control_family: string;
+  name: string;
 
   @property({
     type: 'string',
-    required: true,
+    required: true
   })
-  cf_description: string;
+  description: string;
 
   @property({
-    type: 'boolean',
-    required: true,
+    type: 'string',
+    required: true
+  })
+  implementation: string;
+
+  @property({
+    type: 'string'
+  })
+  parameters: string;
+
+  @property({
+    type: 'boolean'
   })
   base_control: boolean;
 
   @property({
-    type: 'string',
-    required: true,
+    type: 'string'
   })
-  control_name: string;
-
-  @property({
-    type: 'string',
-    required: true,
-  })
-  control_description: string;
-
-  @property({
-    type: 'string',
-  })
-  guidance?: string;
-
-  @property({
-    type: 'string',
-  })
-  parameters?: string;
-
-  @property({
-    type: 'string',
-  })
-  candidate?: string;
-
-  @property({
-    type: 'string',
-  })
-  comment?: string;
-
-  @property({
-    type: 'string',
-  })
-  inherited?: string;
-
-  @property({
-    type: 'string',
-  })
-  platform_responsibility?: string;
-
-  @property({
-    type: 'string',
-  })
-  app_responsibility?: string;
+  parent_control: string;
 
   @hasOne(() => Nist, {keyTo: 'number'})
   nist: Nist;

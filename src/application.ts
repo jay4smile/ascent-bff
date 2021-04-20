@@ -10,6 +10,9 @@ import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
 import {MySequence} from './sequence';
 
+import multer from 'multer';
+import { FILE_UPLOAD_SERVICE } from './keys';
+
 export {ApplicationConfig};
 
 export class ArchitectureMapperBffApplication extends BootMixin(
@@ -30,6 +33,9 @@ export class ArchitectureMapperBffApplication extends BootMixin(
     });
     this.component(RestExplorerComponent);
 
+    // Configure file upload with multer options
+    this.configureFileUpload();
+
     this.projectRoot = __dirname;
     // Customize @loopback/boot Booter Conventions here
     this.bootOptions = {
@@ -40,5 +46,15 @@ export class ArchitectureMapperBffApplication extends BootMixin(
         nested: true,
       },
     };
+  }
+
+  /**
+   * Configure `multer` options for file upload
+   */
+   protected configureFileUpload() {
+    const multerOptions: multer.Options = {
+    };
+    // Configure the file upload service with multer options
+    this.configure(FILE_UPLOAD_SERVICE).to(multerOptions);
   }
 }

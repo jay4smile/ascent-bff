@@ -35,19 +35,10 @@ describe('Controls', () => {
   it('POST a control', async () => {
     await client
       .post('/controls').send({
-        "control_id": testControlId,
-        "control_family": "test control_family",
-        "cf_description": "test cf_description",
-        "base_control": true,
-        "control_name": "test control_name",
-        "control_description": "test control_description",
-        "guidance": "test guidance",
-        "parameters": "test parameters",
-        "candidate": "test candidate",
-        "comment": "test comment",
-        "inherited": "test inherited",
-        "platform_responsibility": "test platform_responsibility",
-        "app_responsibility": "test app_responsibility"
+        "id": testControlId,
+        "name": "test name",
+        "description": "test description",
+        "implementation": "test implementation",
       })
       .expect(200)
       .expect('Content-Type', /application\/json/);
@@ -63,11 +54,11 @@ describe('Controls', () => {
   it('PATCH a control', async () => {
     await client
       .patch(`/controls/${testControlId}`).send({
-        "comment": "test comment updated"
+        "description": "test description updated"
       })
       .expect(200)
       .expect('Content-Type', /application\/json/)
-      .expect(/{.*"comment":"test comment updated".*}/);
+      .expect(/{.*"description":"test description updated".*}/);
   });
 
   it('DELETE a control', async () => {
@@ -79,7 +70,7 @@ describe('Controls', () => {
   it('PATCH all controls', async () => {
     await client
       .patch(`/controls`).send({
-        "comment": "test comment updated"
+        "base_control": true
       })
       .expect(200)
       .expect('Content-Type', /application\/json/)
