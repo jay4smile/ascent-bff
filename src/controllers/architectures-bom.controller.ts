@@ -120,14 +120,14 @@ export class ArchitecturesBomController {
           md += `\n### Impacting controls\n`;
           for (const mp of serviceMappings) {
             if (mp.control_id && mp?.control?.id) {
-              md += `- [${mp.control_id}](#${((mp?.control?.name && (mp.control_id + " " + mp?.control?.name)) || mp.control_id).toLowerCase().replace(/ /gi, '-').replace(/[()/]/gi, '')}) ${mp?.control?.name}\n`;
+              md += `- **[${mp.control_id}](#${((mp?.control?.name && (mp.control_id + " " + mp?.control?.name)) || mp.control_id).toLowerCase().replace(/ /gi, '-').replace(/[()/]/gi, '')})**: ${mp?.control?.name}\n`;
             }
             else if (mp.control_id) md += `- ${mp.control_id}\n`;
             if (mp.control_subsections) md += `  - **Control specific item(s)**: ${mp.control_subsections}\n`;
             if (mp?.goals.length) {
-              md += `  - **SCC Goal(s)**:\n`;
+              md += `  - **Goal(s)** from [IBM Security and Compliance](https://cloud.ibm.com/security-compliance/overview):\n`;
               for (const goal of mp?.goals) {
-                md += `    - **[${goal.goal_id}](https://cloud.ibm.com/security-compliance/goals/${goal.goal_id})**: ${goal.description}\n`;
+                md += `    - [${goal.goal_id}](https://cloud.ibm.com/security-compliance/goals/${goal.goal_id}): ${goal.description}\n`;
               }
             }
           }
