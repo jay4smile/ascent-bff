@@ -1,5 +1,5 @@
-import {Entity, property, model, hasOne} from '@loopback/repository';
-import {Profile, Services} from '../models';
+import {Entity, property, model, hasOne, hasMany} from '@loopback/repository';
+import {Profile, Services, Controls, Goal, MappingGoals} from '../models';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -52,11 +52,6 @@ export class ControlMapping extends Entity {
   @property({
     type: 'string',
   })
-  scc_goal?: string;
-
-  @property({
-    type: 'string',
-  })
   scc_profile?: string;
 
   @property({
@@ -69,11 +64,23 @@ export class ControlMapping extends Entity {
   })
   comment?: string;
 
+  @hasOne(() => Controls, {keyTo: 'id', keyFrom: 'control_id'})
+  control: Controls;
+
   @hasOne(() => Services, {keyTo: 'service_id', keyFrom: 'service_id'})
   service: Services;
 
   @hasOne(() => Profile, {keyTo: 'id', keyFrom: 'scc_profile'})
   profile: Profile;
+
+  @hasMany(() => Goal, {
+    through: {
+      model: () => MappingGoals,
+      keyFrom: 'mapping_id',
+      keyTo: 'goal_id',
+    }
+  })
+  goals: Goal[];
 
   constructor(data: Partial<ControlMapping>) {
     super(data);

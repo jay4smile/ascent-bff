@@ -20,7 +20,7 @@ import {
 } from '@loopback/rest';
 import parse from 'csv-parse';
 import { Profile, ControlMapping } from '../models';
-import { ProfileRepository, ControlMappingRepository } from '../repositories';
+import { ProfileRepository, ControlMappingRepository, GoalRepository } from '../repositories';
 
 import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler} from '../types';
@@ -42,6 +42,8 @@ export class ProfileController {
     @repository(ControlMappingRepository)
     public mappingRepository : ControlMappingRepository,
     @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler,
+    @repository(GoalRepository)
+    public goalRepository : GoalRepository
   ) {}
 
   @get('/mapping/profiles/count')
@@ -147,10 +149,15 @@ export class ProfileController {
                         service_id: serviceId,
                         control_subsections: controlId[1] || undefined,
                         desc: records[ix].Description,
-                        scc_goal: records[ix].ControlId,
                         scc_profile: newProfile.id
                       });
-                      this.mappingRepository.create(mapping).catch(createMappingErr => {
+                      this.mappingRepository.create(mapping)
+                      .then((newMapping) => {
+                        for (const goalId of records[ix].ControlId.split(',')) {
+                          this.mappingRepository.goals(newMapping.id).link(goalId).catch(console.error);
+                        }
+                      })
+                      .catch(createMappingErr => {
                         console.log(createMappingErr);
                       });
                     }

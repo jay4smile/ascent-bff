@@ -6,7 +6,6 @@ import {
   repository,
   Where,
 } from '@loopback/repository';
-import {inject} from "@loopback/core";
 import {
   post,
   param,
@@ -16,23 +15,49 @@ import {
   del,
   requestBody,
   response,
-  Response,
-  oas,
-  RestBindings,
-  HttpErrors
 } from '@loopback/rest';
 import _ from 'lodash';
-import { ArchitecturesBomController, ServicesController, AutomationCatalogController } from '.';
-import {Bom} from '../models';
+import { ServicesController, AutomationCatalogController } from '.';
+import { Bom, Services } from '../models';
 import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository } from '../repositories';
-
-import MarkdownPDF from 'markdown-pdf';
-import fs from 'fs';
-import path from 'path';
-import { file } from 'nconf';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+export interface BomComposite {
+  _id?: string,
+  arch_id?: string,
+  service_id: string,
+  desc: string,
+  automation_variables: string,
+  service: Services,
+  automation: object | undefined,
+  catalog: {
+    overview_ui: {
+      en: {
+        display_name: string,
+        long_description: string,
+        description: string,
+      }
+    },
+    tags: string[],
+    provider: {
+      name: string
+    },
+    geo_tags: string[],
+    metadata: {
+      ui: {
+        urls: {
+          catalog_details_url: string,
+          apidocs_url: string,
+          doc_url: string,
+          instructions_url: string,
+          terms_url: string
+        }
+      }
+    }
+  }
+}
 
 export class BomController {
   constructor(
@@ -166,47 +191,6 @@ export class BomController {
     return jsonObj;
   }
 
-  @get('/boms/{archid}/compliance-report')
-  @response(200, {
-    description: 'Download PDF compliance report based on the reference architecture BOM',
-  })
-  @oas.response.file()
-  async downloadComplianceReport(
-    @param.path.string('archid') archId: string,
-    @inject(RestBindings.Http.RESPONSE) res: Response,
-  ) {
-    const arch = await this.architecturesRepository.findById(archId);
-    const archBom = await this.architecturesRepository.boms(archId).find({ include: ['service'] });
-    const archBomData = JSON.parse(JSON.stringify(archBom));
-    const jsonObj = [];
-    let md = `# ${arch.name} compliance report\n`;
-    md += `## Services\n`;
-    for await (const p of archBomData) {
-      console.log(p);
-      md += `### ${p.service.ibm_catalog_service ?? p.service.service_id}\n`;
-    }
-    let outputpath = `compliance-report.pdf`;
-    return new Promise<Response>(async (resolve) => {
-      MarkdownPDF().from.string(md).to(outputpath, () => {
-        const file = this.validateFileName(outputpath);
-        res.download(file, outputpath);
-        resolve(res);
-      });
-    })
-  }
-  
-  /**
-   * Validate file names to prevent them goes beyond the designated directory
-   * @param fileName - File name
-   */
-  private validateFileName(fileName: string) {
-    const resolved = path.resolve(fileName);
-    console.log(resolved);
-    if (resolved) return resolved;
-    // The resolved file is outside sandbox
-    throw new HttpErrors.BadRequest(`Invalid file name: ${fileName}`);
-  }
-
   @patch('/boms/{id}')
   @response(200, {
     description: 'Controls model instance',
@@ -273,15 +257,14 @@ export class BomController {
   })
   async compositeCatalogByArchId(
     @param.path.string('archid') archid: string,    
-  ): Promise<any> {    
-    const arch_bom_res = await (new ArchitecturesBomController(this.architecturesRepository)).find(archid);
+  ): Promise<BomComposite[]> {    
+    const arch_bom_res = await this.architecturesRepository.boms(archid).find({ include: ['service'] });
     const arch_bom_data = JSON.parse(JSON.stringify(arch_bom_res));
     const jsonObj = [];
     for await (const p of arch_bom_data) {
       console.log("*******p.service_id*********"+p.service_id);
       // Get service data
       try {
-        p.service = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository)).findById(p.service_id);
         p.automation = await (new AutomationCatalogController(this.architecturesRepository,this.servicesRepository)).automationById(p.service.cloud_automation_id);
       }
       catch(e) {

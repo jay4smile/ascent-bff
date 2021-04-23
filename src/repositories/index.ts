@@ -6,3 +6,4 @@ export * from './bom.repository';
 export * from './control-mapping.repository';
 export * from './goal.repository';
 export * from './profile.repository';
+export * from './mapping-goals.repository';
