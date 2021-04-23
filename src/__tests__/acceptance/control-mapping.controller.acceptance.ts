@@ -19,6 +19,9 @@ describe('Control Nist', () => {
   it('GET all control mappings', async () => {
     await client
       .get('/control-mapping')
+      .query({filter: {
+        limit:50
+      }})
       .expect(200)
       .expect('Content-Type', /application\/json/);
   });
@@ -45,7 +48,6 @@ describe('Control Nist', () => {
         "compliant": "UNKNOWN",
         "configuration": "string",
         "evidence": "string",
-        "scc_goal": "string",
         "desc": "string",
         "comment": "string"
       })

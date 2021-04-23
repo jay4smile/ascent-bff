@@ -48,13 +48,14 @@ Table service {
 }
 
 Table control_mapping {
+  _id string
   control_id string [pk, ref: > control.id]
   service_id string [pk, ref: > service.service_id]
   arch_id string [pk, ref: > architecture.id]
+  control_subsections string [pk, note: 'IBM SSP control sub section(s).']
   compliant string
   configuration string
   evidence string
-  scc_goal string [ref: > goal.id]
   scc_profile string [pk, ref: > profile.id]
   desc string
   comment string
@@ -68,9 +69,14 @@ Table goal {
   comments string
 }
 
+Table mapping_goals {
+  goal_id  string [pk, ref: > goal.id]
+  mapping_id string [pk, ref: > control_mapping._id]
+}
+
 Table profile {
   id string [pk]
-  mnemonic string
+  name string
   description string
 }
 

@@ -17,12 +17,47 @@ import {
   response,
 } from '@loopback/rest';
 import _ from 'lodash';
-import { ArchitecturesBomController, ServicesController, AutomationCatalogController } from '.';
-import {Bom} from '../models';
+import { ServicesController, AutomationCatalogController } from '.';
+import { Bom, Services } from '../models';
 import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository } from '../repositories';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+export interface BomComposite {
+  _id?: string,
+  arch_id?: string,
+  service_id: string,
+  desc: string,
+  automation_variables: string,
+  service: Services,
+  automation: object | undefined,
+  catalog: {
+    overview_ui: {
+      en: {
+        display_name: string,
+        long_description: string,
+        description: string,
+      }
+    },
+    tags: string[],
+    provider: {
+      name: string
+    },
+    geo_tags: string[],
+    metadata: {
+      ui: {
+        urls: {
+          catalog_details_url: string,
+          apidocs_url: string,
+          doc_url: string,
+          instructions_url: string,
+          terms_url: string
+        }
+      }
+    }
+  }
+}
 
 export class BomController {
   constructor(
@@ -222,15 +257,14 @@ export class BomController {
   })
   async compositeCatalogByArchId(
     @param.path.string('archid') archid: string,    
-  ): Promise<any> {    
-    const arch_bom_res = await (new ArchitecturesBomController(this.architecturesRepository)).find(archid);
+  ): Promise<BomComposite[]> {    
+    const arch_bom_res = await this.architecturesRepository.boms(archid).find({ include: ['service'] });
     const arch_bom_data = JSON.parse(JSON.stringify(arch_bom_res));
     const jsonObj = [];
     for await (const p of arch_bom_data) {
       console.log("*******p.service_id*********"+p.service_id);
       // Get service data
       try {
-        p.service = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository)).findById(p.service_id);
         p.automation = await (new AutomationCatalogController(this.architecturesRepository,this.servicesRepository)).automationById(p.service.cloud_automation_id);
       }
       catch(e) {
@@ -249,7 +283,3 @@ export class BomController {
     return jsonObj;
   }  
 }
-
-
-
-
