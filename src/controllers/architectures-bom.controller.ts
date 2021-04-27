@@ -144,7 +144,7 @@ export class ArchitecturesBomController {
         const catalog = archBom.find(elt => elt.service.service_id === service.service_id)?.catalog;
         md += `\n## ${service.ibm_catalog_service ?? service.service_id}\n`;
         md += `\n### Description\n`;
-        md += `${catalog?.overview_ui?.en?.long_description ?? catalog?.overview_ui?.en?.description ?? service.desc}\n`;      
+        md += `${catalog?.overview_ui?.en?.long_description ?? catalog?.overview_ui?.en?.description ?? service.desc}\n`;
         if (catalog?.provider?.name) md += `- **Provider**: ${catalog?.provider?.name}\n`;
         if (service.grouping) md += `- **Group**: *${service.grouping}*\n`;
         if (service.deployment_method) md += `- **Deployment Method**: *${service.deployment_method}*\n`;
@@ -249,7 +249,7 @@ export class ArchitecturesBomController {
           if (err) {
             throw err;
           } else {
-            
+
             const uploadedFiles = request.files;
             const mapper = (f: globalThis.Express.Multer.File) => ({
               mimetype: f.mimetype,
@@ -266,7 +266,7 @@ export class ArchitecturesBomController {
             }
             // Check uploaded files
             for (const file of files) {
-              if (file.mimetype !== "text/yaml") throw {message: "You must only upload YAML files."};
+              if (file.mimetype !== "application/x-yaml") throw {message: "You must only upload YAML files."};
               if (file.size > 102400) throw {message: "Files must me <= 100Ko."};
             }
             for (const file of files) {
