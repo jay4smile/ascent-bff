@@ -6,6 +6,7 @@ import {
   repository,
   Where,
 } from '@loopback/repository';
+import {inject} from "@loopback/core";
 import {
   post,
   param,
@@ -14,7 +15,9 @@ import {
   patch,
   del,
   requestBody,
-  response
+  response,
+  RestBindings,
+  Response
 } from '@loopback/rest';
 import {Architectures} from '../models';
 import {ArchitecturesRepository} from '../repositories';
@@ -23,6 +26,7 @@ import * as _ from 'lodash';
 import {Services} from '../appenv';
 import * as Storage from "ibm-cos-sdk"
 import assert from "assert";
+import yaml from 'js-yaml';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -131,8 +135,21 @@ export class ArchitecturesController {
       },
     })
     architectures: Architectures,
+    @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Architectures> {
-    return this.architecturesRepository.create(architectures);
+    return new Promise((resolve, reject) => {
+      if (architectures.automation_variables) {
+        try {
+          yaml.load(architectures.automation_variables);
+        } catch (error) {
+          return reject(res.status(400).send({error: {
+            message: "Wrong yaml format for automation variables",
+            details: error
+          }}));
+        }
+      }
+      return resolve(this.architecturesRepository.create(architectures));
+    });
   }
 
   @get('/architectures/count')
@@ -178,9 +195,22 @@ export class ArchitecturesController {
       },
     })
     architectures: Architectures,
+    @inject(RestBindings.Http.RESPONSE) res: Response,
     @param.where(Architectures) where?: Where<Architectures>,
   ): Promise<Count> {
-    return this.architecturesRepository.updateAll(architectures, where);
+    return new Promise((resolve, reject) => {
+      if (architectures.automation_variables) {
+        try {
+          yaml.load(architectures.automation_variables);
+        } catch (error) {
+          return reject(res.status(400).send({error: {
+            message: "Wrong yaml format for automation variables",
+            details: error
+          }}));
+        }
+      }
+      return resolve(this.architecturesRepository.updateAll(architectures, where));
+    });
   }
 
   @get('/architectures/{id}')
@@ -218,9 +248,27 @@ export class ArchitecturesController {
       },
     })
     architectures: Architectures,
+    @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Architectures> {
-    await this.architecturesRepository.updateById(id, architectures);
-    return this.architecturesRepository.findById(id);
+    return new Promise((resolve, reject) => {
+      if (architectures.automation_variables) {
+        try {
+          yaml.load(architectures.automation_variables);
+        } catch (error) {
+          return reject(res.status(400).send({error: {
+            message: "Wrong yaml format for automation variables",
+            details: error
+          }}));
+        }
+      }
+      this.architecturesRepository.updateById(id, architectures)
+      .then(() => {
+        return resolve(this.architecturesRepository.findById(id));
+      })
+      .catch((err) => {
+        return reject(err);
+      });
+    });
   }
 
   @del('/architectures/{id}')
