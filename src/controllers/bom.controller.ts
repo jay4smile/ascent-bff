@@ -1,3 +1,4 @@
+import {Inject} from 'typescript-ioc';
 import {
   Count,
   CountSchema,
@@ -6,6 +7,7 @@ import {
   repository,
   Where,
 } from '@loopback/repository';
+import {inject} from "@loopback/core";
 import {
   post,
   param,
@@ -15,14 +17,24 @@ import {
   del,
   requestBody,
   response,
+  Response,
+  RestBindings
 } from '@loopback/rest';
 import _ from 'lodash';
 import { ServicesController, AutomationCatalogController } from '.';
 import { Bom, Services } from '../models';
 import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository } from '../repositories';
 
+import {
+  ModuleSelector,
+  CatalogLoader,
+  Catalog
+} from '@cloudnativetoolkit/iascable';
+const catalogUrl = "https://raw.githubusercontent.com/cloud-native-toolkit/garage-terraform-modules/gh-pages/index.yaml"
+
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-throw-literal */
 
 export interface BomComposite {
   _id?: string,
@@ -60,6 +72,13 @@ export interface BomComposite {
 }
 
 export class BomController {
+
+  @Inject
+  moduleSelector!: ModuleSelector;
+  @Inject
+  loader!: CatalogLoader;
+  catalog: Catalog;
+
   constructor(
     @repository(BomRepository)
     public bomRepository : BomRepository,
@@ -69,7 +88,15 @@ export class BomController {
     protected architecturesRepository: ArchitecturesRepository,
     @repository(ControlMappingRepository) 
     protected controlMappingRepository: ControlMappingRepository,
-  ) {}
+  ) {
+    if (!this.catalog) {
+      this.loader.loadCatalog(catalogUrl)
+      .then((catalog) => {
+        this.catalog = catalog;
+      })
+      .catch(console.error);
+    }
+  }
 
   @post('/boms')
   @response(200, {
@@ -88,7 +115,21 @@ export class BomController {
       },
     })
     bom: Omit<Bom, '_id'>,
-  ): Promise<Bom> {
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<Bom|Response> {
+    if (bom.automation_variables) {
+      // Validate automation_variables yaml
+      const service = await this.servicesRepository.findById(bom.service_id);
+      try {
+        if(!service.cloud_automation_id) throw { message: `Service ${service.ibm_catalog_service} is missing automation ID .` };
+        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, service.cloud_automation_id, bom.automation_variables);
+      } catch (error) {
+        return res.status(400).send({error: {
+          message: `YAML automation variables config error.`,
+          details: error
+        }});
+      }
+    }
     await this.servicesRepository.findById(bom['service_id']);
     return this.bomRepository.create(bom);
   }
@@ -136,8 +177,14 @@ export class BomController {
       },
     })
     bom: Bom,
+    @inject(RestBindings.Http.RESPONSE) res: Response,
     @param.where(Bom) where?: Where<Bom>,
-  ): Promise<Count> {
+  ): Promise<Count|Response> {
+    if (bom.automation_variables) {
+      return res.status(400).send({error: {
+        message: `You cannot update all automation IDs.`
+      }});
+    }
     return this.bomRepository.updateAll(bom, where);
   }
 
@@ -210,7 +257,22 @@ export class BomController {
       },
     })
     bom: Bom,
-  ): Promise<Bom> {
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<Bom|Response> {
+    if (bom.automation_variables) {
+      // Validate automation_variables yaml
+      const curBom = await this.bomRepository.findById(id, {include: ["service"]});
+      const service = curBom.service;
+      try {
+        if(!service.cloud_automation_id) throw { message: `Service ${service.ibm_catalog_service} is missing automation ID .` };
+        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, service.cloud_automation_id, bom.automation_variables);
+      } catch (error) {
+        return res.status(400).send({error: {
+          message: `YAML automation variables config error.`,
+          details: error
+        }});
+      }
+    }
     await this.bomRepository.updateById(id, bom);
     return this.bomRepository.findById(id);
   }

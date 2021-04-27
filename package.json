@@ -50,7 +50,7 @@
     "!*/__tests__"
   ],
   "dependencies": {
-    "@cloudnativetoolkit/iascable": "^0.13.0",
+    "@cloudnativetoolkit/iascable": "^0.14.0",
     "@loopback/boot": "^3.3.1",
     "@loopback/core": "^2.15.1",
     "@loopback/repository": "^3.5.1",
@@ -71,7 +71,7 @@
     "handy-redis": "^2.2.1",
     "ibm-cos-sdk": "^1.10.0",
     "install": "^0.13.0",
-    "js-yaml": "^3.13.1",
+    "js-yaml": "^3.14.1",
     "lodash": "^4.17.21",
     "loopback-connector-mongodb": "^5.5.0",
     "md-to-pdf": "^3.3.2",

@@ -1,3 +1,4 @@
+import {Inject} from 'typescript-ioc';
 import {
   Count,
   CountSchema,
@@ -15,6 +16,7 @@ import {
   patch,
   post,
   requestBody,
+  Request,
   response,
   Response,
   oas,
@@ -27,16 +29,52 @@ import {
 import { ArchitecturesRepository, BomRepository, ControlMappingRepository, ServicesRepository } from '../repositories';
 import { BomController } from '.';
 
+import {
+  ModuleSelector,
+  CatalogLoader,
+  Catalog
+} from '@cloudnativetoolkit/iascable';
+
+import {FILE_UPLOAD_SERVICE} from '../keys';
+import {FileUploadHandler} from '../types';
+import yaml, { YAMLException } from 'js-yaml';
+
 import { mdToPdf } from 'md-to-pdf';
+
+const catalogUrl = "https://raw.githubusercontent.com/cloud-native-toolkit/garage-terraform-modules/gh-pages/index.yaml"
+
+/* eslint-disable no-throw-literal */
+
+interface File {
+  mimetype: string,
+  buffer: Buffer,
+  size: number
+}
+
+const loadAndValidateBomYaml = (yamlString:string) => {
+  const doc = yaml.load(yamlString);
+  if (doc.kind !== "BillOfMaterial")  throw new YAMLException("YAML property 'kind' must be set to 'BillOfMaterial'.");
+  if (!doc.metadata.name) throw new YAMLException("YAML property 'metadata.name' must be set.");
+  if (!doc?.spec?.modules.length) throw new YAMLException("YAML property 'spec.modules' must be a list of valid terraform modules.");
+  return doc;
+}
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
 export class ArchitecturesBomController {
+
+  @Inject
+  moduleSelector!: ModuleSelector;
+  @Inject
+  loader!: CatalogLoader;
+  catalog: Catalog;
+
   constructor(
     @repository(ArchitecturesRepository) protected architecturesRepository: ArchitecturesRepository,
     @repository(BomRepository) protected bomRepository: BomRepository,
     @repository(ControlMappingRepository) protected cmRepository: ControlMappingRepository,
     @repository(ServicesRepository) protected servicesRepository: ServicesRepository,
+    @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
   ) { }
 
   @get('/architectures/{id}/boms', {
@@ -178,6 +216,124 @@ export class ArchitecturesBomController {
     }) bom: Omit<Bom, '_id'>,
   ): Promise<Bom> {
     return this.architecturesRepository.boms(id).create(bom);
+  }
+
+  @post('/architectures/boms/import', {
+    responses: {
+      200: {
+        content: {
+          'application/json': {
+            schema: {
+              type: 'object',
+            },
+          },
+        },
+        description: 'Information about the import status',
+      },
+    },
+  })
+  async uploadBomYaml(
+    @requestBody.file()
+    request: Request,
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+    @param.query.string('overwrite') overwrite: string
+  ): Promise<object> {
+    // Load Catalog
+    if (!this.catalog) {
+      this.catalog = await this.loader.loadCatalog(catalogUrl);
+    }
+    return new Promise<object>((resolve, reject) => {
+      this.fileHandler(request, res,(err: unknown) => {
+        let successCount = 0;
+        (async () => {
+          if (err) {
+            throw err;
+          } else {
+            
+            const uploadedFiles = request.files;
+            const mapper = (f: globalThis.Express.Multer.File) => ({
+              mimetype: f.mimetype,
+              buffer: f.buffer,
+              size: f.size
+            });
+            let files: File[] = [];
+            if (Array.isArray(uploadedFiles)) {
+              files = uploadedFiles.map(mapper);
+            } else {
+              for (const filename in uploadedFiles) {
+                files.push(...uploadedFiles[filename].map(mapper));
+              }
+            }
+            // Check uploaded files
+            for (const file of files) {
+              if (file.mimetype !== "text/yaml") throw {message: "You must only upload YAML files."};
+              if (file.size > 102400) throw {message: "Files must me <= 100Ko."};
+            }
+            for (const file of files) {
+              const doc = loadAndValidateBomYaml(file.buffer.toString());
+              // Try to get corresponding architecture
+              let arch: Architectures;
+              let archExists = false;
+              try {
+                arch = await this.architecturesRepository.findById(doc.metadata.name);
+                archExists = true;
+              } catch (getArchError) {
+                // Arch does not exist, create new
+                arch = await this.architecturesRepository.create(new Architectures({
+                  arch_id: doc.metadata.name,
+                  name: doc.metadata.name,
+                  short_desc: `${doc.metadata.name} Architecture.`,
+                  long_desc: `${doc.metadata.name} FS Architecture.`,
+                  diagram_folder: "placeholder",
+                  diagram_link_drawio: "none",
+                  diagram_link_png: "placeholder.png",
+                  confidential: true
+                }));
+              }
+              if (archExists && !overwrite) throw { message: `Architecture ${doc.metadata.name} already exists. Set 'overwrite' parameter to overwrite.` };
+              // Delete existing BOMs
+              await this.architecturesRepository.boms(arch.arch_id).delete();
+              // Set architecture automation variables
+              await this.architecturesRepository.updateById(arch.arch_id, {
+                automation_variables: yaml.dump({variables: doc.spec.variables})
+              })
+              // Import automation modules
+              for (const module of doc.spec.modules) {
+                // Validate module
+                try {
+                  await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, module.name, yaml.dump(module));
+                } catch (error) {
+                  throw {
+                    message: `YAML module config error for module ${module.name}`,
+                    details: error
+                  }
+                }
+                const services = await this.servicesRepository.find({ where: { cloud_automation_id: module.name } });
+                if (!services.length) throw {message: `No service matching automation ID ${module.name}`};
+                const newBom = new Bom({
+                  arch_id: arch.arch_id,
+                  service_id: services[0].service_id,
+                  desc: module.alias || module.name
+                });
+                if (module.alias && module.variables) {
+                  newBom.automation_variables = yaml.dump({alias: module.alias, variables: module.variables});
+                } else if (module.alias) {
+                  newBom.automation_variables = yaml.dump({alias: module.alias});
+                } else if (module.variables) {
+                  newBom.automation_variables = yaml.dump({variables: module.variables});
+                }
+                await this.architecturesRepository.boms(arch.arch_id).create(newBom);
+              }
+              successCount += 1;
+            }
+          }
+        })()
+        .then(() => resolve(res.status(200).send({ count: successCount })))
+        .catch((error) => {
+          reject(res.status(400).send({error: error}))
+        });
+      });
+    });
   }
 
   @patch('/architectures/{id}/boms', {
