@@ -88,15 +88,7 @@ export class BomController {
     protected architecturesRepository: ArchitecturesRepository,
     @repository(ControlMappingRepository) 
     protected controlMappingRepository: ControlMappingRepository,
-  ) {
-    if (!this.catalog) {
-      this.loader.loadCatalog(catalogUrl)
-      .then((catalog) => {
-        this.catalog = catalog;
-      })
-      .catch(console.error);
-    }
-  }
+  ) { }
 
   @post('/boms')
   @response(200, {
@@ -118,6 +110,9 @@ export class BomController {
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Bom|Response> {
     if (bom.automation_variables) {
+      if (!this.catalog) {
+        this.catalog = await this.loader.loadCatalog(catalogUrl);
+      }
       // Validate automation_variables yaml
       const service = await this.servicesRepository.findById(bom.service_id);
       try {
@@ -260,6 +255,9 @@ export class BomController {
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Bom|Response> {
     if (bom.automation_variables) {
+      if (!this.catalog) {
+        this.catalog = await this.loader.loadCatalog(catalogUrl);
+      }
       // Validate automation_variables yaml
       const curBom = await this.bomRepository.findById(id, {include: ["service"]});
       const service = curBom.service;

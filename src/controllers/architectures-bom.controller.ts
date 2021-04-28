@@ -214,7 +214,25 @@ export class ArchitecturesBomController {
         },
       },
     }) bom: Omit<Bom, '_id'>,
-  ): Promise<Bom> {
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<Bom|Response> {
+    if (bom.automation_variables) {
+      if (!this.catalog) {
+        this.catalog = await this.loader.loadCatalog(catalogUrl);
+      }
+      // Validate automation_variables yaml
+      const service = await this.servicesRepository.findById(bom.service_id);
+      try {
+        if(!service.cloud_automation_id) throw { message: `Service ${service.ibm_catalog_service} is missing automation ID .` };
+        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, service.cloud_automation_id, bom.automation_variables);
+      } catch (error) {
+        console.log(error);
+        return res.status(400).send({error: {
+          message: `YAML automation variables config error.`,
+          details: error
+        }});
+      }
+    }
     return this.architecturesRepository.boms(id).create(bom);
   }
 
