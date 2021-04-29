@@ -309,14 +309,13 @@ export class ArchitecturesBomController {
                 }));
               }
               // Do not delete the architecture document accept it and love it and just update the variable
-              //if (archExists && !overwrite) throw { message: `Architecture ${doc.metadata.name} already exists. Set 'overwrite' parameter to overwrite.` };
+              if (archExists && !overwrite) throw { message: `Architecture ${doc.metadata.name} already exists. Set 'overwrite' parameter to overwrite.` };
               // Delete existing BOMs
-              //await this.architecturesRepository.boms(arch.arch_id).delete();
+              await this.architecturesRepository.boms(arch.arch_id).delete();
               // Set architecture automation variables
-
               await this.architecturesRepository.updateById(arch.arch_id, {
                 automation_variables: yaml.dump({variables: doc.spec.variables})
-              })
+              });
               // Import automation modules
               for (const module of doc.spec.modules) {
                 // Validate module
@@ -325,6 +324,7 @@ export class ArchitecturesBomController {
                 } catch (error) {
                   throw {
                     message: `YAML module config error for module ${module.name}`,
+                    architecture: arch.arch_id,
                     details: error
                   }
                 }
