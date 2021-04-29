@@ -308,10 +308,12 @@ export class ArchitecturesBomController {
                   confidential: true
                 }));
               }
-              if (archExists && !overwrite) throw { message: `Architecture ${doc.metadata.name} already exists. Set 'overwrite' parameter to overwrite.` };
+              // Do not delete the architecture document accept it and love it and just update the variable
+              //if (archExists && !overwrite) throw { message: `Architecture ${doc.metadata.name} already exists. Set 'overwrite' parameter to overwrite.` };
               // Delete existing BOMs
-              await this.architecturesRepository.boms(arch.arch_id).delete();
+              //await this.architecturesRepository.boms(arch.arch_id).delete();
               // Set architecture automation variables
+
               await this.architecturesRepository.updateById(arch.arch_id, {
                 automation_variables: yaml.dump({variables: doc.spec.variables})
               })
