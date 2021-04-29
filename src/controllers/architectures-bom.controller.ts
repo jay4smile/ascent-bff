@@ -284,7 +284,7 @@ export class ArchitecturesBomController {
             }
             // Check uploaded files
             for (const file of files) {
-              if (file.mimetype !== "application/x-yaml") throw {message: "You must only upload YAML files."};
+              if (file.mimetype !== "application/x-yaml" && file.mimetype !== "text/yaml") throw {message: "You must only upload YAML files."};
               if (file.size > 102400) throw {message: "Files must me <= 100Ko."};
             }
             for (const file of files) {
