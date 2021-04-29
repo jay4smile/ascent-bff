@@ -324,6 +324,7 @@ export class ArchitecturesBomController {
                 } catch (error) {
                   throw {
                     message: `YAML module config error for module ${module.name}`,
+                    architecture: arch.arch_id,
                     details: error
                   }
                 }
