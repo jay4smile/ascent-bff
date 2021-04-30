@@ -16,6 +16,7 @@ Table control {
   id string [pk]
   name string
   description string
+  fs_guidance string
   parameters string
   implementation string
   base_control boolean
