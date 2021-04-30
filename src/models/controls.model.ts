@@ -27,6 +27,11 @@ export class Controls extends Entity {
   description: string;
 
   @property({
+    type: 'string'
+  })
+  fs_guidance: string;
+
+  @property({
     type: 'string',
     required: true
   })
