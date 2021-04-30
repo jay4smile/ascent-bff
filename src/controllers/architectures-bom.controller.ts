@@ -149,24 +149,15 @@ export class ArchitecturesBomController {
         if (service.grouping) md += `- **Group**: *${service.grouping}*\n`;
         if (service.deployment_method) md += `- **Deployment Method**: *${service.deployment_method}*\n`;
         if (service.provision) md += `- **Provision**: *${service.provision}*\n`;
-        if (catalog?.geo_tags?.length) {
-          md += `- **Geos**:\n`;
-          for (const tag of catalog.geo_tags) md += `  - *${tag}*\n`;
-        }
         const serviceMappings = mappings.filter(elt => elt.service_id === service.service_id);
         if (serviceMappings.length) {
           md += `\n### Impacting controls\n`;
+          md += `\n|**Control ID** |**SCC Goal** |**Goal Description** |\n`;
+          md += `|:--- |:--- |:--- |\n`;
           for (const mp of serviceMappings) {
-            if (mp.control_id && mp?.control?.id) {
-              md += `- **[${mp.control_id}](#${((mp?.control?.name && (mp.control_id + " " + mp?.control?.name)) || mp.control_id).toLowerCase().replace(/ /gi, '-').replace(/[()/]/gi, '')})**: ${mp?.control?.name}\n`;
-            }
-            else if (mp.control_id) md += `- ${mp.control_id}\n`;
-            if (mp.control_subsections) md += `  - **Control specific item(s)**: ${mp.control_subsections}\n`;
-            if (mp?.goals.length) {
-              md += `  - **Goal(s)** from [IBM Security and Compliance](https://cloud.ibm.com/security-compliance/overview):\n`;
-              for (const goal of mp?.goals) {
-                md += `    - [${goal.goal_id}](https://cloud.ibm.com/security-compliance/goals/${goal.goal_id}): ${goal.description}\n`;
-              }
+            for (const goal of mp?.goals) {
+              if (mp.control_id && mp?.control?.id) md += `|[**${mp.control_id}**](#${((mp.control.name && (mp.control.id + " " + mp.control.name)) || mp.control.id).toLowerCase().replace(/ /gi, '-').replace(/[()/&]/gi, '')}) |[${goal.goal_id}](https://cloud.ibm.com/security-compliance/goals/${goal.goal_id}) |${goal.description} |\n`;
+              else if(mp.control_id) md += `|**${mp.control_id}** |[${goal.goal_id}](https://cloud.ibm.com/security-compliance/goals/${goal.goal_id}) |${goal.description} |\n`;
             }
           }
         }
