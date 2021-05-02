@@ -224,7 +224,7 @@ export class AutomationCatalogController  {
 
       // Add the Diagrams from the Architectures
       zip.addLocalFile(currentPath+"/public/images/"+architecture.diagram_folder+"/"+architecture.diagram_link_png);
-      zip.addLocalFile(currentPath+"/public/images/"+architecture.diagram_folder+"/"+architecture.diagram_link_drawio);
+      if (architecture?.diagram_link_drawio !== "none") zip.addLocalFile(currentPath+"/public/images/"+architecture.diagram_folder+"/"+architecture.diagram_link_drawio);
 
       let mdfiles = "";
       terraformComponent.files.map(async (file: OutputFile) => {
