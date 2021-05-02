@@ -326,8 +326,12 @@ export class ArchitecturesBomController {
                   service_id: services[0].service_id,
                   desc: module.alias || module.name
                 });
-                if (module.alias && module.variables) {
+                if (module.alias && module.variables && module.dependencies) {
+                  newBom.automation_variables = yaml.dump({alias: module.alias, variables: module.variables, dependencies: module.dependencies});
+                } else if (module.alias && module.variables) {
                   newBom.automation_variables = yaml.dump({alias: module.alias, variables: module.variables});
+                } else if (module.alias && module.dependencies) {
+                  newBom.automation_variables = yaml.dump({alias: module.alias, dependencies: module.dependencies});
                 } else if (module.alias) {
                   newBom.automation_variables = yaml.dump({alias: module.alias});
                 } else if (module.variables) {
