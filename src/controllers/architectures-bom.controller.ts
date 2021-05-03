@@ -39,7 +39,9 @@ import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler} from '../types';
 import yaml, { YAMLException } from 'js-yaml';
 
-import { mdToPdf } from 'md-to-pdf';
+import { Document as PDFDocument, Image, cm, Font } from "pdfjs";
+import Jimp from "jimp";
+import fs from "fs";
 
 const catalogUrl = "https://raw.githubusercontent.com/cloud-native-toolkit/garage-terraform-modules/gh-pages/index.yaml"
 
@@ -68,6 +70,7 @@ export class ArchitecturesBomController {
   @Inject
   loader!: CatalogLoader;
   catalog: Catalog;
+  bomController: BomController;
 
   constructor(
     @repository(ArchitecturesRepository) protected architecturesRepository: ArchitecturesRepository,
@@ -75,7 +78,9 @@ export class ArchitecturesBomController {
     @repository(ControlMappingRepository) protected cmRepository: ControlMappingRepository,
     @repository(ServicesRepository) protected servicesRepository: ServicesRepository,
     @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
-  ) { }
+  ) {
+    if (!this.bomController) this.bomController = new BomController(this.bomRepository, this.servicesRepository, this.architecturesRepository, this.cmRepository);
+  }
 
   @get('/architectures/{id}/boms', {
     responses: {
@@ -96,7 +101,7 @@ export class ArchitecturesBomController {
     return this.architecturesRepository.boms(id).find(filter);
   }
 
-  @get('/architectures/{archid}/compliance-report.pdf')
+  @get('/architectures/{archid}/compliance-report')
   @response(200, {
     description: 'Download PDF compliance report based on the reference architecture BOM',
   })
@@ -108,7 +113,7 @@ export class ArchitecturesBomController {
   ) {
     // Get data
     const arch = await this.architecturesRepository.findById(archId);
-    const archBom = await new BomController(this.bomRepository, this.servicesRepository, this.architecturesRepository, this.cmRepository).compositeCatalogByArchId(archId);
+    const archBom = await this.bomController.compositeCatalogByArchId(archId);
     const services = [...new Set(archBom.map(bom => bom.service))];
     const serviceIds = [...new Set(archBom.map(bom => bom.service_id))];
     const mappings = await this.cmRepository.find({
@@ -126,62 +131,80 @@ export class ArchitecturesBomController {
     });
     const controls = [...new Set(mappings.map(mapping => mapping.control))];
 
-    // Build Markdown
-    let md = `# ${arch.name}\n`;
+    // Build PDF Document
+    const doc = new PDFDocument({
+      font: new Font(fs.readFileSync('./fonts/IBMPlexSans-Regular.ttf')),
+      padding: 50,
+      fontSize: 11
+    });
+    doc.footer().pageNumber(function(curr, total) { return curr + ' / ' + total }, { textAlign: 'center' })
+    doc.text(`${arch.name}\n\n`, { textAlign: 'center', fontSize: 32 });
     if (arch.diagram_link_png && arch.diagram_folder) {
-      const diagramPath = `./public/images/${arch.diagram_folder}/${arch.diagram_link_png}`;
-      // Add the Diagrams from the Architectures
-      md += `\n## Reference Architecture Diagram\n`;
-      md += `![Reference Architecture Diagram PNG](${diagramPath})\n`;
+      const image = await (await Jimp.read(`./public/images/${arch.diagram_folder}/${arch.diagram_link_png}`));
+      const buffer  = await image.getBufferAsync(Jimp.MIME_JPEG);
+      doc.image(new Image(buffer), { width: 750, align: 'center' });
     }
-    md += `\n## Bill of Materials\n`;
+    doc.pageBreak();
+    const bomCell = doc.cell({ paddingBottom: 0.5*cm });
+    bomCell.text(`Bill of Materials`, { fontSize: 24 });
     for await (const p of archBom) {
-      md += `- ${p.desc}: [${p.service.ibm_catalog_service ?? p.service.service_id}](#${(p.service.ibm_catalog_service ?? p.service.service_id).toLowerCase().replace(/ /gi, '-')})\n`;
+      bomCell.text(`- ${p.desc}: ${p.service.ibm_catalog_service ?? p.service.service_id}`);
     }
-    md += `\n# Services\n`;
+    const servicesCell = doc.cell({ paddingBottom: 0.5*cm });
+    servicesCell.text(`Services`, { fontSize: 24 });
     for await (const service of services) {
       if (service) {
+        const serviceCell = servicesCell.cell({ paddingBottom: 0.5*cm });
         const catalog = archBom.find(elt => elt.service.service_id === service.service_id)?.catalog;
-        md += `\n## ${service.ibm_catalog_service ?? service.service_id}\n`;
-        md += `\n### Description\n`;
-        md += `${catalog?.overview_ui?.en?.long_description ?? catalog?.overview_ui?.en?.description ?? service.desc}\n`;
-        if (catalog?.provider?.name) md += `- **Provider**: ${catalog?.provider?.name}\n`;
-        if (service.grouping) md += `- **Group**: *${service.grouping}*\n`;
-        if (service.deployment_method) md += `- **Deployment Method**: *${service.deployment_method}*\n`;
-        if (service.provision) md += `- **Provision**: *${service.provision}*\n`;
-        const serviceMappings = mappings.filter(elt => elt.service_id === service.service_id);
-        if (serviceMappings.length) {
-          md += `\n### Impacting controls\n`;
-          md += `\n|**Control ID** |**SCC Goal** |**Goal Description** |\n`;
-          md += `|:--- |:--- |:--- |\n`;
-          for (const mp of serviceMappings) {
-            for (const goal of mp?.goals) {
-              if (mp.control_id && mp?.control?.id) md += `|[**${mp.control_id}**](#${((mp.control.name && (mp.control.id + " " + mp.control.name)) || mp.control.id).toLowerCase().replace(/ /gi, '-').replace(/[()/&]/gi, '')}) |[${goal.goal_id}](https://cloud.ibm.com/security-compliance/goals/${goal.goal_id}) |${goal.description} |\n`;
-              else if(mp.control_id) md += `|**${mp.control_id}** |[${goal.goal_id}](https://cloud.ibm.com/security-compliance/goals/${goal.goal_id}) |${goal.description} |\n`;
-            }
-          }
-        }
+        serviceCell.text(`${service.ibm_catalog_service ?? service.service_id}`, { fontSize: 20 });
+        serviceCell.text(`Description`, { fontSize: 16 });
+        serviceCell.text(`${catalog?.overview_ui?.en?.long_description ?? catalog?.overview_ui?.en?.description ?? service.desc}`);
+        if (catalog?.provider?.name) serviceCell.text(`- Provider: ${catalog?.provider?.name}`);
+        if (service.grouping) serviceCell.text(`- Group: ${service.grouping}`);
+        if (service.deployment_method) serviceCell.text(`- Deployment Method: ${service.deployment_method}`);
+        if (service.provision) serviceCell.text(`- Provision: ${service.provision}`);
+        // const serviceMappings = mappings.filter(elt => elt.service_id === service.service_id);
+        // if (serviceMappings.length) {
+        //   md += `\n### Impacting controls\n`;
+        //   md += `\n|**Control ID** |**SCC Goal** |**Goal Description** |\n`;
+        //   md += `|:--- |:--- |:--- |\n`;
+        //   for (const mp of serviceMappings) {
+        //     for (const goal of mp?.goals) {
+        //       if (mp.control_id && mp?.control?.id) md += `|[**${mp.control_id}**](#${((mp.control.name && (mp.control.id + " " + mp.control.name)) || mp.control.id).toLowerCase().replace(/ /gi, '-').replace(/[()/&]/gi, '')}) |[${goal.goal_id}](https://cloud.ibm.com/security-compliance/goals/${goal.goal_id}) |${goal.description} |\n`;
+        //       else if(mp.control_id) md += `|**${mp.control_id}** |[${goal.goal_id}](https://cloud.ibm.com/security-compliance/goals/${goal.goal_id}) |${goal.description} |\n`;
+        //     }
+        //   }
+        // }
       }
     }
-    md += `\n# Controls\n`;
+    const controlsCell = doc.cell({ paddingBottom: 0.5*cm });
+    controlsCell.text(`Controls`, { fontSize: 24 });
     for await (const control of controls) {
       if (control) {
-        md += `\n## ${(control.name && (control.id + " " + control.name)) || control.id}\n`;
-        md += `\n### Description\n`;
-        md += `${control.description}\n`;
-        if (control.parent_control) md += `**Parent control**: ${control.parent_control}\n`;
-        md += `\n### Parameters\n`;
-        md += `${control.parameters}\n`;
-        md += `\n### Solution and Implementation\n`;
-        md += `${control.implementation}\n`;
+        const controlCell = controlsCell.cell({ paddingBottom: 0.5*cm });
+        controlCell.text(`${(control.name && (control.id + " " + control.name)) || control.id}`, { fontSize: 20 });
+        controlCell.text(`Description`, { fontSize: 16 });
+        controlCell.text(`${control.description
+          .replace(/\n\*\*([a-zA-Z1-9\(\)]+)\*\*/gi, '\n$1')
+          .replace(/\n\n/gi, '\n')
+          .replace(/\*\*Note\*\*/gi, 'Note')
+          .replace(/\*\*Note:\*\*/gi, 'Note:')}`);
+        if (control.parent_control) controlCell.text(`- Parent control: ${control.parent_control}`);
+        controlCell.text(`Parameters`, { fontSize: 16 });
+        controlCell.text(`${control.parameters.replace(/\*/gi, '')}`);
+        controlCell.text(`Solution and Implementation`, { fontSize: 16 });
+        controlCell.text(`${control.implementation
+          .replace(/\n\*\*([a-zA-Z1-9\(\)]+)\*\*/gi, '\n$1')
+          .replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n')
+          .replace(/##### *([^\n]+)/gi, '\n$1\n')
+          .replace(/#### *([^\n]+)/gi, '\n$1')
+          .replace(/\*\*Note\*\*/gi, 'Note')
+          .replace(/\*\*Note:\*\*/gi, 'Note:')}`)
       }
     }
-    const pdf = await mdToPdf({ content: md }).catch(console.error);
-    if (pdf) {
-      return pdf.content;
-    } else {
-      return res.status(500).send({error: {message: "Error generating your PDF report."}})
-    }
+
+    // Send PDF Document
+    return doc.asBuffer();
   }
 
   @post('/architectures/{id}/boms', {

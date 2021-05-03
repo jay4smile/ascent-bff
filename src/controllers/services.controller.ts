@@ -18,7 +18,6 @@ import {
 } from '@loopback/rest';
 import { Services } from '../models';
 import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository } from '../repositories';
-import { BomController } from './bom.controller';
 import { CatalogController } from './catalog.controller';
 import { AutomationCatalogController } from '.';
 
@@ -26,6 +25,10 @@ import { AutomationCatalogController } from '.';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export class ServicesController {
+
+  automationCatalogController: AutomationCatalogController;
+  catalogController: CatalogController;
+
   constructor(
     @repository(ServicesRepository)
     public servicesRepository: ServicesRepository,
@@ -35,7 +38,10 @@ export class ServicesController {
     protected architecturesRepository: ArchitecturesRepository,
     @repository(ControlMappingRepository)
     protected controlMappingRepository: ControlMappingRepository,
-  ) { }
+  ) {
+    if (!this.automationCatalogController) this.automationCatalogController = new AutomationCatalogController(this.architecturesRepository,this.servicesRepository);
+    if (!this.catalogController) this.catalogController = new CatalogController;
+  }
 
   @post('/services')
   @response(200, {
@@ -107,7 +113,7 @@ export class ServicesController {
       // Get automation data
       if (p.cloud_automation_id) {
         try {
-          p.automation = await (new AutomationCatalogController(this.architecturesRepository,this.servicesRepository)).automationById(p.cloud_automation_id);
+          p.automation = await this.automationCatalogController.automationById(p.cloud_automation_id);
         }
         catch(e) {
           console.error(e);
@@ -115,7 +121,7 @@ export class ServicesController {
       }
       // Get catalog data
       try {
-        p.catalog = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository)).catalogByServiceId(p.service_id);
+        p.catalog = await this.catalogByServiceId(p.service_id);
         jsonObj.push(p);
       }
       catch(e) {
@@ -214,7 +220,7 @@ export class ServicesController {
         throw new Error("There is no services id corresponding to this bom id" + serviceId);
       }
 
-      const automation_res = await (new CatalogController).catalogById(serviceId);
+      const automation_res = await this.catalogController.catalogById(serviceId);
 
       const data = JSON.parse(automation_res);
       let found = false;
@@ -245,7 +251,7 @@ export class ServicesController {
     @param.path.string('bomId') bomId: string
   ): Promise<any[]> {
 
-    const bom_res = new BomController(this.bomRepository, this.servicesRepository, this.architecturesRepository, this.controlMappingRepository).findById(bomId);
+    const bom_res = this.bomRepository.findById(bomId);
     const bomServiceid = (await bom_res).service_id;
 
 
@@ -256,7 +262,7 @@ export class ServicesController {
       throw new Error("There is no services id corresponding to this bom id" + bomId);
     }
 
-    const automation_res = await (new CatalogController).catalogById(bomServiceid);
+    const automation_res = await this.catalogController.catalogById(bomServiceid);
     //const data = JSON.parse(JSON.stringify(automation_res));
     const data = JSON.parse(automation_res);
     const jsonObj = [];
