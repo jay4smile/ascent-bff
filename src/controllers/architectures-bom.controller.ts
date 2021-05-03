@@ -148,7 +148,7 @@ export class ArchitecturesBomController {
     const bomCell = doc.cell({ paddingBottom: 0.5*cm });
     bomCell.text(`Bill of Materials`, { fontSize: 24 });
     for await (const p of archBom) {
-      const txt = bomCell.text(`- ${p.desc}:`)
+      bomCell.text(`- ${p.desc}:`)
         .append(` ${p.service.ibm_catalog_service ?? p.service.service_id}`, {
           goTo: p.service.service_id,
           underline: true,
