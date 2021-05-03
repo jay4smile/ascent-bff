@@ -10,23 +10,31 @@ RUN apt-get update \
       --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Set to a non-root built-in user `node`
-USER node
+# Create app directory (with user `pptruser`)
+RUN mkdir -p /home/pptruser/app
 
-# Create app directory (with user `node`)
-RUN mkdir -p /home/node/app
+WORKDIR /home/pptruser/app
 
-WORKDIR /home/node/app
+RUN npm i puppeteer \
+    # Add user so we don't need --no-sandbox.
+    # same layer as npm install to keep re-chowned files from using up several hundred MBs more space
+    && groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
+    && mkdir -p /home/pptruser/Downloads \
+    && chown -R pptruser:pptruser /home/pptruser \
+    && chown -R pptruser:pptruser /node_modules
+
+# Set to a non-root built-in user `pptruser`
+USER pptruser
 
 # Install app dependencies
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
 # where available (npm@5+)
-COPY --chown=node package*.json ./
+COPY --chown=pptruser package*.json ./
 
 RUN npm install
 
 # Bundle app source code
-COPY --chown=node . .
+COPY --chown=pptruser . .
 
 # Copy the Images into the Public folder
 COPY ./data/source/images ./public/images
