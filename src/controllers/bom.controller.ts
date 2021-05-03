@@ -78,6 +78,8 @@ export class BomController {
   @Inject
   loader!: CatalogLoader;
   catalog: Catalog;
+  automationCatalogController: AutomationCatalogController;
+  servicesController: ServicesController;
 
   constructor(
     @repository(BomRepository)
@@ -88,7 +90,10 @@ export class BomController {
     protected architecturesRepository: ArchitecturesRepository,
     @repository(ControlMappingRepository) 
     protected controlMappingRepository: ControlMappingRepository,
-  ) { }
+  ) { 
+    if (!this.automationCatalogController) this.automationCatalogController = new AutomationCatalogController(this.architecturesRepository,this.servicesRepository);
+    if (!this.servicesController) this.servicesController = new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository);
+  }
 
   @post('/boms')
   @response(200, {
@@ -217,15 +222,15 @@ export class BomController {
     let jsonObj:any = JSON.parse(JSON.stringify(bom));
     // Get service data
     try {
-      jsonObj.service = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository)).findById(bom.service_id, {"include":["controls"]});
-      jsonObj.automation = await (new AutomationCatalogController(this.architecturesRepository,this.servicesRepository)).automationById(jsonObj.service.cloud_automation_id);
+      jsonObj.service = await this.servicesController.findById(bom.service_id, {"include":["controls"]});
+      jsonObj.automation = await this.automationCatalogController.automationById(jsonObj.service.cloud_automation_id);
     }
     catch(e) {
       console.error(e);
     }
     // Get catalog data
     try {
-      jsonObj.catalog = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository)).catalogByServiceId(bom.service_id);
+      jsonObj.catalog = await this.servicesController.catalogByServiceId(bom.service_id);
     }
     catch(e) {
       console.error(e);
@@ -300,7 +305,7 @@ export class BomController {
     const bom_serv_id = bom_res.service_id;        
     const bom_data = JSON.parse(JSON.stringify(bom_res));    
     console.log("*******bom_serv_id*********"+bom_serv_id);
-    const serv_res = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository)).catalogByServiceId(bom_serv_id);    
+    const serv_res = await this.servicesController.catalogByServiceId(bom_serv_id);    
     const srvc_data = JSON.parse(JSON.stringify(serv_res));    
   
     const result = _.merge(bom_data, srvc_data[0]);
@@ -325,14 +330,14 @@ export class BomController {
       console.log("*******p.service_id*********"+p.service_id);
       // Get service data
       try {
-        p.automation = await (new AutomationCatalogController(this.architecturesRepository,this.servicesRepository)).automationById(p.service.cloud_automation_id);
+        p.automation = await this.automationCatalogController.automationById(p.service.cloud_automation_id);
       }
       catch(e) {
         console.error(e);
       }
       // Get catalog data
       try {
-        p.catalog = await (new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository)).catalogByServiceId(p.service_id);
+        p.catalog = await this.servicesController.catalogByServiceId(p.service_id);
         jsonObj.push(p);
       }
       catch(e) {
