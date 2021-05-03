@@ -140,7 +140,7 @@ export class ArchitecturesBomController {
     doc.footer().pageNumber(function(curr, total) { return curr + ' / ' + total }, { textAlign: 'center' })
     doc.text(`${arch.name}\n\n`, { textAlign: 'center', fontSize: 32 });
     if (arch.diagram_link_png && arch.diagram_folder) {
-      const image = await (await Jimp.read(`./public/images/${arch.diagram_folder}/${arch.diagram_link_png}`));
+      const image = await Jimp.read(`./public/images/${arch.diagram_folder}/${arch.diagram_link_png}`);
       const buffer  = await image.getBufferAsync(Jimp.MIME_JPEG);
       doc.image(new Image(buffer), { width: 750, align: 'center' });
     }
