@@ -148,7 +148,12 @@ export class ArchitecturesBomController {
     const bomCell = doc.cell({ paddingBottom: 0.5*cm });
     bomCell.text(`Bill of Materials`, { fontSize: 24 });
     for await (const p of archBom) {
-      bomCell.text(`- ${p.desc}: ${p.service.ibm_catalog_service ?? p.service.service_id}`);
+      const txt = bomCell.text(`- ${p.desc}:`)
+        .append(` ${p.service.ibm_catalog_service ?? p.service.service_id}`, {
+          goTo: p.service.service_id,
+          underline: true,
+          color: 0x569cd6
+        });
     }
     const servicesCell = doc.cell({ paddingBottom: 0.5*cm });
     servicesCell.text(`Services`, { fontSize: 24 });
@@ -156,6 +161,7 @@ export class ArchitecturesBomController {
       if (service) {
         const serviceCell = servicesCell.cell({ paddingBottom: 0.5*cm });
         const catalog = archBom.find(elt => elt.service.service_id === service.service_id)?.catalog;
+        serviceCell.destination(service.service_id);
         serviceCell.text(`${service.ibm_catalog_service ?? service.service_id}`, { fontSize: 20 });
         serviceCell.text(`Description`, { fontSize: 16 });
         serviceCell.text(`${catalog?.overview_ui?.en?.long_description ?? catalog?.overview_ui?.en?.description ?? service.desc}`);
@@ -163,18 +169,36 @@ export class ArchitecturesBomController {
         if (service.grouping) serviceCell.text(`- Group: ${service.grouping}`);
         if (service.deployment_method) serviceCell.text(`- Deployment Method: ${service.deployment_method}`);
         if (service.provision) serviceCell.text(`- Provision: ${service.provision}`);
-        // const serviceMappings = mappings.filter(elt => elt.service_id === service.service_id);
-        // if (serviceMappings.length) {
-        //   md += `\n### Impacting controls\n`;
-        //   md += `\n|**Control ID** |**SCC Goal** |**Goal Description** |\n`;
-        //   md += `|:--- |:--- |:--- |\n`;
-        //   for (const mp of serviceMappings) {
-        //     for (const goal of mp?.goals) {
-        //       if (mp.control_id && mp?.control?.id) md += `|[**${mp.control_id}**](#${((mp.control.name && (mp.control.id + " " + mp.control.name)) || mp.control.id).toLowerCase().replace(/ /gi, '-').replace(/[()/&]/gi, '')}) |[${goal.goal_id}](https://cloud.ibm.com/security-compliance/goals/${goal.goal_id}) |${goal.description} |\n`;
-        //       else if(mp.control_id) md += `|**${mp.control_id}** |[${goal.goal_id}](https://cloud.ibm.com/security-compliance/goals/${goal.goal_id}) |${goal.description} |\n`;
-        //     }
-        //   }
-        // }
+        const serviceMappings = mappings.filter(elt => elt.service_id === service.service_id);
+        if (serviceMappings.length) {
+          serviceCell.text(`Impacting controls`, { fontSize: 16 });
+          const table = serviceCell.table({
+            widths: [1.5*cm, 1.5*cm, null, 2*cm, 2.5*cm],
+            borderHorizontalWidths: function(i) { return i < 2 ? 1 : 0.1 },
+            padding: 5
+          });
+          const header = table.header();
+          header.cell('Control ID');
+          header.cell('SCC Goal');
+          header.cell('Goal Description');
+          for (const mp of serviceMappings) {
+            for (const goal of mp?.goals) {
+              const row = table.row();
+              if (mp.control_id && mp?.control?.id) row.cell(mp.control_id, {
+                goTo: mp.control_id,
+                underline: true,
+                color: 0x569cd6
+              });
+              else row.cell(mp.control_id);
+              row.cell(goal.goal_id, {
+                link: `https://cloud.ibm.com/security-compliance/goals/${goal.goal_id}`,
+                underline: true,
+                color: 0x569cd6
+              });
+              row.cell(goal.description);
+            }
+          }
+        }
       }
     }
     const controlsCell = doc.cell({ paddingBottom: 0.5*cm });
@@ -182,6 +206,7 @@ export class ArchitecturesBomController {
     for await (const control of controls) {
       if (control) {
         const controlCell = controlsCell.cell({ paddingBottom: 0.5*cm });
+        controlCell.destination(control.id);
         controlCell.text(`${(control.name && (control.id + " " + control.name)) || control.id}`, { fontSize: 20 });
         controlCell.text(`Description`, { fontSize: 16 });
         controlCell.text(`${control.description
