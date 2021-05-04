@@ -72,7 +72,7 @@ export class ArchitecturesBomController {
   catalog: Catalog;
   bomController: BomController;
 
-  fonts: {
+  fonts: {
     plex: Font,
     plexBold: Font
   };
