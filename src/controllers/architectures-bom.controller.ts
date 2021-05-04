@@ -72,6 +72,11 @@ export class ArchitecturesBomController {
   catalog: Catalog;
   bomController: BomController;
 
+  fonts: {
+    plex: Font,
+    plexBold: Font
+  };
+
   constructor(
     @repository(ArchitecturesRepository) protected architecturesRepository: ArchitecturesRepository,
     @repository(BomRepository) protected bomRepository: BomRepository,
@@ -80,6 +85,10 @@ export class ArchitecturesBomController {
     @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
   ) {
     if (!this.bomController) this.bomController = new BomController(this.bomRepository, this.servicesRepository, this.architecturesRepository, this.cmRepository);
+    if (!this.fonts) this.fonts = {
+      plex: new Font(fs.readFileSync('./fonts/IBMPlexSans-Regular.ttf')),
+      plexBold: new Font(fs.readFileSync('./fonts/IBMPlexSans-Bold.ttf'))
+    };
   }
 
   @get('/architectures/{id}/boms', {
@@ -133,10 +142,11 @@ export class ArchitecturesBomController {
 
     // Build PDF Document
     const doc = new PDFDocument({
-      font: new Font(fs.readFileSync('./fonts/IBMPlexSans-Regular.ttf')),
+      font: this.fonts.plex,
       padding: 50,
       fontSize: 11
     });
+    
     doc.footer().pageNumber(function(curr, total) { return curr + ' / ' + total }, { textAlign: 'center' })
     doc.text(`${arch.name}\n\n`, { textAlign: 'center', fontSize: 32 });
     if (arch.diagram_link_png && arch.diagram_folder) {
@@ -145,7 +155,34 @@ export class ArchitecturesBomController {
       doc.image(new Image(buffer), { width: 750, align: 'center' });
     }
     doc.pageBreak();
+    // Table of contents
+    let tocIx = 0;
+    doc.text(`Table of contents`, { fontSize: 24 });
+    doc.text(`${++tocIx}.  Bill of Materials`, {
+      goTo: 'bom'
+    });
+    doc.text(`${++tocIx}.  Services`, {
+      goTo: 'services'
+    });
+    for await (const service of services) {
+      let serviceIx = 0;
+      if (service) doc.text(`    ${tocIx}.${++serviceIx}.  ${service.ibm_catalog_service ?? service.service_id}`, {
+        goTo: service.service_id
+      });
+    }
+    doc.text(`${++tocIx}.  Controls`, {
+      goTo: 'controls'
+    });
+    for await (const control of controls) {
+      let controlIx = 0;
+      if (control) doc.text(`    ${tocIx}.${++controlIx}.  ${(control.name && (control.id + " " + control.name)) || control.id}`, {
+        goTo: control.id
+      });
+    }
+    doc.pageBreak();
+    // END: Table of contents
     const bomCell = doc.cell({ paddingBottom: 0.5*cm });
+    bomCell.destination('bom');
     bomCell.text(`Bill of Materials`, { fontSize: 24 });
     for await (const p of archBom) {
       bomCell.text(`- ${p.desc}:`)
@@ -156,6 +193,7 @@ export class ArchitecturesBomController {
         });
     }
     const servicesCell = doc.cell({ paddingBottom: 0.5*cm });
+    servicesCell.destination('services');
     servicesCell.text(`Services`, { fontSize: 24 });
     for await (const service of services) {
       if (service) {
@@ -173,18 +211,23 @@ export class ArchitecturesBomController {
         if (serviceMappings.length) {
           serviceCell.text(`Impacting controls`, { fontSize: 16 });
           const table = serviceCell.table({
-            widths: [1.5*cm, 1.5*cm, null, 2*cm, 2.5*cm],
+            padding: 2,
+            widths: [2.5*cm, 2.5*cm, '*'],
             borderHorizontalWidths: function(i) { return i < 2 ? 1 : 0.1 },
-            padding: 5
+            // borderVerticalWidths: [0.1,0.1,0.1,0.1,0.1,0.1],
+            fontSize: 9
           });
-          const header = table.header();
+          const header = table.header({
+            font: this.fonts.plexBold,
+            fontSize: 11
+          });
           header.cell('Control ID');
           header.cell('SCC Goal');
           header.cell('Goal Description');
           for (const mp of serviceMappings) {
             for (const goal of mp?.goals) {
               const row = table.row();
-              if (mp.control_id && mp?.control?.id) row.cell(mp.control_id, {
+              if (mp.control_id && mp?.control?.id) row.cell(mp?.control?.id, {
                 goTo: mp.control_id,
                 underline: true,
                 color: 0x569cd6
@@ -202,6 +245,7 @@ export class ArchitecturesBomController {
       }
     }
     const controlsCell = doc.cell({ paddingBottom: 0.5*cm });
+    controlsCell.destination('controls');
     controlsCell.text(`Controls`, { fontSize: 24 });
     for await (const control of controls) {
       if (control) {
@@ -211,23 +255,42 @@ export class ArchitecturesBomController {
         controlCell.text(`Description`, { fontSize: 16 });
         controlCell.text(`${control.description
           .replace(/\n\*\*([a-zA-Z1-9\(\)]+)\*\*/gi, '\n$1')
-          .replace(/\n\n/gi, '\n')
+          .replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n')
           .replace(/\*\*Note\*\*/gi, 'Note')
           .replace(/\*\*Note:\*\*/gi, 'Note:')}`);
-        if (control.parent_control) controlCell.text(`- Parent control: ${control.parent_control}`);
+        // if (control.parent_control) controlCell.text(`- Parent control: ${control.parent_control}`);
+        if (control.fs_guidance) {
+          controlCell.text(`Additionnal FS Guidance`, { fontSize: 14 });
+          controlCell.text(control.fs_guidance
+            .replace(/\n\*\*([a-zA-Z1-9\(\)]+)\*\*/gi, '\n$1')
+            .replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n')
+            .replace(/\*\*Note\*\*/gi, 'Note')
+            .replace(/\*\*Note:\*\*/gi, 'Note:'));
+        }
         controlCell.text(`Parameters`, { fontSize: 16 });
         controlCell.text(`${control.parameters.replace(/\*/gi, '')}`);
         controlCell.text(`Solution and Implementation`, { fontSize: 16 });
-        controlCell.text(`${control.implementation
-          .replace(/\n\*\*([a-zA-Z1-9\(\)]+)\*\*/gi, '\n$1')
+        const implemParts = control.implementation
           .replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n')
-          .replace(/##### *([^\n]+)/gi, '\n$1\n')
-          .replace(/#### *([^\n]+)/gi, '\n$1')
-          .replace(/\*\*Note\*\*/gi, 'Note')
-          .replace(/\*\*Note:\*\*/gi, 'Note:')}`)
+          .replace(/\n#### Part ([a-z][1-9]?\))/gi, '\nPart $1')
+          .split(/\n(Part [a-z][1-9]?\))/gi);
+        for (const part of implemParts) {
+          if (part.startsWith('Part')) controlCell.text(part, { fontSize: 14 });
+          else if (part) {
+            const guidances = part.replace(/\n##### Provider ((?:Evidence|Implementation){1} Guidance)\s?\n?/gi, '\n$1').split(/\n((?:Evidence Guidance)|(?:Implementation Guidance))/gi);
+            for (const guidance of guidances) {
+              if (guidance.startsWith('Evidence') || guidance.startsWith('Implementation')) controlCell.text(`Provider ${guidance}`, {
+                font: this.fonts.plexBold
+              });
+              else if (guidance) controlCell.text(guidance
+                .replace(/\n\*\*([a-zA-Z1-9\(\)]+)\*\*/gi, '\n$1')
+                .replace(/\*\*Note\*\*/gi, 'Note')
+                .replace(/\*\*Note:\*\*/gi, 'Note:'));
+            }
+          }
+        }
       }
     }
-
     // Send PDF Document
     return doc.asBuffer();
   }
