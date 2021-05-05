@@ -164,8 +164,8 @@ export class ArchitecturesBomController {
     doc.text(`${++tocIx}.  Services`, {
       goTo: 'services'
     });
+    let serviceIx = 0;
     for await (const service of services) {
-      let serviceIx = 0;
       if (service) doc.text(`    ${tocIx}.${++serviceIx}.  ${service.ibm_catalog_service ?? service.service_id}`, {
         goTo: service.service_id
       });
@@ -173,8 +173,8 @@ export class ArchitecturesBomController {
     doc.text(`${++tocIx}.  Controls`, {
       goTo: 'controls'
     });
+    let controlIx = 0;
     for await (const control of controls) {
-      let controlIx = 0;
       if (control) doc.text(`    ${tocIx}.${++controlIx}.  ${(control.name && (control.id + " " + control.name)) || control.id}`, {
         goTo: control.id
       });
