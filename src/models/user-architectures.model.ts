@@ -23,7 +23,6 @@ export class UserArchitectures extends Entity {
   })
   arch_id: string;
 
-
   constructor(data?: Partial<UserArchitectures>) {
     super(data);
   }

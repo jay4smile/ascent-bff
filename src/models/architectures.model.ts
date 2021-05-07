@@ -1,6 +1,6 @@
 
 import {Entity, model, property, hasMany} from '@loopback/repository';
-import {Bom} from './bom.model';
+import {Bom, User, UserArchitectures} from '.';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -72,6 +72,15 @@ export class Architectures extends Entity {
 
   @hasMany(() => Bom, {keyTo: 'arch_id'})
   boms: Bom[];
+
+  @hasMany(() => User, {
+    through: {
+      model: () => UserArchitectures,
+      keyFrom: 'arch_id',
+      keyTo: 'email'
+    }
+  })
+  owners: User[];
 
   constructor(data?: Partial<Architectures>) {
     super(data);
