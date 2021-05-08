@@ -26,33 +26,9 @@ export class Architectures extends Entity {
   short_desc: string;
 
   @property({
-    type: 'string',
-    required: true,
+    type: 'string'
   })
   long_desc?: string;
-
-  @property({
-    type: 'string',
-    required: true,
-  })
-  diagram_folder: string;
-
-  @property({
-    type: 'string',
-    required: true,
-  })
-  diagram_link_drawio: string;
-
-  @property({
-    type: 'string',
-    required: true,
-  })
-  diagram_link_png: string;
-
-  @property({
-    type: 'string',
-  })
-  partner_name?: string;
 
   @property({
     type: 'boolean',
