@@ -39,11 +39,7 @@ describe('Architectures', () => {
         "name": "string",
         "short_desc": "string",
         "long_desc": "string",
-        "diagram_folder": "string",
-        "diagram_link_drawio": "string",
-        "diagram_link_png": "string",
-        "partner_name": "string",
-        "confidential": true,
+        "public": true,
         "production_ready": true
       })
       .expect(200)

@@ -23,17 +23,11 @@ import { Profile, ControlMapping } from '../models';
 import { ProfileRepository, ControlMappingRepository, GoalRepository } from '../repositories';
 
 import {FILE_UPLOAD_SERVICE} from '../keys';
-import {FileUploadHandler} from '../types';
+import {FileUploadHandler, File} from '../types';
 
 import { tagsMapping } from '../tags-mapping';
 
 /* eslint-disable @typescript-eslint/naming-convention */
-
-interface File {
-  mimetype: string,
-  buffer: Buffer,
-  size: number
-}
   
 export class ProfileController {
   constructor(
@@ -102,7 +96,9 @@ export class ProfileController {
           const mapper = (f: globalThis.Express.Multer.File) => ({
             mimetype: f.mimetype,
             buffer: f.buffer,
-            size: f.size
+            size: f.size,
+            fieldname: f.fieldname,
+            name: f.originalname
           });
           let files: File[] = [];
           if (Array.isArray(uploadedFiles)) {

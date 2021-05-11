@@ -93,13 +93,9 @@ Table profile {
 Table architecture {
   id string [pk]
   name string
-  public boolean
   short_desc string
   long_desc string
-  diagram_link_drawio string
-  diagram_link_png string
-  partner_name string
-  confidential boolean
+  public boolean
   production_ready boolean
   automation_variables string
 }

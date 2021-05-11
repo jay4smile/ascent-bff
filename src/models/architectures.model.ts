@@ -11,7 +11,7 @@ export class Architectures extends Entity {
     id: true,
     generated: false,
   })
-  arch_id?: string;
+  arch_id: string;
 
   @property({
     type: 'string',
@@ -34,7 +34,7 @@ export class Architectures extends Entity {
     type: 'boolean',
     required: true,
   })
-  confidential: boolean;
+  public: boolean;
 
   @property({
     type: 'boolean',
