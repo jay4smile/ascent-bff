@@ -36,22 +36,18 @@ import {
 } from '@cloudnativetoolkit/iascable';
 
 import {FILE_UPLOAD_SERVICE} from '../keys';
-import {FileUploadHandler} from '../types';
+import {FileUploadHandler, File} from '../types';
 import yaml, { YAMLException } from 'js-yaml';
 
 import { Document as PDFDocument, Image, cm, Font } from "pdfjs";
 import Jimp from "jimp";
 import fs from "fs";
 
+import { ArchitecturesController, DiagramType } from './architectures.controller'
+
 const catalogUrl = "https://raw.githubusercontent.com/cloud-native-toolkit/garage-terraform-modules/gh-pages/index.yaml"
 
 /* eslint-disable no-throw-literal */
-
-interface File {
-  mimetype: string,
-  buffer: Buffer,
-  size: number
-}
 
 const loadAndValidateBomYaml = (yamlString:string) => {
   const doc = yaml.load(yamlString);
@@ -71,6 +67,7 @@ export class ArchitecturesBomController {
   loader!: CatalogLoader;
   catalog: Catalog;
   bomController: BomController;
+  archController: ArchitecturesController;
 
   fonts: {
     plex: Font,
@@ -84,7 +81,8 @@ export class ArchitecturesBomController {
     @repository(ServicesRepository) protected servicesRepository: ServicesRepository,
     @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
   ) {
-    if (!this.bomController) this.bomController = new BomController(this.bomRepository, this.servicesRepository, this.architecturesRepository, this.cmRepository);
+    if (!this.bomController) this.bomController = new BomController(this.bomRepository, this.servicesRepository, this.architecturesRepository, this.cmRepository, fileHandler);
+    if (!this.archController) this.archController = new ArchitecturesController(this.architecturesRepository, fileHandler);
     if (!this.fonts) this.fonts = {
       plex: new Font(fs.readFileSync('./fonts/IBMPlexSans-Regular.ttf')),
       plexBold: new Font(fs.readFileSync('./fonts/IBMPlexSans-Bold.ttf'))
@@ -149,10 +147,16 @@ export class ArchitecturesBomController {
     
     doc.footer().pageNumber(function(curr, total) { return curr + ' / ' + total }, { textAlign: 'center' })
     doc.text(`${arch.name}\n\n`, { textAlign: 'center', fontSize: 32 });
-    if (arch.diagram_link_png && arch.diagram_folder) {
-      const image = await Jimp.read(`./public/images/${arch.diagram_folder}/${arch.diagram_link_png}`);
-      const buffer  = await image.getBufferAsync(Jimp.MIME_JPEG);
-      doc.image(new Image(buffer), { width: 750, align: 'center' });
+    // Fetch diagram PNG from COS
+    if (arch.arch_id) {
+      try {
+        const diagram = await this.archController.getDiagram(arch.arch_id, DiagramType.PNG);
+        fs.writeFileSync('/tmp/arch.png', diagram);
+        const image = await Jimp.read('/tmp/arch.png');
+        doc.image(new Image(await image.getBufferAsync(Jimp.MIME_JPEG)), { width: 750, align: 'center' });
+      } catch (error) {
+        console.log(error);
+      }
     }
     doc.pageBreak();
     // Table of contents
@@ -364,7 +368,7 @@ export class ArchitecturesBomController {
     }
     return new Promise<object>((resolve, reject) => {
       this.fileHandler(request, res,(err: unknown) => {
-        let successCount = 0;
+        const success:Architectures[] = [];
         (async () => {
           if (err) {
             throw err;
@@ -374,7 +378,9 @@ export class ArchitecturesBomController {
             const mapper = (f: globalThis.Express.Multer.File) => ({
               mimetype: f.mimetype,
               buffer: f.buffer,
-              size: f.size
+              size: f.size,
+              fieldname: f.fieldname,
+              name: f.originalname
             });
             let files: File[] = [];
             if (Array.isArray(uploadedFiles)) {
@@ -404,10 +410,10 @@ export class ArchitecturesBomController {
                   name: doc.metadata.name,
                   short_desc: `${doc.metadata.name} Architecture.`,
                   long_desc: `${doc.metadata.name} FS Architecture.`,
-                  diagram_folder: "placeholder",
-                  diagram_link_drawio: "none",
-                  diagram_link_png: "placeholder.png",
-                  confidential: true
+                  // diagram_folder: "placeholder",
+                  // diagram_link_drawio: "none",
+                  // diagram_link_png: "placeholder.png",
+                  public: true
                 }));
               }
               // Do not delete the architecture document accept it and love it and just update the variable
@@ -450,11 +456,11 @@ export class ArchitecturesBomController {
                 }
                 await this.architecturesRepository.boms(arch.arch_id).create(newBom);
               }
-              successCount += 1;
+              success.push(arch);
             }
           }
         })()
-        .then(() => resolve(res.status(200).send({ count: successCount })))
+        .then(() => resolve(res.status(200).send({ architectures: success })))
         .catch((error) => {
           reject(res.status(400).send({error: error}))
         });

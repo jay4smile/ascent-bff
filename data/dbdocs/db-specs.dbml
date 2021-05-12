@@ -24,31 +24,40 @@ Table control {
   nist string [ref: > nist.number]
 }
 
-Enum grouping_enum {
-  sandi
-  network
-  storage
-  databases
-  compute
-  devtools
+Enum grouping {
+  "Security & Identity"
+  "Developer Tools"
+  "SRE Tools"
+  "Databases"
+  "Network"
+  "Storage"
+  "Compute"
+  "IBM Cloud Platform Services"
 }
-Enum deployment_method_enum {
-  platform
-  managed_service
+Enum deploymentMethod {
+  "Managed Service"
+  "Platform"
+  "Operator"
+  "Helm"
 }
-
+Enum provision {
+  "Terraform"
+  "Operator"
+  "Ansible"
+  "Helm"
+}
 Table service {
   service_id string [pk]
-  grouping grouping_enum
+  grouping grouping
   ibm_catalog_service string
   desc string
-  deployment_method deployment_method_enum
-  provision string
+  deployment_method deploymentMethod
+  provision provision
   automation_id string
   default_automation_variables string
 }
 
-Table control_mapping {
+Table controlMapping {
   _id string
   control_id string [pk, ref: > control.id]
   service_id string [pk, ref: > service.service_id]
@@ -70,9 +79,9 @@ Table goal {
   comments string
 }
 
-Table mapping_goals {
+Table mappingGoals {
   goal_id  string [pk, ref: > goal.id]
-  mapping_id string [pk, ref: > control_mapping._id]
+  mapping_id string [pk, ref: > controlMapping._id]
 }
 
 Table profile {
@@ -86,12 +95,23 @@ Table architecture {
   name string
   short_desc string
   long_desc string
-  diagram_link_drawio string
-  diagram_link_png string
-  partner_name string
-  confidential boolean
+  public boolean
   production_ready boolean
   automation_variables string
+}
+
+Table user {
+  email string
+}
+
+Enum userRole  {
+  "read-only"
+  "owner"
+}
+Table userArchitectures {
+  email string [pk, ref: > user.email]
+  arch_id string [pk, ref: > architecture.id]
+  // role userRole
 }
 
 Table bom {

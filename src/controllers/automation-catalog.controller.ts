@@ -38,6 +38,11 @@ import {inject} from "@loopback/core";
 import {repository} from "@loopback/repository";
 import  AdmZip = require("adm-zip");
 
+import {FILE_UPLOAD_SERVICE} from '../keys';
+import {FileUploadHandler} from '../types';
+import { ArchitecturesController, DiagramType } from './architectures.controller'
+import fs from "fs";
+
 const catalogUrl = "https://raw.githubusercontent.com/cloud-native-toolkit/garage-terraform-modules/gh-pages/index.yaml"
 
 export class AutomationCatalogController  {
@@ -49,15 +54,18 @@ export class AutomationCatalogController  {
   @Inject
   terraformBuilder!: TerraformBuilder;
   catalog: Catalog;
+  archController: ArchitecturesController;
 
   constructor(
       @repository(ArchitecturesRepository)
       public architecturesRepository : ArchitecturesRepository,
       @repository(ServicesRepository)
-      public serviceRepository: ServicesRepository
+      public serviceRepository: ServicesRepository,
+      @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
   ) {
 
     console.log("Constructor for Automation Catalog")
+    if (!this.archController) this.archController = new ArchitecturesController(this.architecturesRepository, fileHandler);
 
   }
 
@@ -220,11 +228,19 @@ export class AutomationCatalogController  {
       }
 
       // Add the Diagrams to the Zip Contents
-      const currentPath = process.cwd();
-
       // Add the Diagrams from the Architectures
-      zip.addLocalFile(currentPath+"/public/images/"+architecture.diagram_folder+"/"+architecture.diagram_link_png);
-      if (architecture?.diagram_link_drawio !== "none") zip.addLocalFile(currentPath+"/public/images/"+architecture.diagram_folder+"/"+architecture.diagram_link_drawio);
+      if (architecture.arch_id) {
+        try {
+          const drawio = await this.archController.getDiagram(architecture.arch_id, DiagramType.DRAWIO);
+          zip.addFile(`${architecture.arch_id}.drawio`, Buffer.alloc(drawio.toString().length, drawio.toString()), `Architecture diagram ${architecture.arch_id} .drawio file`);
+          const png = await this.archController.getDiagram(architecture.arch_id, DiagramType.PNG);
+          fs.writeFileSync(`/tmp/${architecture.arch_id}.png`, png);
+          zip.addLocalFile(`/tmp/${architecture.arch_id}.png`);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+
 
       let mdfiles = "";
       terraformComponent.files.map(async (file: OutputFile) => {
@@ -262,7 +278,7 @@ export class AutomationCatalogController  {
               contents = contents.replace(new RegExp("{name}", "g"), architecture.name);
               contents = contents.replace(new RegExp("{short_desc}", "g"), architecture.short_desc);
               //contents = contents.replace(new RegExp("{long_desc}", "g"), architecture.long_desc);
-              contents = contents.replace(new RegExp("{diagram}", "g"), architecture.diagram_link_png);
+              contents = contents.replace(new RegExp("{diagram}", "g"), `${architecture.arch_id}.png`);
               contents = contents.replace(new RegExp("{modules}", "g"), mdfiles);
 
             }

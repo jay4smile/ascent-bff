@@ -25,6 +25,9 @@ import { ServicesController, AutomationCatalogController } from '.';
 import { Bom, Services } from '../models';
 import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository } from '../repositories';
 
+import {FILE_UPLOAD_SERVICE} from '../keys';
+import {FileUploadHandler} from '../types';
+
 import {
   ModuleSelector,
   CatalogLoader,
@@ -90,9 +93,10 @@ export class BomController {
     protected architecturesRepository: ArchitecturesRepository,
     @repository(ControlMappingRepository) 
     protected controlMappingRepository: ControlMappingRepository,
+    @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
   ) { 
-    if (!this.automationCatalogController) this.automationCatalogController = new AutomationCatalogController(this.architecturesRepository,this.servicesRepository);
-    if (!this.servicesController) this.servicesController = new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository);
+    if (!this.automationCatalogController) this.automationCatalogController = new AutomationCatalogController(this.architecturesRepository,this.servicesRepository,fileHandler);
+    if (!this.servicesController) this.servicesController = new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository,fileHandler);
   }
 
   @post('/boms')

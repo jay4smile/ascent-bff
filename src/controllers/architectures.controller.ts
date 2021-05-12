@@ -14,6 +14,8 @@ import {
   getModelSchemaRef,
   patch,
   del,
+  oas,
+  Request,
   requestBody,
   response,
   RestBindings,
@@ -21,6 +23,8 @@ import {
 } from '@loopback/rest';
 import {Architectures} from '../models';
 import {ArchitecturesRepository} from '../repositories';
+import {FILE_UPLOAD_SERVICE} from '../keys';
+import {FileUploadHandler, File} from '../types';
 
 import * as _ from 'lodash';
 import {Services} from '../appenv';
@@ -28,15 +32,30 @@ import * as Storage from "ibm-cos-sdk"
 import assert from "assert";
 import yaml from 'js-yaml';
 
+import Jimp from "jimp";
+
+import util from 'util';
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/naming-convention */
+
+export enum DiagramType {
+  DRAWIO = "drawio",
+  PNG = "png"
+}
 
 export class ArchitecturesController {
 
-  private cos : any;
+  private cos : Storage.S3;
+  private bucketNames: {
+    drawio: Storage.S3.BucketName,
+    png: Storage.S3.BucketName
+  };
 
   constructor(
     @repository(ArchitecturesRepository)
     public architecturesRepository : ArchitecturesRepository,
+    @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
   ) {
 
     console.log("Constructor for Architecture API")
@@ -64,60 +83,217 @@ export class ArchitecturesController {
     };
 
     this.cos = new Storage.S3(config);
-
-  }
-
-  /*
-  @get('/architectures/{id}/diagram')
-  @response(200, {
-    description: 'Download Terraform Package based on the reference architecture BOM',
-    content: {
-      'application/png': {
-        schema: getModelSchemaRef(Architectures, {includeRelations: true}),
-      },
-
-    })
-  @oas.response.file()
-  async downloadAutomationZip(
-      @param.path.string('id') id: string,
-      @inject(RestBindings.Http.RESPONSE) res: Response,
-  ) {
-
-  @get('/architectures/{id}/diagram')
-  @response(200, {
-    description: 'Architectures model Diagram',
-    content: {
-      'application/png': {
-        schema: getModelSchemaRef(Architectures, {includeRelations: true}),
-      },
-    },
-  })
-  async findDiagramById(
-      @param.path.string('id') id: string,
-      @param.filter(Architectures, {exclude: 'where'}) filter?: FilterExcludingWhere<Architectures>
-  ): Promise<Architectures> {
-
-      console.log(`Retrieving item from bucket: ${bucketName}, key: ${itemName}`);
-      return this.cos.getObject({
-        Bucket: bucketName,
-        Key: itemName
-      }).promise()
-          .then((data) => {
-            if (data != null) {
-              console.log('File Contents: ' + Buffer.from(data.Body).toString());
-            }
-          })
-          .catch((e) => {
-            console.error(`ERROR: ${e.code} - ${e.message}\n`);
-          });
+    this.bucketNames = {
+      drawio: "architecture-diagrams-drawio",
+      png: "architecture-diagrams-images"
     }
-
-    return this.architecturesRepository.findById(id, filter);
-
+    this.cos.listBuckets().promise()
+      .then(data => {
+        if (!data?.Buckets?.find(bucket => bucket.Name === this.bucketNames.drawio)) {
+          this.cos.createBucket({
+            Bucket: this.bucketNames.drawio,
+            CreateBucketConfiguration: {
+              LocationConstraint: 'eu-geo'
+            }
+          }).promise()
+            .then(() => {
+              console.log(`Bucket ${this.bucketNames.drawio} created.`);
+            })
+            .catch(function(err) {
+              console.error(util.inspect(err));
+            });
+        }
+        if (!data?.Buckets?.find(bucket => bucket.Name === this.bucketNames.png)) {
+          this.cos.createBucket({
+            Bucket: this.bucketNames.png,
+            CreateBucketConfiguration: {
+              LocationConstraint: 'eu-geo'
+            }
+          }).promise()
+            .then(() => {
+              console.log(`Bucket ${this.bucketNames.png} created.`);
+            })
+            .catch(function(err) {
+              console.error(util.inspect(err));
+            });
+        }
+      })
+      .catch(function(err) {
+        console.error(util.inspect(err));
+      });
   }
 
- */
+  public async getDiagram(arch_id: string, diagramType: DiagramType, small=false): Promise<Storage.S3.Body> {
+    return new Promise((resolve, reject) => {
+      this.cos.getObject({
+        Bucket: this.bucketNames[diagramType],
+        Key: `${small ? "small-" : ""}${arch_id}-diagram.${diagramType}`
+      }).promise()
+        .then((data) => {
+          if (data?.Body) {
+            return resolve(data.Body);
+          }
+          return reject({error: {
+            message: `Error retrieving diagram`,
+            details: data
+          }});
+        }, (error) => {
+          if (error?.code === "NoSuchKey") {
+            return this.cos.getObject({
+              Bucket: this.bucketNames[diagramType],
+              Key: `${small ? "small-" : ""}placeholder.${diagramType}`
+            }).promise()
+              .then((data) => {
+                if (data?.Body) {
+                  return resolve(data.Body);
+                }
+                return reject({error: {
+                  message: `Error retrieving diagram`,
+                  details: data
+                }});
+              }, (e) => {
+                return reject({error: {
+                  message: `Error retrieving diagram`,
+                  details: e
+                }});
+              })
+              .catch((e) => reject({error: {
+                message: `Error retrieving diagram`,
+                details: e
+              }}));
+          }
+          return reject({error: {
+            message: `Error retrieving diagram`,
+            details: error
+          }});
+        })
+        .catch((e) => {
+          return reject({error: {
+          message: `Error retrieving diagram`,
+          details: e
+          }});
+      });
+    });
+  }
 
+  @get('/architectures/{id}/diagram/{type}')
+  @response(200, {
+    description: 'Get architecture diagram (.drawio or .png)',
+  })
+  @oas.response.file()
+  async findDiagramById(
+    @param.path.string('id') arch_id: string,
+    @param.query.boolean('small') small: boolean,
+    @param.path.string('type') fileType: DiagramType,
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<any> {
+    if (fileType !== DiagramType.DRAWIO && fileType !== DiagramType.PNG) {
+      return res.status(400).send({error: {
+        message: `Diagram type must be either "drawio" or "png"`
+      }});
+    }
+    const arch = await this.architecturesRepository.findById(arch_id);
+    return new Promise((resolve, reject) => {
+      this.getDiagram(arch.arch_id, fileType, small)
+          .then((data) => {
+            return resolve(data);
+          }, (error => {
+            return reject(res.status(400).send(error));
+          }))
+          .catch(getErr => {
+            return reject(res.status(400).send({error: {
+              message: `Error retrieving diagram`,
+              details: getErr
+            }}));
+          });
+    });
+  }
+
+  private async putDiagrams(files: File[], arch_id: string): Promise<object> {
+    const error = {message: ""};
+    if (files.length < 1 || files.length > 2) error.message += "You must upload 1 or 2 files. ";
+    if (files.find((f) => (f.fieldname !== "drawio" && f.fieldname !== "png"))) error.message += "Only .drawio and .png files are accepted. ";
+    if (files.find((f) => f.size > 2000 * 1024)) error.message += "File too large (must me <= 2MiB) ";
+    const pngIx = files.findIndex(f => f.fieldname === "png");
+    if (pngIx >= 0) {
+      // fs.writeFileSync('/tmp/arch.png', files[pngIx].buffer);
+      const image = await Jimp.read(files[pngIx].buffer);
+      image.resize(370, 200);
+      const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
+      files.push({
+        mimetype: files[pngIx].mimetype,
+        buffer: buffer,
+        size: buffer.length,
+        fieldname: files[pngIx].fieldname,
+        name: `png-small`
+      });
+    }
+    return new Promise((resolve, reject) => {
+      if (error.message) return reject({error: error});
+      let fileIx = 0;
+      const errors:object[] = [];
+      for (const file of files) {
+        this.cos.putObject({
+          Bucket: file.fieldname === "drawio" ? this.bucketNames.drawio : this.bucketNames.png,
+          Key: `${(file.name === "png-small") ? "small-" : ""}${arch_id}-diagram.${file.fieldname}`,
+          Body: file.buffer
+        }, (err) => {
+          if (err) {
+            errors.push(err);
+          }
+          if (++fileIx === files.length) {
+            if (err) return reject({error: errors});
+            return resolve({});
+          }
+        });
+      }
+    });
+  }
+
+  @post('/architectures/{id}/diagram')
+  @response(204, {
+    description: 'Diagram import success',
+  })
+  async postDiagram(
+    @requestBody.file()
+    request: Request,
+    @param.path.string('id') arch_id: string,
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<void> {
+    const arch = await this.architecturesRepository.findById(arch_id);
+    return new Promise((resolve, reject) => {
+      this.fileHandler(request, res, (err: unknown) => {
+        if (err) reject({error: err});
+        else {
+          const uploadedFiles = request.files;
+          const mapper = (f: globalThis.Express.Multer.File) => ({
+            mimetype: f.mimetype,
+            buffer: f.buffer,
+            size: f.size,
+            fieldname: f.fieldname,
+            name: f.originalname
+          });
+          let files: File[] = [];
+          if (Array.isArray(uploadedFiles)) {
+            files = uploadedFiles.map(mapper);
+          } else {
+            for (const filename in uploadedFiles) {
+              files.push(...uploadedFiles[filename].map(mapper));
+            }
+          }
+          this.putDiagrams(files, arch.arch_id)
+          .then((putErr) => {
+            if (putErr) return reject(res.status(400).send(putErr));
+            return resolve();
+          })
+          .catch(putErr => {
+            return reject(res.status(400).send(putErr));
+          });
+        }
+      });
+    });
+  }
+  
   @post('/architectures')
   @response(200, {
     description: 'Architectures model instance',

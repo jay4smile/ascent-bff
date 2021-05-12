@@ -12,3 +12,5 @@ export * from './control-mapping.controller';
 export * from './goal.controller';
 export * from './profile.controller';
 export * from './mapping-goals.controller';
+export * from './user.controller';
+export * from './user-architectures.controller';

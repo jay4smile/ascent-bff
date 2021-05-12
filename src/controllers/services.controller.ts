@@ -16,10 +16,14 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
+import {inject} from "@loopback/core";
 import { Services } from '../models';
 import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository } from '../repositories';
 import { CatalogController } from './catalog.controller';
 import { AutomationCatalogController } from '.';
+
+import {FILE_UPLOAD_SERVICE} from '../keys';
+import {FileUploadHandler} from '../types';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -38,8 +42,9 @@ export class ServicesController {
     protected architecturesRepository: ArchitecturesRepository,
     @repository(ControlMappingRepository)
     protected controlMappingRepository: ControlMappingRepository,
+    @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
   ) {
-    if (!this.automationCatalogController) this.automationCatalogController = new AutomationCatalogController(this.architecturesRepository,this.servicesRepository);
+    if (!this.automationCatalogController) this.automationCatalogController = new AutomationCatalogController(this.architecturesRepository,this.servicesRepository,fileHandler);
     if (!this.catalogController) this.catalogController = new CatalogController;
   }
 
