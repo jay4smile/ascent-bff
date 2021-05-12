@@ -32,15 +32,16 @@ import * as Storage from "ibm-cos-sdk"
 import assert from "assert";
 import yaml from 'js-yaml';
 
+import Jimp from "jimp";
+
 import util from 'util';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/naming-convention */
 
-
 export enum DiagramType {
   DRAWIO = "drawio",
-  PNG ="png"
+  PNG = "png"
 }
 
 export class ArchitecturesController {
@@ -122,11 +123,11 @@ export class ArchitecturesController {
       });
   }
 
-  public async getDiagram(arch_id: string, diagramType: DiagramType): Promise<Storage.S3.Body> {
+  public async getDiagram(arch_id: string, diagramType: DiagramType, small=false): Promise<Storage.S3.Body> {
     return new Promise((resolve, reject) => {
       this.cos.getObject({
         Bucket: this.bucketNames[diagramType],
-        Key: `${arch_id}-diagram.${diagramType}`
+        Key: `${small ? "small-" : ""}${arch_id}-diagram.${diagramType}`
       }).promise()
         .then((data) => {
           if (data?.Body) {
@@ -140,7 +141,7 @@ export class ArchitecturesController {
           if (error?.code === "NoSuchKey") {
             return this.cos.getObject({
               Bucket: this.bucketNames[diagramType],
-              Key: `placeholder.${diagramType}`
+              Key: `${small ? "small-" : ""}placeholder.${diagramType}`
             }).promise()
               .then((data) => {
                 if (data?.Body) {
@@ -182,6 +183,7 @@ export class ArchitecturesController {
   @oas.response.file()
   async findDiagramById(
     @param.path.string('id') arch_id: string,
+    @param.query.boolean('small') small: boolean,
     @param.path.string('type') fileType: DiagramType,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<any> {
@@ -192,7 +194,7 @@ export class ArchitecturesController {
     }
     const arch = await this.architecturesRepository.findById(arch_id);
     return new Promise((resolve, reject) => {
-      this.getDiagram(arch.arch_id, fileType)
+      this.getDiagram(arch.arch_id, fileType, small)
           .then((data) => {
             return resolve(data);
           }, (error => {
@@ -208,35 +210,43 @@ export class ArchitecturesController {
   }
 
   private async putDiagrams(files: File[], arch_id: string): Promise<object> {
-    return new Promise((resolve, reject) => {
-      const error = {message: ""};
-      console.log(files);
-      if (files.length < 1 || files.length > 2) error.message += "You must upload 1 or 2 files. ";
-      if (files.find((f) => (f.fieldname !== "drawio" && f.fieldname !== "png"))) error.message += "Only .drawio and .png files are accepted. ";
-      if (files.find((f) => f.size > 2000 * 1024)) error.message += "File too large (must me <= 2MiB) ";
-      if (error.message) return reject({error: error});
-      console.log(files[0]);
-      this.cos.putObject({
-        Bucket: files[0].fieldname === "drawio" ? this.bucketNames.drawio : this.bucketNames.png,
-        Key: `${arch_id}-diagram.${files[0].fieldname}`,
-        Body: files[0].buffer
-      }, (err) => {
-        if (err) {
-          return reject({error: err});
-        }
-        if (files.length === 2) {
-          this.cos.putObject({
-            Bucket: files[1].fieldname === "drawio" ? this.bucketNames.drawio : this.bucketNames.png,
-            Key: `${arch_id}-diagram.${files[1].fieldname}`,
-            Body: files[1].buffer
-          }, (secErr) => {
-            if (secErr) {
-              return reject({error: secErr});
-            }
-            return resolve({});
-          });
-        } else return resolve({});
+    const error = {message: ""};
+    if (files.length < 1 || files.length > 2) error.message += "You must upload 1 or 2 files. ";
+    if (files.find((f) => (f.fieldname !== "drawio" && f.fieldname !== "png"))) error.message += "Only .drawio and .png files are accepted. ";
+    if (files.find((f) => f.size > 2000 * 1024)) error.message += "File too large (must me <= 2MiB) ";
+    const pngIx = files.findIndex(f => f.fieldname === "png");
+    if (pngIx >= 0) {
+      // fs.writeFileSync('/tmp/arch.png', files[pngIx].buffer);
+      const image = await Jimp.read(files[pngIx].buffer);
+      image.resize(370, 200);
+      const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
+      files.push({
+        mimetype: files[pngIx].mimetype,
+        buffer: buffer,
+        size: buffer.length,
+        fieldname: files[pngIx].fieldname,
+        name: `png-small`
       });
+    }
+    return new Promise((resolve, reject) => {
+      if (error.message) return reject({error: error});
+      let fileIx = 0;
+      const errors:object[] = [];
+      for (const file of files) {
+        this.cos.putObject({
+          Bucket: file.fieldname === "drawio" ? this.bucketNames.drawio : this.bucketNames.png,
+          Key: `${(file.name === "png-small") ? "small-" : ""}${arch_id}-diagram.${file.fieldname}`,
+          Body: file.buffer
+        }, (err) => {
+          if (err) {
+            errors.push(err);
+          }
+          if (++fileIx === files.length) {
+            if (err) return reject({error: errors});
+            return resolve({});
+          }
+        });
+      }
     });
   }
 
