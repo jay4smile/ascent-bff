@@ -368,7 +368,7 @@ export class ArchitecturesBomController {
     }
     return new Promise<object>((resolve, reject) => {
       this.fileHandler(request, res,(err: unknown) => {
-        let success:Architectures[] = [];
+        const success:Architectures[] = [];
         (async () => {
           if (err) {
             throw err;
