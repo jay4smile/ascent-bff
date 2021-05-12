@@ -368,7 +368,7 @@ export class ArchitecturesBomController {
     }
     return new Promise<object>((resolve, reject) => {
       this.fileHandler(request, res,(err: unknown) => {
-        let successCount = 0;
+        let success:Architectures[] = [];
         (async () => {
           if (err) {
             throw err;
@@ -456,11 +456,11 @@ export class ArchitecturesBomController {
                 }
                 await this.architecturesRepository.boms(arch.arch_id).create(newBom);
               }
-              successCount += 1;
+              success.push(arch);
             }
           }
         })()
-        .then(() => resolve(res.status(200).send({ count: successCount })))
+        .then(() => resolve(res.status(200).send({ architectures: success })))
         .catch((error) => {
           reject(res.status(400).send({error: error}))
         });
