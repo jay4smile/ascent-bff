@@ -22,7 +22,10 @@ import {
   Response
 } from '@loopback/rest';
 import {Architectures} from '../models';
-import {ArchitecturesRepository} from '../repositories';
+import {
+  ArchitecturesRepository,
+  UserRepository
+} from '../repositories';
 import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler, File} from '../types';
 
@@ -55,10 +58,12 @@ export class ArchitecturesController {
   constructor(
     @repository(ArchitecturesRepository)
     public architecturesRepository : ArchitecturesRepository,
-    @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
+    @repository(UserRepository)
+    public userRepository : UserRepository,
+    @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler,
   ) {
 
-    console.log("Constructor for Architecture API")
+    // console.log("Constructor for Architecture API")
 
     // Load Information from Environment
     const services = Services.getInstance();
@@ -258,9 +263,16 @@ export class ArchitecturesController {
     @requestBody.file()
     request: Request,
     @param.path.string('id') arch_id: string,
+    @param.query.string('email') email: string,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<void> {
-    const arch = await this.architecturesRepository.findById(arch_id);
+    const arch = await this.architecturesRepository.findById(arch_id, {include: ['owners']});
+    if (email && !arch.owners.find(user => user.email === email)) {
+      res.status(401).send({error: {
+        message: `User ${email} must be owner of architecture ${arch_id}`
+      }});
+      return;
+    }
     return new Promise((resolve, reject) => {
       this.fileHandler(request, res, (err: unknown) => {
         if (err) reject({error: err});
@@ -311,6 +323,7 @@ export class ArchitecturesController {
       },
     })
     architectures: Architectures,
+    @param.query.string('email') email: string,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Architectures> {
     return new Promise((resolve, reject) => {
@@ -324,6 +337,13 @@ export class ArchitecturesController {
           }}));
         }
       }
+      if (email) this.userRepository.architectures(email).create(architectures)
+        .then((arch) => {
+          resolve(arch);
+        })
+        .catch(() => {
+          reject(this.userRepository.create({email: email}));
+        });
       return resolve(this.architecturesRepository.create(architectures));
     });
   }
@@ -352,9 +372,20 @@ export class ArchitecturesController {
     },
   })
   async find(
+    @param.query.string('email') email: string,
     @param.filter(Architectures) filter?: Filter<Architectures>,
   ): Promise<Architectures[]> {
-    return this.architecturesRepository.find(filter);
+    const archFilter = filter ?? {};
+    archFilter.where = {public: true};
+    let userArch:Architectures[] = [];
+    if (email) {
+      try {
+        userArch = await this.userRepository.architectures(email).find();
+      } catch (error) {
+        await this.userRepository.create({email: email});
+      }
+    }
+    return Array.from(new Set((await this.architecturesRepository.find(filter)).concat(userArch)));
   }
 
   @patch('/architectures')
@@ -371,10 +402,17 @@ export class ArchitecturesController {
       },
     })
     architectures: Architectures,
+    @param.query.string('email') email: string,
     @inject(RestBindings.Http.RESPONSE) res: Response,
     @param.where(Architectures) where?: Where<Architectures>,
   ): Promise<Count> {
     return new Promise((resolve, reject) => {
+      if (email) {
+        res.status(401).send({error: {
+          message: `User ${email} cannot patch all architectures`
+        }});
+        return;
+      }
       if (architectures.automation_variables) {
         try {
           yaml.load(architectures.automation_variables);
@@ -424,9 +462,16 @@ export class ArchitecturesController {
       },
     })
     architectures: Architectures,
+    @param.query.string('email') email: string,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Architectures> {
+    const arch = await this.architecturesRepository.findById(id, {include: ['owners']});
     return new Promise((resolve, reject) => {
+      if (email && !arch.owners.find(user => user.email === email)) {
+        return reject(res.status(401).send({error: {
+          message: `User ${email} must be owner of architecture ${id}`
+        }}));
+      }
       if (architectures.automation_variables) {
         try {
           yaml.load(architectures.automation_variables);
@@ -451,7 +496,19 @@ export class ArchitecturesController {
   @response(204, {
     description: 'Architectures DELETE success',
   })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
+  async deleteById(
+      @param.path.string('id') id: string,
+      @param.query.string('email') email: string,
+      @inject(RestBindings.Http.RESPONSE) res: Response
+    ): Promise<void> {
+    const arch = await this.architecturesRepository.findById(id, {include: ['owners']});
+    if (email && !arch.owners.find(user => user.email === email)) {
+      res.status(401).send({error: {
+        message: `User ${email} must be owner of architecture ${id}`
+      }});
+      return;
+    }
+    await this.architecturesRepository.boms(id).delete();
     await this.architecturesRepository.deleteById(id);
   }
 }

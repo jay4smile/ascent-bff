@@ -26,7 +26,12 @@ import {
   Architectures,
   Bom,
 } from '../models';
-import { ArchitecturesRepository, BomRepository, ControlMappingRepository, ServicesRepository } from '../repositories';
+import {
+  ArchitecturesRepository,
+  BomRepository,
+  ControlMappingRepository,
+  ServicesRepository,
+  UserRepository } from '../repositories';
 import { BomController } from '.';
 
 import {
@@ -79,10 +84,11 @@ export class ArchitecturesBomController {
     @repository(BomRepository) protected bomRepository: BomRepository,
     @repository(ControlMappingRepository) protected cmRepository: ControlMappingRepository,
     @repository(ServicesRepository) protected servicesRepository: ServicesRepository,
+    @repository(UserRepository) protected userRepository: UserRepository,
     @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
   ) {
-    if (!this.bomController) this.bomController = new BomController(this.bomRepository, this.servicesRepository, this.architecturesRepository, this.cmRepository, fileHandler);
-    if (!this.archController) this.archController = new ArchitecturesController(this.architecturesRepository, fileHandler);
+    if (!this.bomController) this.bomController = new BomController(this.bomRepository, this.servicesRepository, this.architecturesRepository, this.cmRepository, this.userRepository, fileHandler);
+    if (!this.archController) this.archController = new ArchitecturesController(this.architecturesRepository, this.userRepository, fileHandler);
     if (!this.fonts) this.fonts = {
       plex: new Font(fs.readFileSync('./fonts/IBMPlexSans-Regular.ttf')),
       plexBold: new Font(fs.readFileSync('./fonts/IBMPlexSans-Bold.ttf'))

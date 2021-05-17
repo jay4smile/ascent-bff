@@ -23,7 +23,7 @@ import {
 import _ from 'lodash';
 import { ServicesController, AutomationCatalogController } from '.';
 import { Bom, Services } from '../models';
-import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository } from '../repositories';
+import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository, UserRepository } from '../repositories';
 
 import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler} from '../types';
@@ -93,10 +93,11 @@ export class BomController {
     protected architecturesRepository: ArchitecturesRepository,
     @repository(ControlMappingRepository) 
     protected controlMappingRepository: ControlMappingRepository,
+    @repository(UserRepository) protected userRepository: UserRepository,
     @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
   ) { 
-    if (!this.automationCatalogController) this.automationCatalogController = new AutomationCatalogController(this.architecturesRepository,this.servicesRepository,fileHandler);
-    if (!this.servicesController) this.servicesController = new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository,fileHandler);
+    if (!this.automationCatalogController) this.automationCatalogController = new AutomationCatalogController(this.architecturesRepository,this.servicesRepository,this.userRepository,fileHandler);
+    if (!this.servicesController) this.servicesController = new ServicesController(this.servicesRepository,this.bomRepository,this.architecturesRepository, this.controlMappingRepository,this.userRepository,fileHandler);
   }
 
   @post('/boms')

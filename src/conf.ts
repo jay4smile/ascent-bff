@@ -12,7 +12,7 @@ nconf.overrides({
 nconf.argv();
 nconf.env({separator: '__'});
 
-const confdir = nconf.get('conf') || path.join('config', process.env.NODE_ENV ?? 'dev');
+const confdir = nconf.get('conf') || path.join('config', process.env.NODE_ENV ?? 'staging');
 
 if ( fs.existsSync( confdir ) && fs.statSync( confdir ).isDirectory() ) {
   console.log( 'Configuration directory: ' + confdir );

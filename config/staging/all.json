@@ -1,0 +1,9 @@
+{
+    "secrets": {
+        "database": "DATABASE",
+        "host" :  "INGRESS_HOST",
+        "redis" : "REDIS",
+        "storage" : "STORAGE"
+    }
+}
+  

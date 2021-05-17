@@ -1,41 +1,71 @@
-import {ApplicationConfig, ArchitectureMapperBffApplication} from './application';
+// Copyright IBM Corp. 2020. All Rights Reserved.
+// Node module: @loopback/example-passport-login
+// This file is licensed under the MIT License.
+// License text available at https://opensource.org/licenses/MIT
 
+import {RestApplication} from '@loopback/rest';
+import {ApplicationConfig, ExpressServer} from './server';
+
+export * from './server';
 export * from './application';
 
-export async function main(options: ApplicationConfig = {}) {
-  const app = new ArchitectureMapperBffApplication(options);
-  await app.boot();
-  await app.start();
-
-  const url = app.restServer.url;
-
-  // Add in Figlet
-
-  console.log(`Server is running at ${url}`);
-  console.log(`Try ${url}/health`);
-
-  return app;
-}
-
-if (require.main === module) {
-  // Run the application
+/**
+ * Prepare server config
+ */
+export async function serverConfig(): Promise<ApplicationConfig> {
   const config = {
     rest: {
       port: +(process.env.PORT ?? 3001),
       host: process.env.HOST,
-      // The `gracePeriodForClose` provides a graceful close for http/https
-      // servers with keep-alive clients. The default value is `Infinity`
-      // (don't force-close). If you want to immediately destroy all sockets
-      // upon stop, set its value to `0`.
-      // See https://www.npmjs.com/package/stoppable
+      // protocol: 'http',
       gracePeriodForClose: 5000, // 5 seconds
       openApiSpec: {
-        // useful when used with OpenAPI-to-GraphQL to locate your application
         setServersFromRequest: true,
       },
-    },
+      // Use the LB4 application as a route. It should not be listening.
+      listenOnStart: false,
+    }
   };
-  main(config).catch(err => {
+  return config;
+}
+
+/**
+ * bind resources to application
+ * @param server
+ */
+export async function setupApplication(
+  lbApp: RestApplication
+) {
+  lbApp.bind('datasources.config.db').to({
+    name: 'db',
+    connector: 'memory',
+    localStorage: '',
+    file: undefined,
+  });
+}
+
+/**
+ * Start this application
+ */
+export async function startApplication(): Promise<ExpressServer> {
+  const config = await serverConfig();
+  const server = new ExpressServer(config);
+  await setupApplication(server.lbApp);
+  await server.boot();
+  await server.start();
+  return server;
+}
+
+/**
+ * run main() to start application with oauth config
+ */
+export async function main() {
+  const server: ExpressServer = await startApplication();
+  console.log(`Server is running at ${server.url}`);
+}
+
+if (require.main === module) {
+  main().catch(err => {
     console.error('Cannot start the application.', err);
     process.exit(1);
   });
