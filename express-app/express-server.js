@@ -26,7 +26,6 @@ if (process.env.NODE_ENV !== "dev" && process.env.NODE_ENV !== "test") {
     const editorMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
     app.use((req, res, next) => {
         if (!editorMethods.includes(req.method) || req?.appIdAuthorizationContext?.accessTokenPayload?.scope?.split(" ").includes("edit")) {
-            req.query['email'] = req.user.email;
             next();
         } else {
             res.status(401).json({

@@ -348,7 +348,7 @@ export class ArchitecturesBomController {
     return this.architecturesRepository.boms(id).create(bom);
   }
 
-  @post('/architectures/boms/import', {
+  @post('/architectures/{id}/boms/import', {
     responses: {
       200: {
         content: {
@@ -363,8 +363,10 @@ export class ArchitecturesBomController {
     },
   })
   async uploadBomYaml(
+    @param.path.string('id') arch_id: typeof Architectures.prototype.arch_id,
     @requestBody.file()
     request: Request,
+    @inject(RestBindings.Http.REQUEST) req: Request,
     @inject(RestBindings.Http.RESPONSE) res: Response,
     @param.query.string('overwrite') overwrite: string
   ): Promise<object> {
@@ -372,6 +374,9 @@ export class ArchitecturesBomController {
     if (!this.catalog) {
       this.catalog = await this.loader.loadCatalog(catalogUrl);
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const user:any = req?.user;
+    const email:string = user?.email;
     return new Promise<object>((resolve, reject) => {
       this.fileHandler(request, res,(err: unknown) => {
         const success:Architectures[] = [];
@@ -407,23 +412,24 @@ export class ArchitecturesBomController {
               let arch: Architectures;
               let archExists = false;
               try {
-                arch = await this.architecturesRepository.findById(doc.metadata.name);
+                if (email) arch = (await this.userRepository.architectures(email).find({where: {arch_id: arch_id}}))[0];
+                else arch = await this.architecturesRepository.findById(arch_id);
+                if (!arch) throw new Error();
                 archExists = true;
               } catch (getArchError) {
                 // Arch does not exist, create new
-                arch = await this.architecturesRepository.create(new Architectures({
-                  arch_id: doc.metadata.name,
-                  name: doc.metadata.name,
+                const newArch:Architectures = new Architectures({
+                  arch_id: arch_id,
+                  name: arch_id,
                   short_desc: `${doc.metadata.name} Architecture.`,
                   long_desc: `${doc.metadata.name} FS Architecture.`,
-                  // diagram_folder: "placeholder",
-                  // diagram_link_drawio: "none",
-                  // diagram_link_png: "placeholder.png",
                   public: true
-                }));
+                });
+                if (email) arch = await this.userRepository.architectures(email).create(newArch);
+                else arch = await this.architecturesRepository.create(newArch);
               }
               // Do not delete the architecture document accept it and love it and just update the variable
-              if (archExists && !overwrite) throw { message: `Architecture ${doc.metadata.name} already exists. Set 'overwrite' parameter to overwrite.` };
+              if (archExists && !overwrite) throw { message: `Architecture ${arch_id} already exists. Set 'overwrite' parameter to overwrite.` };
               // Delete existing BOMs
               await this.architecturesRepository.boms(arch.arch_id).delete();
               // Set architecture automation variables

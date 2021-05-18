@@ -63,19 +63,16 @@ For the test database you want to do the same thing with the `URI_TEST` environm
 You can then run `./mload-cloud { $URI | $URI_TEST }` to configure the MongoDB collection with the initial data to 
 feed the API.
 
-## Install dependencies
+## Local development
 
-By default, dependencies were installed when this application was generated.
-Whenever dependencies in `package.json` are changed, run the following command:
-
-Setup the following environment variables before you can run the application
+Setup the following environment variables before you can run the application.
 
 To run this locally you need to take the mongo binding value that is registered as a 
 secret in the OpenShift environment or from the Service Credentials section of a 
 managed MongoDB instance. Take the binding value and configure it as a environment value.
 
 ```base
-export DATABASE="{binding....}"
+export DATABASE_DEV="{binding....}"
 ```
 
 The BFF integrates with Cloud Object Storage to read Diagrams and other supporting documentations. Export
@@ -89,25 +86,8 @@ Once this value is set it is now possible to run the application.
 
 ```sh
 yarn install
-yarn start
+yarn start:dev
 ```
-
-For playing around using the test database:
-
-```sh
-export DATABASE_TEST="{connection....}"
-NODE_ENV=test yarn start
-```
-
-## Run the application
-
-```sh
-yarn start
-```
-
-You can also run `node .` to skip the build step.
-
-Open http://127.0.0.1:3000 in your browser.
 
 ## Rebuild the project
 
@@ -135,13 +115,6 @@ To automatically fix such issues:
 yarn run lint:fix
 ```
 
-## Other useful commands
-
-- `yarn run migrate`: Migrate database schemas for models
-- `yarn run openapi-spec`: Generate OpenAPI spec into a file
-- `yarn run docker:build`: Build a Docker image for this application
-- `yarn run docker:run`: Run this application inside a Docker container
-
 ## Tests
 
 ```sh
@@ -150,12 +123,15 @@ yarn test
 ```
 
 ### redis (install on mac)
-1) brew install redis
-2) brew services start redis
-3) redis-cli
-4) SET "Key" "value"
-5) GET Key
-6) brew services stop redis
+
+```sh
+brew install redis
+brew services start redis
+redis-cli
+SET "Key" "value"
+GET Key
+brew services stop redis
+```
 
 ## What's next
 

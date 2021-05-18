@@ -35,11 +35,10 @@ export class ArchitecturesRepository extends DefaultCrudRepository<
   >;
 
   constructor(
-    @inject('datasources.mongodb') dataSource: MongodbDataSource, @repository.getter('BomRepository') protected bomRepositoryGetter: Getter<BomRepository>,
-    @repository.getter('UserRepository')
-    protected userRepositoryGetter: Getter<UserRepository>,
-    @repository.getter('UserArchitecturesRepository')
-    protected userArchitecturesRepositoryGetter: Getter<UserArchitecturesRepository>
+    @inject('datasources.mongodb') dataSource: MongodbDataSource,
+    @repository.getter('BomRepository') protected bomRepositoryGetter: Getter<BomRepository>,
+    @repository.getter('UserRepository') protected userRepositoryGetter: Getter<UserRepository>,
+    @repository.getter('UserArchitecturesRepository') protected userArchitecturesRepositoryGetter: Getter<UserArchitecturesRepository>
   ) {
     super(Architectures, dataSource);
     this.boms = this.createHasManyRepositoryFactoryFor('boms', bomRepositoryGetter,);

@@ -260,19 +260,11 @@ export class ArchitecturesController {
     description: 'Diagram import success',
   })
   async postDiagram(
-    @requestBody.file()
-    request: Request,
     @param.path.string('id') arch_id: string,
-    @param.query.string('email') email: string,
+    @requestBody.file() request: Request,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<void> {
     const arch = await this.architecturesRepository.findById(arch_id, {include: ['owners']});
-    if (email && !arch.owners.find(user => user.email === email)) {
-      res.status(401).send({error: {
-        message: `User ${email} must be owner of architecture ${arch_id}`
-      }});
-      return;
-    }
     return new Promise((resolve, reject) => {
       this.fileHandler(request, res, (err: unknown) => {
         if (err) reject({error: err});
@@ -323,7 +315,7 @@ export class ArchitecturesController {
       },
     })
     architectures: Architectures,
-    @param.query.string('email') email: string,
+    @inject(RestBindings.Http.REQUEST) req: Request,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Architectures> {
     return new Promise((resolve, reject) => {
@@ -337,14 +329,16 @@ export class ArchitecturesController {
           }}));
         }
       }
+      const user:any = req?.user;
+      const email:string = user?.email;
       if (email) this.userRepository.architectures(email).create(architectures)
         .then((arch) => {
           resolve(arch);
         })
-        .catch(() => {
-          reject(this.userRepository.create({email: email}));
+        .catch((err) => {
+          reject({error: err});
         });
-      return resolve(this.architecturesRepository.create(architectures));
+      else return resolve(this.architecturesRepository.create(architectures));
     });
   }
 
@@ -372,18 +366,16 @@ export class ArchitecturesController {
     },
   })
   async find(
-    @param.query.string('email') email: string,
+    @inject(RestBindings.Http.REQUEST) req: Request,
     @param.filter(Architectures) filter?: Filter<Architectures>,
   ): Promise<Architectures[]> {
     const archFilter = filter ?? {};
     archFilter.where = {public: true};
     let userArch:Architectures[] = [];
+    const user:any = req?.user;
+    const email:string = user?.email;
     if (email) {
-      try {
-        userArch = await this.userRepository.architectures(email).find();
-      } catch (error) {
-        await this.userRepository.create({email: email});
-      }
+      userArch = await this.userRepository.architectures(email).find();
     }
     return Array.from(new Set((await this.architecturesRepository.find(filter)).concat(userArch)));
   }
@@ -402,17 +394,10 @@ export class ArchitecturesController {
       },
     })
     architectures: Architectures,
-    @param.query.string('email') email: string,
     @inject(RestBindings.Http.RESPONSE) res: Response,
     @param.where(Architectures) where?: Where<Architectures>,
   ): Promise<Count> {
     return new Promise((resolve, reject) => {
-      if (email) {
-        res.status(401).send({error: {
-          message: `User ${email} cannot patch all architectures`
-        }});
-        return;
-      }
       if (architectures.automation_variables) {
         try {
           yaml.load(architectures.automation_variables);
@@ -462,16 +447,9 @@ export class ArchitecturesController {
       },
     })
     architectures: Architectures,
-    @param.query.string('email') email: string,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Architectures> {
-    const arch = await this.architecturesRepository.findById(id, {include: ['owners']});
     return new Promise((resolve, reject) => {
-      if (email && !arch.owners.find(user => user.email === email)) {
-        return reject(res.status(401).send({error: {
-          message: `User ${email} must be owner of architecture ${id}`
-        }}));
-      }
       if (architectures.automation_variables) {
         try {
           yaml.load(architectures.automation_variables);
@@ -498,16 +476,7 @@ export class ArchitecturesController {
   })
   async deleteById(
       @param.path.string('id') id: string,
-      @param.query.string('email') email: string,
-      @inject(RestBindings.Http.RESPONSE) res: Response
     ): Promise<void> {
-    const arch = await this.architecturesRepository.findById(id, {include: ['owners']});
-    if (email && !arch.owners.find(user => user.email === email)) {
-      res.status(401).send({error: {
-        message: `User ${email} must be owner of architecture ${id}`
-      }});
-      return;
-    }
     await this.architecturesRepository.boms(id).delete();
     await this.architecturesRepository.deleteById(id);
   }
