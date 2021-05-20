@@ -95,31 +95,22 @@ export class ArchitectureOwnershipInterceptor implements Provider<Interceptor> {
           const bom = await this.bomRepository.findById(ctx.args[0]);
           archid = bom.arch_id;
         }
-        console.log(archid);
         if (archid) {
-          const arch = await this.architecturesRepository.findById(archid, {include: ['owners']});
-          if (!((request.method === "GET" && arch.public) || arch?.owners?.find(owner => owner.email === email))) {
-            return response.status(401).send({error: {
-              message: `User ${email} must be owner of architecture ${archid} to perform this request.`
-            }});
+          try {
+            const arch = await this.architecturesRepository.findById(archid, {include: ['owners']});
+            if (!((request.method === "GET" && arch.public) || arch?.owners?.find(owner => owner.email === email))) {
+              return response.status(401).send({error: {
+                message: `User ${email} must be owner of architecture ${archid} to perform this request.`
+              }});
+            }
+          } catch (error) {
+            console.log(error);
           }
         }
       }
 
-      console.log('Request: %s %s', request.method, request.originalUrl);
-      try {
-        // Proceed with next middleware
-        const result = await next();
-        return result;
-      } catch (err) {
-        // Catch errors from downstream middleware
-        console.error(
-          'Error received for %s %s',
-          request.method,
-          request.originalUrl,
-        );
-        throw err;
-      }
+      const result = await next();
+      return result;
     };
   }
 }

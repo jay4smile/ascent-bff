@@ -1,7 +1,6 @@
 import {
   Count,
   CountSchema,
-  Filter,
   FilterExcludingWhere,
   repository,
   Where,
@@ -365,19 +364,8 @@ export class ArchitecturesController {
       },
     },
   })
-  async find(
-    @inject(RestBindings.Http.REQUEST) req: Request,
-    @param.filter(Architectures) filter?: Filter<Architectures>,
-  ): Promise<Architectures[]> {
-    const archFilter = filter ?? {};
-    archFilter.where = {public: true};
-    let userArch:Architectures[] = [];
-    const user:any = req?.user;
-    const email:string = user?.email;
-    if (email) {
-      userArch = await this.userRepository.architectures(email).find();
-    }
-    return Array.from(new Set((await this.architecturesRepository.find(filter)).concat(userArch)));
+  async find(): Promise<Architectures[]> {
+    return this.architecturesRepository.find({include: ["owners"], where: {public: true}});
   }
 
   @patch('/architectures')

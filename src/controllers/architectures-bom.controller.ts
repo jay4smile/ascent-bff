@@ -423,7 +423,7 @@ export class ArchitecturesBomController {
                   name: arch_id,
                   short_desc: `${doc.metadata.name} Architecture.`,
                   long_desc: `${doc.metadata.name} FS Architecture.`,
-                  public: true
+                  public: false
                 });
                 if (email) arch = await this.userRepository.architectures(email).create(newArch);
                 else arch = await this.architecturesRepository.create(newArch);

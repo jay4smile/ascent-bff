@@ -34,6 +34,7 @@
     "openapi-spec": "node ./dist/openapi-spec",
     "rebuild": "yarn run clean && yarn run build",
     "prestart": "yarn run rebuild",
+    "prestart:dev": "yarn run rebuild",
     "start": "NODE_ENV=staging node .",
     "start:dev": "NODE_ENV=dev node .",
     "clean": "lb-clean dist *.tsbuildinfo .eslintcache"
