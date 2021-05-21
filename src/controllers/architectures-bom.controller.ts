@@ -29,6 +29,7 @@ import {
 import {
   ArchitecturesRepository,
   BomRepository,
+  ControlDetailsRepository,
   ControlMappingRepository,
   ServicesRepository,
   UserRepository } from '../repositories';
@@ -85,6 +86,7 @@ export class ArchitecturesBomController {
     @repository(ControlMappingRepository) protected cmRepository: ControlMappingRepository,
     @repository(ServicesRepository) protected servicesRepository: ServicesRepository,
     @repository(UserRepository) protected userRepository: UserRepository,
+    @repository(ControlDetailsRepository) protected controlDetailsRepository: ControlDetailsRepository,
     @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
   ) {
     if (!this.bomController) this.bomController = new BomController(this.bomRepository, this.servicesRepository, this.architecturesRepository, this.cmRepository, this.userRepository, fileHandler);
@@ -259,32 +261,33 @@ export class ArchitecturesBomController {
     controlsCell.text(`Controls`, { fontSize: 24 });
     for await (const control of controls) {
       if (control) {
+        const controlDetails = await this.controlDetailsRepository.findById(control.id);
         const controlCell = controlsCell.cell({ paddingBottom: 0.5*cm });
         controlCell.destination(control.id);
         controlCell.text(`${(control.name && (control.id + " " + control.name)) || control.id}`, { fontSize: 20 });
         controlCell.text(`Description`, { fontSize: 16 });
-        controlCell.text(`${control.description
+        controlCell.text(`${controlDetails.description
           .replace(/\n\*\*([a-zA-Z1-9\(\)]+)\*\*/gi, '\n$1')
           .replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n')
           .replace(/\*\*Note\*\*/gi, 'Note')
           .replace(/\*\*Note:\*\*/gi, 'Note:')}`);
         // if (control.parent_control) controlCell.text(`- Parent control: ${control.parent_control}`);
-        if (control.fs_guidance) {
+        if (controlDetails.fs_guidance) {
           controlCell.text(`Additionnal FS Guidance`, { fontSize: 14 });
-          controlCell.text(control.fs_guidance
+          controlCell.text(controlDetails.fs_guidance
             .replace(/\n\*\*([a-zA-Z1-9\(\)]+)\*\*/gi, '\n$1')
             .replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n')
             .replace(/\*\*Note\*\*/gi, 'Note')
             .replace(/\*\*Note:\*\*/gi, 'Note:'));
         }
         controlCell.text(`Parameters`, { fontSize: 16 });
-        controlCell.text(`${control.parameters.replace(/\*/gi, '')}`);
+        controlCell.text(`${controlDetails.parameters?.replace(/\*/gi, '')}`);
         controlCell.text(`Solution and Implementation`, { fontSize: 16 });
-        const implemParts = control.implementation
-          .replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n')
+        const implemParts = controlDetails.implementation
+          ?.replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n')
           .replace(/\n#### Part ([a-z][1-9]?\))/gi, '\nPart $1')
           .split(/\n(Part [a-z][1-9]?\))/gi);
-        for (const part of implemParts) {
+        if (implemParts) for (const part of implemParts) {
           if (part.startsWith('Part')) controlCell.text(part, { fontSize: 14 });
           else if (part) {
             const guidances = part.replace(/\n##### Provider ((?:Evidence|Implementation){1} Guidance)\s?\n?/gi, '\n$1').split(/\n((?:Evidence Guidance)|(?:Implementation Guidance))/gi);

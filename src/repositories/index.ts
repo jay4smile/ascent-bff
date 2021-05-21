@@ -9,3 +9,4 @@ export * from './profile.repository';
 export * from './mapping-goals.repository';
 export * from './user.repository';
 export * from './user-architectures.repository';
+export * from './control-details.repository';

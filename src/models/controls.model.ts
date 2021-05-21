@@ -1,5 +1,5 @@
 import {hasOne, hasMany, Entity, model, property} from '@loopback/repository';
-import {Nist, Services, ControlMapping, Architectures} from '.';
+import {Nist, Services, ControlMapping, Architectures, ControlDetails} from '.';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -21,28 +21,6 @@ export class Controls extends Entity {
   name: string;
 
   @property({
-    type: 'string',
-    required: true
-  })
-  description: string;
-
-  @property({
-    type: 'string'
-  })
-  fs_guidance: string;
-
-  @property({
-    type: 'string',
-    required: true
-  })
-  implementation: string;
-
-  @property({
-    type: 'string'
-  })
-  parameters: string;
-
-  @property({
     type: 'boolean'
   })
   base_control: boolean;
@@ -51,6 +29,9 @@ export class Controls extends Entity {
     type: 'string'
   })
   parent_control: string;
+
+  @hasOne(() => ControlDetails, {keyTo: 'id'})
+  controlDetails: ControlDetails;
 
   @hasOne(() => Nist, {keyTo: 'number'})
   nist: Nist;

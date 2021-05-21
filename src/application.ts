@@ -10,7 +10,7 @@ import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
 import {MySequence} from './sequence';
 
-import {ArchitectureOwnershipInterceptor} from './interceptors';
+import {ArchitectureOwnershipInterceptor, ControlDetailsInterceptor} from './interceptors';
 
 import multer from 'multer';
 import { FILE_UPLOAD_SERVICE } from './keys';
@@ -40,6 +40,7 @@ export class ArchitectureMapperBffApplication extends BootMixin(
 
     this.projectRoot = __dirname;
     this.add(createBindingFromClass(ArchitectureOwnershipInterceptor));
+    this.add(createBindingFromClass(ControlDetailsInterceptor));
     // Customize @loopback/boot Booter Conventions here
     this.bootOptions = {
       controllers: {

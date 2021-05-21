@@ -67,12 +67,11 @@ export class ArchitectureOwnershipInterceptor implements Provider<Interceptor> {
       ctx: InvocationContext,
       next: () => ValueOrPromise<InvocationResult>,
     ) => {
-      const request = await ctx.get(RestBindings.Http.REQUEST);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const request:any = await ctx.get(RestBindings.Http.REQUEST);
       const response = await ctx.get(RestBindings.Http.RESPONSE);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const user: any = request?.user;
-      const email:string = user?.email;
+      const email:string = request?.user?.email;
 
       if (email) {
         if (unauthorizedTargets.includes(ctx.targetName)) {
