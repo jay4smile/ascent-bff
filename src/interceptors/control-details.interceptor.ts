@@ -14,6 +14,8 @@ const protectedControlTargets = [
   'ControlsController.prototype.findById',
 ]
 
+ /* eslint-disable no-useless-catch */
+
 /**
  * This class will be bound to the application as an `Interceptor` during
  * `boot`
@@ -46,6 +48,7 @@ export class ControlDetailsInterceptor implements Provider<Interceptor> {
     try {
       
       if (protectedControlTargets.includes(invocationCtx.targetName)) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const request:any = await invocationCtx.get(RestBindings.Http.REQUEST);
         const response = await invocationCtx.get(RestBindings.Http.RESPONSE);
         const email:string = request?.user?.email;
