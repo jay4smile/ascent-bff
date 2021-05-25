@@ -74,16 +74,27 @@ To run this locally you need to take the mongo binding value that is registered 
 secret in the OpenShift environment or from the Service Credentials section of a 
 managed MongoDB instance. Take the binding value and configure it as a environment value.
 
-```base
-export DATABASE="{binding....}"
-```
+A script has been provided to simplify this process. The steps to run the script are as follows:
 
-The BFF integrates with Cloud Object Storage to read Diagrams and other supporting documentations. Export
-a variable for storage
+1. Log into the IBM Cloud account using the ibmcloud cli
+2. Find the names of the MongoDB and Object Storage instances:
+   
+    ```shell
+    ibmcloud resource service-instances
+    ```
+   
+3. Source the setup-environment script to create the environment variables, passing the names of the services:
+   
+    ```shell
+    source ./scripts/setup-environment.sh {MONGODB_NAME} {COS_NAME}
+    ```
+   
+4. Verify the environment variables have been created by running the following:
 
-```base
-export STORAGE="{binding....}"
-```
+    ```shell
+    echo $DATABASE
+    echo $STORAGE
+    ```
 
 Once this value is set it is now possible to run the application.
 
