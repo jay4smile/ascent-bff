@@ -9,7 +9,7 @@ const app = (module.exports = express());
 if (process.env.NODE_ENV !== "dev" && process.env.NODE_ENV !== "test") {
     app.use(passport.initialize());
     passport.use(new APIStrategy({
-        oauthServerUrl: "https://eu-de.appid.cloud.ibm.com/oauth/v4/a8bf17bc-10f5-476b-a4c8-b9eb1e5d6072"
+        oauthServerUrl: process.env.APPID_OAUTH_SERVER_URL
     }));
     passport.serializeUser(function (user, cb) {
         cb(null, user);
