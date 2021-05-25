@@ -98,7 +98,7 @@ export class ArchitectureOwnershipInterceptor implements Provider<Interceptor> {
         if (archid) {
           try {
             const arch = await this.architecturesRepository.findById(archid, {include: ['owners']});
-            if (!(((request.method === "GET" || ctx.targetName === "ArchitecturesController.prototype.duplicate") && arch.public) || arch?.owners?.find(owner => owner.email === email))) {
+            if (!(request?.appIdAuthorizationContext?.accessTokenPayload?.scope?.split(" ")?.includes("super_edit") || ((request.method === "GET" || ctx.targetName === "ArchitecturesController.prototype.duplicate") && arch.public) || arch?.owners?.find(owner => owner.email === email))) {
               return response.status(401).send({error: {
                 message: `User ${email} must be owner of architecture ${archid} to perform this request.`
               }});
