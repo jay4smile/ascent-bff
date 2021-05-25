@@ -46,12 +46,12 @@ export class ControlDetailsInterceptor implements Provider<Interceptor> {
     next: () => ValueOrPromise<InvocationResult>,
   ) {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const request:any = await invocationCtx.get(RestBindings.Http.REQUEST);
+      const response = await invocationCtx.get(RestBindings.Http.RESPONSE);
+      const email:string = request?.user?.email;
       
-      if (protectedControlTargets.includes(invocationCtx.targetName)) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const request:any = await invocationCtx.get(RestBindings.Http.REQUEST);
-        const response = await invocationCtx.get(RestBindings.Http.RESPONSE);
-        const email:string = request?.user?.email;
+      if (email && protectedControlTargets.includes(invocationCtx.targetName)) {
         if (request?.query?.filter
            && !request?.appIdAuthorizationContext?.accessTokenPayload?.scope?.split(" ")?.includes("view_controls")
            && JSON.parse(request.query.filter)?.include?.includes("controlDetails")) {
