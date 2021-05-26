@@ -314,7 +314,7 @@ export class ArchitecturesController {
       },
     })
     architectures: Architectures,
-    @inject(RestBindings.Http.REQUEST) req: Request,
+    @inject(RestBindings.Http.REQUEST) req: any,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Architectures> {
     return new Promise((resolve, reject) => {
@@ -490,7 +490,7 @@ export class ArchitecturesController {
       },
     })
     archDetails: Architectures,
-    @inject(RestBindings.Http.REQUEST) req: Request,
+    @inject(RestBindings.Http.REQUEST) req: any,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Architectures> {
     // Duplicate architecture entity

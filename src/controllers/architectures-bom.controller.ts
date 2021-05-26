@@ -64,6 +64,7 @@ const loadAndValidateBomYaml = (yamlString:string) => {
 }
 
 /* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export class ArchitecturesBomController {
 
@@ -369,7 +370,7 @@ export class ArchitecturesBomController {
     @param.path.string('id') arch_id: typeof Architectures.prototype.arch_id,
     @requestBody.file()
     request: Request,
-    @inject(RestBindings.Http.REQUEST) req: Request,
+    @inject(RestBindings.Http.REQUEST) req: any,
     @inject(RestBindings.Http.RESPONSE) res: Response,
     @param.query.string('overwrite') overwrite: string
   ): Promise<object> {
@@ -377,7 +378,6 @@ export class ArchitecturesBomController {
     if (!this.catalog) {
       this.catalog = await this.loader.loadCatalog(catalogUrl);
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user:any = req?.user;
     const email:string = user?.email;
     return new Promise<object>((resolve, reject) => {
