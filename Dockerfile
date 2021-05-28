@@ -1,10 +1,7 @@
 # Check out https://hub.docker.com/_/node to select a new base image
 FROM registry.access.redhat.com/ubi8/nodejs-14:1-28.1618434924
 
-# Set to a non-root built-in user `node`
 USER default
-
-# Create app directory (with user `node`)
 
 WORKDIR /opt/app-root/src
 
@@ -15,6 +12,8 @@ COPY --chown=default package*.json ./
 
 RUN npm install -g yarn
 RUN npm install
+
+RUN chown -R default:default /opt/app-root/src
 
 # Bundle app source code
 COPY --chown=default . .
