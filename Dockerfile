@@ -10,10 +10,7 @@ WORKDIR /opt/app-root/src
 # where available (npm@5+)
 COPY --chown=default package*.json ./
 
-RUN npm install -g yarn
 RUN npm install
-
-RUN chown -R default:default /opt/app-root/src
 
 # Bundle app source code
 COPY --chown=default . .
