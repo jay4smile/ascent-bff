@@ -42,8 +42,9 @@ import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler} from '../types';
 import { ArchitecturesController, DiagramType } from './architectures.controller'
 import fs from "fs";
+import catalogConfig from '../config/catalog.config'
 
-const catalogUrl = "https://raw.githubusercontent.com/cloud-native-toolkit/garage-terraform-modules/gh-pages/index.yaml"
+const catalogUrl = catalogConfig.url;
 
 export class AutomationCatalogController  {
 
