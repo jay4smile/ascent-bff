@@ -2,22 +2,21 @@
 FROM registry.access.redhat.com/ubi8/nodejs-14:1-28.1618434924
 
 # Set to a non-root built-in user `node`
-USER node
+USER default
 
 # Create app directory (with user `node`)
-RUN mkdir -p /home/node/app
 
-WORKDIR /home/node/app
+WORKDIR /opt/app-root/src
 
 # Install app dependencies
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
 # where available (npm@5+)
-COPY --chown=node package*.json ./
+COPY --chown=default package*.json ./
 
 RUN npm install
 
 # Bundle app source code
-COPY --chown=node . .
+COPY --chown=default . .
 
 # Copy the Images into the Public folder
 COPY ./data/source/images ./public/images
