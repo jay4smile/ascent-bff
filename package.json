@@ -41,7 +41,7 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.ibm.com/gsi-labs/architecture-builder-bff"
   },
   "author": "Github pipeline <pipeline@github.com>",
   "license": "",
@@ -72,6 +72,7 @@
     "figlet": "^1.5.0",
     "handy-redis": "^2.2.1",
     "ibm-cos-sdk": "^1.10.0",
+    "ibmcloud-appid": "^6.1.1",
     "install": "^0.13.0",
     "jimp": "^0.16.1",
     "js-yaml": "^3.14.1",
@@ -81,6 +82,7 @@
     "nconf": "^0.11.2",
     "node-fetch": "^2.6.1",
     "npm": "^7.8.0",
+    "passport": "^0.4.1",
     "pdfjs": "^2.4.3",
     "redis": "^3.1.0",
     "tedis": "^0.1.12",
