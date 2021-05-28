@@ -27,4 +27,4 @@ RUN npm run build
 ENV HOST=0.0.0.0 PORT=3001
 
 EXPOSE ${PORT}
-CMD ["NODE_ENV=staging", "node", "."]
+CMD ["NODE_ENV=staging node", "."]
