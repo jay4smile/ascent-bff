@@ -37,7 +37,8 @@
     "prestart:dev": "npm run rebuild",
     "start": "NODE_ENV=staging node .",
     "start:dev": "NODE_ENV=dev node .",
-    "clean": "lb-clean dist *.tsbuildinfo .eslintcache"
+    "clean": "lb-clean dist *.tsbuildinfo .eslintcache",
+    "serve": "NODE_ENV=staging node ."
   },
   "repository": {
     "type": "git",
