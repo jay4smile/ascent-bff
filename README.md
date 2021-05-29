@@ -70,20 +70,23 @@ Setup the following environment variables before you can run the application.
 To run this locally you need to take the mongo binding value that is registered as a 
 secret in the OpenShift environment or from the Service Credentials section of a 
 managed MongoDB instance. Take the binding value and configure it as a environment value.
-
 ```base
 export DATABASE_DEV="{binding....}"
 ```
 
 The BFF integrates with Cloud Object Storage to read Diagrams and other supporting documentations. Export
 a variable for storage
-
 ```base
 export STORAGE="{binding....}"
 ```
+```
 
-Once this value is set it is now possible to run the application.
+The BFF integrates with App ID protect API resources. Export a variable for AppID:
+```base
+export APPID_OAUTH_SERVER_URL="https://<REGION>.appid.cloud.ibm.com/oauth/v4/<ID>"
+```
 
+Once these values are set it is now possible to run the application:
 ```sh
 yarn install
 yarn start:dev
@@ -137,6 +140,50 @@ yarn start:dev
     ❯ oc create configmap mapper-ui --from-literal=route=https://mapperui.openfn.co --from-literal=api-host=todo -n mapper-staging
     ```
     - **Note**: We'll update the `api-host` value once we've deployed the BFF APIs.
+6. Create the pipeline for the BFF
+   1. Update the `binding-builder-mongodb` secret to add a new `binding-test` key with the same content as the `binding` key, in which you replace every `ibmclouddb` to your test database (mine is `ibmcloudtestdb`).
+   2. In OpenShift console, update the `test` step of the `ibm-nodejs-test-v2-6-13` tekton task in `tools` project, to add the variables BFF needs to run testing:
+      ```yaml
+      ... omitted ...
+          - env:
+              - name: DATABASE_TEST
+                valueFrom:
+                  secretKeyRef:
+                    key: binding-test
+                    name: binding-builder-mongodb
+              - name: STORAGE
+                valueFrom:
+                  secretKeyRef:
+                    key: binding
+                    name: binding-dev-mapper-storage
+            image: $(params.js-image)
+            name: test
+            resources: {}
+            script: |
+              CI=true npm test
+            workingDir: $(params.source-dir)
+      ... omitted ...
+      ```
+   3. Create the `docker-io` secret to pull `redis` image without encountering docker limit
+    ```sh
+    ❯ docker login
+    ❯ kubectl create secret generic docker-io --from-file=.dockerconfigjson=$HOME/.docker/config.json --type=kubernetes.io/dockerconfigjson -n mapper-dev
+    ```
+   4. Create the BFF pipeline:
+      ```sh
+      ❯ oc pipeline --tekton -u ${GIT_USERNAME} -P ${GIT_ACCESS_TOKEN} -g -n mapper-dev
+      ❯ oc secret link pipeline docker-io --for=pull
+      ```
+   5. Once the pipeline is successful, create the UI pipeline:
+      ```sh
+      ❯ oc create configmap mapper-ui \
+        --from-literal=route=https://mapperui-dev.openfn.co \
+        --from-literal=api-host=https://$(oc get routes/architecture-builder-bff -n mapper-dev -o jsonpath='{.spec.host}') \
+        -n mapper-dev
+      ❯ cd path/to/architecture-builder-ui
+      ❯ oc pipeline --tekton -n mapper-dev
+      ```
+   6. Set up ArgoCD:
 
 ## Rebuild the project
 
