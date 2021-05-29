@@ -39,8 +39,7 @@ spec:
       {{- end }}
       containers:
         - name: redis
-          image: bitnami/redis
-
+          image: quay.io/bitnami/redis
           ports:
             - containerPort: 6379
               name: redis
@@ -58,11 +57,11 @@ spec:
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /
+              path: /health
               port: http
           readinessProbe:
             httpGet:
-              path: /
+              path: /health
               port: http
           env:
             - name: DATABASE
@@ -75,6 +74,11 @@ spec:
                 secretKeyRef:
                   name: binding-dev-mapper-storage
                   key: binding
+            - name: APPID_OAUTH_SERVER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: binding-dev-mapper
+                  key: oauthServerUrl
             - name: INGRESS_HOST
               value: ""
             - name: PROTOCOLS

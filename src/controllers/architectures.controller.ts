@@ -1,7 +1,6 @@
 import {
   Count,
   CountSchema,
-  Filter,
   FilterExcludingWhere,
   repository,
   Where,
@@ -22,7 +21,10 @@ import {
   Response
 } from '@loopback/rest';
 import {Architectures} from '../models';
-import {ArchitecturesRepository} from '../repositories';
+import {
+  ArchitecturesRepository,
+  UserRepository
+} from '../repositories';
 import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler, File} from '../types';
 
@@ -55,10 +57,12 @@ export class ArchitecturesController {
   constructor(
     @repository(ArchitecturesRepository)
     public architecturesRepository : ArchitecturesRepository,
-    @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
+    @repository(UserRepository)
+    public userRepository : UserRepository,
+    @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler,
   ) {
 
-    console.log("Constructor for Architecture API")
+    // console.log("Constructor for Architecture API")
 
     // Load Information from Environment
     const services = Services.getInstance();
@@ -255,12 +259,11 @@ export class ArchitecturesController {
     description: 'Diagram import success',
   })
   async postDiagram(
-    @requestBody.file()
-    request: Request,
     @param.path.string('id') arch_id: string,
+    @requestBody.file() request: Request,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<void> {
-    const arch = await this.architecturesRepository.findById(arch_id);
+    const arch = await this.architecturesRepository.findById(arch_id, {include: ['owners']});
     return new Promise((resolve, reject) => {
       this.fileHandler(request, res, (err: unknown) => {
         if (err) reject({error: err});
@@ -311,6 +314,7 @@ export class ArchitecturesController {
       },
     })
     architectures: Architectures,
+    @inject(RestBindings.Http.REQUEST) req: any,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Architectures> {
     return new Promise((resolve, reject) => {
@@ -324,7 +328,16 @@ export class ArchitecturesController {
           }}));
         }
       }
-      return resolve(this.architecturesRepository.create(architectures));
+      const user:any = req?.user;
+      const email:string = user?.email;
+      if (email) this.userRepository.architectures(email).create(architectures)
+        .then((arch) => {
+          resolve(arch);
+        })
+        .catch((err) => {
+          reject({error: err});
+        });
+      else return resolve(this.architecturesRepository.create(architectures));
     });
   }
 
@@ -351,10 +364,8 @@ export class ArchitecturesController {
       },
     },
   })
-  async find(
-    @param.filter(Architectures) filter?: Filter<Architectures>,
-  ): Promise<Architectures[]> {
-    return this.architecturesRepository.find(filter);
+  async find(): Promise<Architectures[]> {
+    return this.architecturesRepository.find({include: ["owners"], where: {public: true}});
   }
 
   @patch('/architectures')
@@ -451,7 +462,87 @@ export class ArchitecturesController {
   @response(204, {
     description: 'Architectures DELETE success',
   })
-  async deleteById(@param.path.string('id') id: string): Promise<void> {
+  async deleteById(
+      @param.path.string('id') id: string,
+    ): Promise<void> {
+    await this.architecturesRepository.boms(id).delete();
+    for (const owner of await this.architecturesRepository.owners(id).find()) {
+      await this.architecturesRepository.owners(id).unlink(owner.email);
+    }
     await this.architecturesRepository.deleteById(id);
+  }
+  
+  @post('/architectures/{id}/duplicate')
+  @response(200, {
+    description: 'Architectures model instance',
+    content: {'application/json': {schema: getModelSchemaRef(Architectures)}},
+  })
+  async duplicate(
+    @param.path.string('id') arch_id: string,
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(Architectures, {
+            partial: true,
+            exclude: ['short_desc','long_desc','public','production_ready','automation_variables']
+          }),
+        },
+      },
+    })
+    archDetails: Architectures,
+    @inject(RestBindings.Http.REQUEST) req: any,
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<Architectures> {
+    // Duplicate architecture entity
+    const existingArch = await this.architecturesRepository.findById(arch_id);
+    let newArch = new Architectures({
+      arch_id: archDetails.arch_id,
+      name: archDetails.name,
+      short_desc: existingArch.short_desc,
+      long_desc: existingArch.long_desc,
+      public: false,
+      production_ready: existingArch.production_ready,
+      automation_variables: existingArch.automation_variables
+    })
+    const user:any = req?.user;
+    const email:string = user?.email;
+    if (email) newArch = await this.userRepository.architectures(email).create(newArch);
+    else newArch = await this.architecturesRepository.create(newArch);
+    // Duplicate architecture BOMs
+    const existingBoms = await this.architecturesRepository.boms(arch_id).find();
+    for (const bom of existingBoms) {
+      bom.arch_id = archDetails.arch_id;
+      delete bom._id;
+      await this.architecturesRepository.boms(archDetails.arch_id).create(bom);
+    }
+    // Duplicate architecture diagrams
+    const diagramPng = await this.cos.getObject({
+      Bucket: this.bucketNames.png,
+      Key: `${arch_id}-diagram.png`
+    }).promise();
+    const diagramPngSmall = await this.cos.getObject({
+      Bucket: this.bucketNames.png,
+      Key: `small-${arch_id}-diagram.png`
+    }).promise();
+    const diagramDrawio = await this.cos.getObject({
+      Bucket: this.bucketNames.drawio,
+      Key: `${arch_id}-diagram.drawio`
+    }).promise();
+    await this.cos.putObject({
+      Bucket: this.bucketNames.png,
+      Key: `${archDetails.arch_id}-diagram.png`,
+      Body: diagramPng.Body
+    }).promise();
+    await this.cos.putObject({
+      Bucket: this.bucketNames.png,
+      Key: `small-${archDetails.arch_id}-diagram.png`,
+      Body: diagramPngSmall.Body
+    }).promise();
+    await this.cos.putObject({
+      Bucket: this.bucketNames.drawio,
+      Key: `${archDetails.arch_id}-diagram.drawio`,
+      Body: diagramDrawio.Body
+    }).promise();
+    return newArch;
   }
 }

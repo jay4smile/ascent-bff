@@ -63,12 +63,9 @@ For the test database you want to do the same thing with the `URI_TEST` environm
 You can then run `./mload-cloud { $URI | $URI_TEST }` to configure the MongoDB collection with the initial data to 
 feed the API.
 
-## Install dependencies
+## Local development
 
-By default, dependencies were installed when this application was generated.
-Whenever dependencies in `package.json` are changed, run the following command:
-
-Setup the following environment variables before you can run the application
+Setup the following environment variables before you can run the application.
 
 To run this locally you need to take the mongo binding value that is registered as a 
 secret in the OpenShift environment or from the Service Credentials section of a 
@@ -92,33 +89,113 @@ A script has been provided to simplify this process. The steps to run the script
 4. Verify the environment variables have been created by running the following:
 
     ```shell
-    echo $DATABASE
+    echo $DATABASE_DEV
     echo $STORAGE
     ```
 
-Once this value is set it is now possible to run the application.
+5. The BFF also integrates with App ID protect API resources. Export a variable for AppID:
+```sh
+export APPID_OAUTH_SERVER_URL="https://<REGION>.appid.cloud.ibm.com/oauth/v4/<ID>"
+```
 
+6. Once these values are set it is now possible to run the application:
 ```sh
 yarn install
-yarn start
+yarn start:dev
 ```
 
-For playing around using the test database:
+## Deploy on OpenShift
 
-```sh
-export DATABASE_TEST="{connection....}"
-NODE_ENV=test yarn start
-```
-
-## Run the application
-
-```sh
-yarn start
-```
-
-You can also run `node .` to skip the build step.
-
-Open http://127.0.0.1:3000 in your browser.
+1. Install [Cloud-Native Toolkit](https://cloudnativetoolkit.dev/adopting/setup/installing.html).
+2. Create projects on your cluster
+    ```sh
+    ❯ oc login ...
+    ❯ oc new-project mapper-dev
+    ❯ oc new-project mapper-test
+    ❯ oc new-project mapper-staging
+    ❯ oc project mapper-dev
+    ```
+3. Bind your IBM Cloud services (MongoDB, AppId, and COS) to your namespaces:
+    ```sh
+    ❯ icc <your-cluster> # Log in to cluster using ICC
+    ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service builder-mongodb -n mapper-dev # MongoDB
+    ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service builder-mongodb -n mapper-test # MongoDB
+    ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service builder-mongodb -n mapper-staging # MongoDB
+    ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service dev-mapper -n mapper-dev # AppID
+    ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service dev-mapper -n mapper-test # AppID
+    ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service dev-mapper -n mapper-staging # AppID
+    ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service dev-mapper-storage -n mapper-dev # COS
+    ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service dev-mapper-storage -n mapper-test # COS
+    ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service dev-mapper-storage -n mapper-staging # COS
+    ```
+4. Update the AppID secrets to add a new `binding-application` key for UI to use and retrieve user roles.
+   1. Copy the application credentials of your AppId service on IBM Cloud
+      1. Go to your [resource list](https://cloud.ibm.com/resources).
+      2. Select your AppId service.
+      3. In the **Applications** section, copy your app credentials. **If none**:
+         1. Create one with following scopes: `edit`, `view_controls`, `super_edit`.
+         2. Create Roles
+            1. `editor` with scopes: `edit`
+            2. `admin` with scopes: `edit`, `super_edit`
+            3. `fs-controls-viewer` with scopes: `view_controls`
+         3. Assign Roles
+   2. For the `mapper-dev`, `mapper-test` and `mapper-staging` projects, update the AppId secrets to add the new `binding-application` key with the value you just copied:
+      1. In the **Workloads > Secrets** section, select the `binding-dev-mapper` secret (`dev-mapper` being the name of our AppId service).
+      2. On the top right, click **Edit Secret**.
+      3. Scroll down to the bottom and add the new `binding-application` key.
+      4. Copy the value you copied earlier, then click **Save**.
+      - **NOTE**: it's mandatory to repeat the last steps for the 3 projects: `mapper-dev`, `mapper-test` and `mapper-staging`.
+5. Create a configmap in each project for the ui:
+    ```sh
+    ❯ oc create configmap mapper-ui --from-literal=route=https://mapperui-dev.openfn.co --from-literal=api-host=todo -n mapper-dev
+    ❯ oc create configmap mapper-ui --from-literal=route=https://mapperui-test.openfn.co --from-literal=api-host=todo -n mapper-test
+    ❯ oc create configmap mapper-ui --from-literal=route=https://mapperui.openfn.co --from-literal=api-host=todo -n mapper-staging
+    ```
+    - **Note**: We'll update the `api-host` value once we've deployed the BFF APIs.
+6. Create the pipeline for the BFF
+   1. Update the `binding-builder-mongodb` secret to add a new `binding-test` key with the same content as the `binding` key, in which you replace every `ibmclouddb` to your test database (mine is `ibmcloudtestdb`).
+   2. In OpenShift console, update the `test` step of the `ibm-nodejs-test-v2-6-13` tekton task in `tools` project, to add the variables BFF needs to run testing:
+      ```yaml
+      ... omitted ...
+          - env:
+              - name: DATABASE_TEST
+                valueFrom:
+                  secretKeyRef:
+                    key: binding-test
+                    name: binding-builder-mongodb
+              - name: STORAGE
+                valueFrom:
+                  secretKeyRef:
+                    key: binding
+                    name: binding-dev-mapper-storage
+            image: $(params.js-image)
+            name: test
+            resources: {}
+            script: |
+              CI=true npm test
+            workingDir: $(params.source-dir)
+      ... omitted ...
+      ```
+   3. Create the `docker-io` secret to pull `redis` image without encountering docker limit
+    ```sh
+    ❯ docker login
+    ❯ kubectl create secret generic docker-io --from-file=.dockerconfigjson=$HOME/.docker/config.json --type=kubernetes.io/dockerconfigjson -n mapper-dev
+    ```
+   4. Create the BFF pipeline:
+      ```sh
+      ❯ oc pipeline --tekton -u ${GIT_USERNAME} -P ${GIT_ACCESS_TOKEN} -g -n mapper-dev
+      ❯ oc secret link pipeline docker-io --for=pull
+      ```
+   5. Once the pipeline is successful, create the UI pipeline:
+      ```sh
+      ❯ oc create configmap mapper-ui \
+        --from-literal=route=https://mapperui-dev.openfn.co \
+        --from-literal=api-host=https://$(oc get routes/architecture-builder-bff -n mapper-dev -o jsonpath='{.spec.host}') \
+        -n mapper-dev
+      ❯ cd path/to/architecture-builder-ui
+      ❯ oc pipeline --tekton -n mapper-dev
+      ```
+   6. Set up ArgoCD:
 
 ## Rebuild the project
 
@@ -146,13 +223,6 @@ To automatically fix such issues:
 yarn run lint:fix
 ```
 
-## Other useful commands
-
-- `yarn run migrate`: Migrate database schemas for models
-- `yarn run openapi-spec`: Generate OpenAPI spec into a file
-- `yarn run docker:build`: Build a Docker image for this application
-- `yarn run docker:run`: Run this application inside a Docker container
-
 ## Tests
 
 ```sh
@@ -161,12 +231,15 @@ yarn test
 ```
 
 ### redis (install on mac)
-1) brew install redis
-2) brew services start redis
-3) redis-cli
-4) SET "Key" "value"
-5) GET Key
-6) brew services stop redis
+
+```sh
+brew install redis
+brew services start redis
+redis-cli
+SET "Key" "value"
+GET Key
+brew services stop redis
+```
 
 ## What's next
 

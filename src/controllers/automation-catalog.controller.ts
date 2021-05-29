@@ -31,7 +31,10 @@ import {
 } from '@cloudnativetoolkit/iascable';
 //import {TileBuilder} from '@cloudnativetoolkit/iascable';
 // FS Architectures Data Models
-import {ArchitecturesRepository, ServicesRepository} from "../repositories";
+import {
+  ArchitecturesRepository,
+  ServicesRepository,
+  UserRepository } from "../repositories";
 import {Architectures, Bom, Services} from "../models";
 
 import {inject} from "@loopback/core";
@@ -62,11 +65,13 @@ export class AutomationCatalogController  {
       public architecturesRepository : ArchitecturesRepository,
       @repository(ServicesRepository)
       public serviceRepository: ServicesRepository,
+      @repository(UserRepository)
+      public userRepository: UserRepository,
       @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
   ) {
 
-    console.log("Constructor for Automation Catalog")
-    if (!this.archController) this.archController = new ArchitecturesController(this.architecturesRepository, fileHandler);
+    // console.log("Constructor for Automation Catalog")
+    if (!this.archController) this.archController = new ArchitecturesController(this.architecturesRepository, this.userRepository, fileHandler);
 
   }
 

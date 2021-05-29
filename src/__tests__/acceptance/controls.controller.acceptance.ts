@@ -37,8 +37,6 @@ describe('Controls', () => {
       .post('/controls').send({
         "id": testControlId,
         "name": "test name",
-        "description": "test description",
-        "implementation": "test implementation",
       })
       .expect(200)
       .expect('Content-Type', /application\/json/);
@@ -54,11 +52,11 @@ describe('Controls', () => {
   it('PATCH a control', async () => {
     await client
       .patch(`/controls/${testControlId}`).send({
-        "description": "test description updated"
+        "name": "test name updated"
       })
       .expect(200)
       .expect('Content-Type', /application\/json/)
-      .expect(/{.*"description":"test description updated".*}/);
+      .expect(/{.*"name":"test name updated".*}/);
   });
 
   it('DELETE a control', async () => {

@@ -18,7 +18,7 @@ import {
 } from '@loopback/rest';
 import {inject} from "@loopback/core";
 import { Services } from '../models';
-import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository } from '../repositories';
+import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository, UserRepository } from '../repositories';
 import { CatalogController } from './catalog.controller';
 import { AutomationCatalogController } from '.';
 
@@ -42,9 +42,10 @@ export class ServicesController {
     protected architecturesRepository: ArchitecturesRepository,
     @repository(ControlMappingRepository)
     protected controlMappingRepository: ControlMappingRepository,
+    @repository(UserRepository) protected userRepository: UserRepository,
     @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
   ) {
-    if (!this.automationCatalogController) this.automationCatalogController = new AutomationCatalogController(this.architecturesRepository,this.servicesRepository,fileHandler);
+    if (!this.automationCatalogController) this.automationCatalogController = new AutomationCatalogController(this.architecturesRepository,this.servicesRepository,this.userRepository,fileHandler);
     if (!this.catalogController) this.catalogController = new CatalogController;
   }
 

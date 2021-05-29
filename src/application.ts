@@ -1,5 +1,5 @@
 import {BootMixin} from '@loopback/boot';
-import {ApplicationConfig} from '@loopback/core';
+import {ApplicationConfig, createBindingFromClass} from '@loopback/core';
 import {
   RestExplorerBindings,
   RestExplorerComponent,
@@ -9,6 +9,8 @@ import {RestApplication} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
 import {MySequence} from './sequence';
+
+import {ArchitectureOwnershipInterceptor, ControlDetailsInterceptor} from './interceptors';
 
 import multer from 'multer';
 import { FILE_UPLOAD_SERVICE } from './keys';
@@ -37,6 +39,8 @@ export class ArchitectureMapperBffApplication extends BootMixin(
     this.configureFileUpload();
 
     this.projectRoot = __dirname;
+    this.add(createBindingFromClass(ArchitectureOwnershipInterceptor));
+    this.add(createBindingFromClass(ControlDetailsInterceptor));
     // Customize @loopback/boot Booter Conventions here
     this.bootOptions = {
       controllers: {

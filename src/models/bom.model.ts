@@ -17,7 +17,7 @@ export class Bom extends Entity {
     type: 'string',
     required: true,
   })
-  arch_id?: string;
+  arch_id: string;
 
   @property({
     type: 'string',

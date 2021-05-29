@@ -65,9 +65,9 @@ export class Services {
   }
   public isLocal() {
     // Check if local
-    const env = process.env.NODE_ENV ?? 'development';
+    const env = process.env.NODE_ENV ?? 'staging';
     let isLocal = false;
-    if (env === 'development' ) {
+    if (env === 'dev' ) {
       isLocal = true;
     }
     return isLocal;

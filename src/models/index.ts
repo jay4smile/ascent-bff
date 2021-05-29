@@ -9,3 +9,4 @@ export * from './profile.model';
 export * from './mapping-goals.model';
 export * from './user.model';
 export * from './user-architectures.model';
+export * from './control-details.model';

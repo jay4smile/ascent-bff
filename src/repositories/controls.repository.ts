@@ -1,15 +1,16 @@
 import { Getter, inject } from '@loopback/core';
 import { HasOneRepositoryFactory, HasManyThroughRepositoryFactory, DefaultCrudRepository, repository } from '@loopback/repository';
 import { MongodbDataSource } from '../datasources';
-import { Nist, Controls, Services, ControlMapping, Architectures } from '../models';
-import { NistRepository, ServicesRepository, ControlMappingRepository, ArchitecturesRepository } from '../repositories';
+import { Nist, Controls, Services, ControlMapping, Architectures, ControlDetails } from '../models';
+import { NistRepository, ServicesRepository, ControlMappingRepository, ArchitecturesRepository, ControlDetailsRepository } from '../repositories';
 
 export class ControlsRepository extends DefaultCrudRepository<
   Controls,
   typeof Controls.prototype.id
-  > {
+> {
 
   public readonly nist: HasOneRepositoryFactory<Nist, typeof Nist.prototype.number>;
+  public readonly controlDetails: HasOneRepositoryFactory<ControlDetails, typeof ControlDetails.prototype.id>;
 
   public readonly services: HasManyThroughRepositoryFactory<
     Services,
@@ -19,7 +20,7 @@ export class ControlsRepository extends DefaultCrudRepository<
   >;
 
   public readonly architectures: HasManyThroughRepositoryFactory<
-  Architectures,
+    Architectures,
     typeof Architectures.prototype.arch_id,
     ControlMapping,
     typeof Controls.prototype.id
@@ -29,6 +30,8 @@ export class ControlsRepository extends DefaultCrudRepository<
     @inject('datasources.mongodb') dataSource: MongodbDataSource,
     @repository.getter('NistRepository')
     protected nistRepositoryGetter: Getter<NistRepository>,
+    @repository.getter('ControlDetailsRepository')
+    protected controlDetailsRepositoryGetter: Getter<ControlDetailsRepository>,
     @repository.getter('ServicesRepository')
     protected servicesRepositoryGetter: Getter<ServicesRepository>,
     @repository.getter('ArchitecturesRepository')
@@ -43,6 +46,12 @@ export class ControlsRepository extends DefaultCrudRepository<
       nistRepositoryGetter,
     );
     this.registerInclusionResolver('nist', this.nist.inclusionResolver);
+
+    this.controlDetails = this.createHasOneRepositoryFactoryFor(
+      'controlDetails',
+      controlDetailsRepositoryGetter,
+    );
+    this.registerInclusionResolver('controlDetails', this.controlDetails.inclusionResolver);
 
     this.services = this.createHasManyThroughRepositoryFactoryFor(
       'services',

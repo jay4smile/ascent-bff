@@ -102,9 +102,10 @@ export class ControlsController {
     },
   })
   async findById(
-    @param.path.string('id') id: string
+    @param.path.string('id') id: string,
+    @param.filter(Controls) filter?: Filter<Controls>,
   ): Promise<Controls> {
-    return this.controlsRepository.findById(id, {include: ['nist', 'services', 'architectures']});
+    return this.controlsRepository.findById(id, filter ?? {include: ['nist', 'services', 'architectures']});
   }
 
   @patch('/controls/{id}')

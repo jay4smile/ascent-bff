@@ -1,31 +1,24 @@
-# Check out https://hub.docker.com/_/node to select a new base image
-FROM node:10-slim
+FROM registry.access.redhat.com/ubi8/nodejs-14:1-28.1618434924
 
-# Set to a non-root built-in user `node`
-USER node
+USER default
 
-# Create app directory (with user `node`)
-RUN mkdir -p /home/node/app
+WORKDIR /opt/app-root/src
 
-WORKDIR /home/node/app
+COPY --chown=default . .
 
-# Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available (npm@5+)
-COPY --chown=node package*.json ./
+RUN ls -lA && npm ci && npm run build
 
-RUN npm install
+LABEL name="ibm/template-node-typescript" \
+      vendor="IBM" \
+      version="1" \
+      release="28.1618434924" \
+      summary="This is an example of a container image." \
+      description="This container image will deploy a Typescript Node App"
 
-# Bundle app source code
-COPY --chown=node . .
+COPY --chown=default licenses licenses
+COPY --chown=default public public
 
-# Copy the Images into the Public folder
-COPY ./data/source/images ./public/images
-
-RUN npm run build
-
-# Bind to all network interfaces so that it can be mapped to the host OS
 ENV HOST=0.0.0.0 PORT=3001
 
 EXPOSE ${PORT}
-CMD [ "node", "." ]
+CMD ["npm", "run", "serve"]
