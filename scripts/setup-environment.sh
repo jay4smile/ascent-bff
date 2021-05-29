@@ -13,7 +13,9 @@ fi
 
 DB_ID=$(ibmcloud resource service-instance "${DB_NAME}" --output JSON | jq -r '.[] | .id')
 
-export DATABASE=$(ibmcloud resource service-keys --output JSON | jq -c --arg ID "${DB_ID}" '[.[] | select(.source_crn == $ID)][0].credentials')
+export DATABASE_DEV=$(ibmcloud resource service-keys --output JSON | jq -c --arg ID "${DB_ID}" '[.[] | select(.source_crn == $ID)][0].credentials')
+# For local development: replace "ibmclouddb" with dev DB "ibmclouddb-dev"
+export DATABASE_DEV=$(echo $DATABASE_DEV | sed -a "s/ibmclouddb/ibmclouddb-dev/g")
 
 COS_ID=$(ibmcloud resource service-instance "${COS_NAME}" --output JSON | jq -r '.[] | .id')
 
