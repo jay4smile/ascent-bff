@@ -40,7 +40,8 @@ spec:
       containers:
         - name: redis
           image: bitnami/redis
-
+          imagePullSecrets:
+            - name: docker-io
           ports:
             - containerPort: 6379
               name: redis
