@@ -33,7 +33,9 @@ import {
   CatalogLoader,
   Catalog
 } from '@cloudnativetoolkit/iascable';
-const catalogUrl = "https://raw.githubusercontent.com/cloud-native-toolkit/garage-terraform-modules/gh-pages/index.yaml"
+import catalogConfig from '../config/catalog.config'
+
+const catalogUrl = catalogConfig.url;
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */

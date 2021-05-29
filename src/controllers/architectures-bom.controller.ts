@@ -44,8 +44,9 @@ import Jimp from "jimp";
 import fs from "fs";
 
 import { ArchitecturesController, DiagramType } from './architectures.controller'
+import catalogConfig from '../config/catalog.config'
 
-const catalogUrl = "https://raw.githubusercontent.com/cloud-native-toolkit/garage-terraform-modules/gh-pages/index.yaml"
+const catalogUrl = catalogConfig.url;
 
 /* eslint-disable no-throw-literal */
 
