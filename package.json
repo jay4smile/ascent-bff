@@ -35,6 +35,7 @@
     "rebuild": "yarn run clean && yarn run build",
     "prestart": "yarn run rebuild",
     "start": "node .",
+    "start:dev": "NODE_ENV=dev node .",
     "clean": "lb-clean dist *.tsbuildinfo .eslintcache"
   },
   "repository": {
@@ -97,6 +98,7 @@
     "dredd": "^14.0.0",
     "eslint": "^7.23.0",
     "source-map-support": "^0.5.19",
-    "typescript": "~4.2.3"
+    "typescript": "~4.2.3",
+    "yarn": "^1.22.10"
   }
 }
