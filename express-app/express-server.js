@@ -6,6 +6,10 @@ const APIStrategy = require("ibmcloud-appid").APIStrategy;
 
 const app = (module.exports = express());
 
+app.get('/health', (req, res, next) => {
+    return res.status(200).send({"status":"UP"});
+});
+
 if (process.env.NODE_ENV !== "dev" && process.env.NODE_ENV !== "test") {
     app.use(passport.initialize());
     passport.use(new APIStrategy({
