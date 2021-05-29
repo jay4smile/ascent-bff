@@ -39,9 +39,7 @@ spec:
       {{- end }}
       containers:
         - name: redis
-          image: bitnami/redis
-          imagePullSecrets:
-            - name: docker-io
+          image: quay.io/bitnami/redis
           ports:
             - containerPort: 6379
               name: redis
