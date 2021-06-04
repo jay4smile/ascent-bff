@@ -3,7 +3,7 @@
 This application backend will enable a collection of APIs that will support the relationship between a 
 Reference Architecture and its Bill of Materials(BOM) (list of comprising services). The BOM relationship to 
 the list of FS Ready services. The mapping between the cloud services and the FS Controls. Finally you can 
-view the FS Controls mapping to the Cloud Services and the supporting refernece Architectures.
+view the FS Controls mapping to the Cloud Services and the supporting reference Architectures.
 
 Once we have this data model in place, we will be able to link it to the Automation Catalog that is being
 built by Asset team,  we will be able to take the BOM and input it into the Solution Builder API they have built
