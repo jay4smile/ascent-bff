@@ -12,6 +12,7 @@ import { RestBindings } from '@loopback/rest';
 const protectedControlTargets = [
   'ControlsController.prototype.find',
   'ControlsController.prototype.findById',
+  'ArchitecturesBomController.prototype.downloadComplianceReport'
 ]
 
  /* eslint-disable no-useless-catch */
@@ -50,11 +51,12 @@ export class ControlDetailsInterceptor implements Provider<Interceptor> {
       const request:any = await invocationCtx.get(RestBindings.Http.REQUEST);
       const response = await invocationCtx.get(RestBindings.Http.RESPONSE);
       const email:string = request?.user?.email;
+      console.log(email);
+      console.log(invocationCtx.targetName);
       
       if (email && protectedControlTargets.includes(invocationCtx.targetName)) {
-        if (request?.query?.filter
-           && !request?.appIdAuthorizationContext?.accessTokenPayload?.scope?.split(" ")?.includes("view_controls")
-           && JSON.parse(request.query.filter)?.include?.includes("controlDetails")) {
+        if (((request?.query?.filter && JSON.parse(request.query.filter)?.include?.includes("controlDetails")) || invocationCtx.targetName === 'ArchitecturesBomController.prototype.downloadComplianceReport')
+           && !request?.appIdAuthorizationContext?.accessTokenPayload?.scope?.split(" ")?.includes("view_controls")) {
             return response.status(401).send({error: {
               message: `User ${email} cannot perform this request.`
             }});

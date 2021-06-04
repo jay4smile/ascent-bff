@@ -122,8 +122,6 @@ yarn start:dev
     ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service builder-mongodb -n mapper-test # MongoDB
     ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service builder-mongodb -n mapper-staging # MongoDB
     ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service dev-mapper -n mapper-dev # AppID
-    ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service dev-mapper -n mapper-test # AppID
-    ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service dev-mapper -n mapper-staging # AppID
     ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service dev-mapper-storage -n mapper-dev # COS
     ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service dev-mapper-storage -n mapper-test # COS
     ❯ ic oc cluster service bind --cluster dev-mapper-ocp --service dev-mapper-storage -n mapper-staging # COS
@@ -139,12 +137,16 @@ yarn start:dev
             2. `admin` with scopes: `edit`, `super_edit`
             3. `fs-controls-viewer` with scopes: `view_controls`
          3. Assign Roles
-   2. For the `mapper-dev`, `mapper-test` and `mapper-staging` projects, update the AppId secrets to add the new `binding-application` key with the value you just copied:
+   2. In the `mapper-dev` project, update the AppId secrets to add the new `binding-application` key with the value you just copied:
       1. In the **Workloads > Secrets** section, select the `binding-dev-mapper` secret (`dev-mapper` being the name of our AppId service).
       2. On the top right, click **Edit Secret**.
       3. Scroll down to the bottom and add the new `binding-application` key.
-      4. Copy the value you copied earlier, then click **Save**.
-      - **NOTE**: it's mandatory to repeat the last steps for the 3 projects: `mapper-dev`, `mapper-test` and `mapper-staging`.
+      4. Copy the value you copied earlier, replace `oAuthServerUrl` with `oauthServerUrl`, then click **Save**.
+      5. Copy the secret in the `mapper-test` and `mapper-staging` projects:
+        ```sh
+        ❯ oc get secret binding-dev-mapper -n mapper-dev -o yaml | sed 's/mapper-dev/mapper-test/g' | oc create -f - # AppID
+        ❯ oc get secret binding-dev-mapper -n mapper-dev -o yaml | sed 's/mapper-dev/mapper-staging/g' | oc create -f - # AppID
+        ```
 5. Create a configmap in each project for the ui:
     ```sh
     ❯ oc create configmap mapper-ui --from-literal=route=https://mapperui-dev.openfn.co --from-literal=api-host=todo -n mapper-dev
@@ -196,6 +198,96 @@ yarn start:dev
       ❯ oc pipeline --tekton -n mapper-dev
       ```
    6. Set up ArgoCD:
+      1. Create a new blank gitops repo, refered here as `https://github.ibm.com/gsi-labs/architecture-builder-gitops`)
+      2. Set up gitops:
+        ```sh
+        ❯ git clone https://github.com/IBM/template-argocd-gitops architecture-builder-gitops
+        ❯ cd architecture-builder-gitops
+        ❯ git remote remove origin
+        ❯ git remote add origin https://github.ibm.com/gsi-labs/architecture-builder-gitops
+        ❯ git push -u origin main
+        ❯ git checkout -b test
+        ❯ cp -r templates/project-config-helm architecture-builder-bff
+        ❯ cp -r templates/project-config-helm architecture-builder-ui
+        ❯ git add .
+        ❯ git commit -m "Added helm template"
+        ❯ git push -u origin test
+        ❯ igc namespace mapper-test
+        ❯ oc policy add-role-to-group system:image-puller system:serviceaccounts:mapper-test -n mapper-dev
+        ❯ git checkout -b staging
+        ❯ git push -u origin staging
+        ❯ igc namespace mapper-staging
+        ❯ oc policy add-role-to-group system:image-puller system:serviceaccounts:mapper-staging -n mapper-dev
+        ❯ oc project mapper-dev
+        ❯ git checkout test
+        ❯ igc gitops
+        ```
+      3. On ArgoCD:
+         1. Connect gitops repository
+         2. Create a new project `architecture-builder`:
+            - With gitops repo as source repo
+            - With 2 destinations `mapper-test` and `mapper-staging` in current cluster
+         3. Create 4 applications under `architecture-builder` project:
+            1. `test-architecture-builder-bff`:
+               - Sync policy: Automatic
+               - Source: gitops repo, `test` revision, `architecture-builder-bff` path
+               - Destination: local cluster, `mapper-test` project
+               - Click **Create** 
+            2. `staging-architecture-builder-bff`:
+               - Sync policy: Automatic
+               - Source: gitops repo, `staging` revision, `architecture-builder-bff` path
+               - Destination: local cluster, `mapper-staging` project
+               - Click **Create** 
+            3. `test-architecture-builder-ui`:
+               - Sync policy: Automatic
+               - Source: gitops repo, `test` revision, `architecture-builder-ui` path
+               - Destination: local cluster, `mapper-test` project
+               - Click **Create** 
+            4. `staging-architecture-builder-ui`:
+               - Sync policy: Automatic
+               - Source: gitops repo, `staging` revision, `architecture-builder-ui` path
+               - Destination: local cluster, `mapper-staging` project
+               - Click **Create** 
+      4. Run the BFF and UI pipelines.
+   7. In AppId service dashboard, add the `ui` route to appid valid callback uri. To get it you can copy the output from:
+      ```sh
+      ❯ echo "https://$(oc get route architecture-builder-ui -n mapper-test -o jsonpath='{.spec.host}')/ibm/cloud/appid/callback"
+      ```
+   8. Update the `mapper-ui` config map in `mapper-test` project:
+      ```sh
+      ❯ export API_HOST=https://$(oc get route architecture-builder-bff -n mapper-test -o jsonpath="{.spec.host}") \
+        && export APP_URI=https://$(oc get route architecture-builder-ui -n mapper-test -o jsonpath="{.spec.host}") \
+        && oc patch cm mapper-ui -n mapper-test --type='json' -p="[{'op' : 'replace' ,'path' : '/data/api-host' ,'value' : $API_HOST}]" \
+        && oc patch cm mapper-ui -n mapper-test --type='json' -p="[{'op' : 'replace' ,'path' : '/data/route' ,'value' : $APP_URI}]"
+      ```
+   9. Once you've tested the app works on test env, submit a PR to `staging` branch of gitops repo from `test`.
+   10. In AppId service dashboard, add the `ui` route to appid valid callback uri. To get it you can copy the output from:
+      ```sh
+      ❯ echo "https://$(oc get route architecture-builder-ui -n mapper-staging -o jsonpath='{.spec.host}')/ibm/cloud/appid/callback"
+      ```
+   11. Update the `mapper-ui` config map in `mapper-staging` project:
+      ```sh
+      ❯ export API_HOST=https://$(oc get route architecture-builder-bff -n mapper-staging -o jsonpath="{.spec.host}") \
+        && export APP_URI=https://$(oc get route architecture-builder-ui -n mapper-staging -o jsonpath="{.spec.host}") \
+        && oc patch cm mapper-ui -n mapper-staging --type='json' -p="[{'op' : 'replace' ,'path' : '/data/api-host' ,'value' : $API_HOST}]" \
+        && oc patch cm mapper-ui -n mapper-staging --type='json' -p="[{'op' : 'replace' ,'path' : '/data/route' ,'value' : $APP_URI}]"
+      ```
+
+There you go, you should have your delivery pipeline up and running!
+
+**Known issues**:
+- ArgoCD application controller might not be able to create resource in `mapper-test` and `mapper-staging` projects. If so the following should fix the issue:
+  ```sh
+  ❯ oc policy add-role-to-user edit system:serviceaccounts:tools:argocd-argocd-application-controller -n mapper-test
+  ❯ oc policy add-role-to-user edit system:serviceaccounts:tools:argocd-argocd-application-controller -n mapper-staging
+  ```
+- Access to IBM Cloud image registry from `mapper-test` and `mapper-staging`:
+  ```sh
+  ❯ oc get secret all-icr-io -n default -o yaml | sed 's/default/mapper-test/g' | oc create -n mapper-test -f -
+  ❯ oc get secret all-icr-io -n default -o yaml | sed 's/default/mapper-staging/g' | oc create -n mapper-staging -f -
+  ❯ oc secret link default all-icr-io --for=pull -n mapper-test
+  ❯ oc secret link default all-icr-io --for=pull -n mapper-staging
+  ```
 
 ## Rebuild the project
 
