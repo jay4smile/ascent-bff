@@ -15,6 +15,11 @@ export class Controls extends Entity {
   id: string;
 
   @property({
+    type: 'string'
+  })
+  family: string;
+
+  @property({
     type: 'string',
     required: true
   })
@@ -29,6 +34,31 @@ export class Controls extends Entity {
     type: 'string'
   })
   parent_control: string;
+
+  @property({
+    type: 'string'
+  })
+  existing_scc_goals?: string;
+
+  @property({
+    type: 'string'
+  })
+  human_or_automated?: string;
+
+  @property({
+    type: 'string'
+  })
+  frequency?: string;
+
+  @property({
+    type: 'string'
+  })
+  org_defined_parameter?: string;
+
+  @property({
+    type: 'string'
+  })
+  create_document?: string;
 
   @hasOne(() => ControlDetails, {keyTo: 'id'})
   controlDetails: ControlDetails;
