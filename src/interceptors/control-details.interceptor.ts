@@ -51,8 +51,6 @@ export class ControlDetailsInterceptor implements Provider<Interceptor> {
       const request:any = await invocationCtx.get(RestBindings.Http.REQUEST);
       const response = await invocationCtx.get(RestBindings.Http.RESPONSE);
       const email:string = request?.user?.email;
-      console.log(email);
-      console.log(invocationCtx.targetName);
       
       if (email && protectedControlTargets.includes(invocationCtx.targetName)) {
         if (((request?.query?.filter && JSON.parse(request.query.filter)?.include?.includes("controlDetails")) || invocationCtx.targetName === 'ArchitecturesBomController.prototype.downloadComplianceReport')
