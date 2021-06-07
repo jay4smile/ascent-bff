@@ -105,7 +105,12 @@ export class ControlsController {
     @param.path.string('id') id: string,
     @param.filter(Controls) filter?: Filter<Controls>,
   ): Promise<Controls> {
-    return this.controlsRepository.findById(id, filter ?? {include: ['nist', 'services', 'architectures']});
+    const fltr = filter ?? {include: ['nist', 'services', 'architectures']};
+    const control = await this.controlsRepository.findById(id, fltr);
+    if (fltr?.include?.includes('nist') && !control.nist) {
+      control.nist = await this.controlsRepository.nist(control.parent_control).get();
+    }
+    return control;
   }
 
   @patch('/controls/{id}')
