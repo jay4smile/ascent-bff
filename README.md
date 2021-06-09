@@ -185,6 +185,7 @@ yarn start:dev
     ```
    4. Create the BFF pipeline:
       ```sh
+      ❯ oc sync mapper-dev --dev
       ❯ oc pipeline --tekton -u ${GIT_USERNAME} -P ${GIT_ACCESS_TOKEN} -g -n mapper-dev
       ❯ oc secret link pipeline docker-io --for=pull
       ```
