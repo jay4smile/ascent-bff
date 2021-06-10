@@ -24,6 +24,7 @@ import {
 } from '@loopback/rest';
 import {
   Architectures,
+  AutomationRelease,
   Bom,
 } from '../models';
 import {
@@ -32,7 +33,9 @@ import {
   ControlDetailsRepository,
   ControlMappingRepository,
   ServicesRepository,
-  UserRepository } from '../repositories';
+  UserRepository,
+  AutomationReleaseRepository
+} from '../repositories';
 import { BomController } from '.';
 
 import {
@@ -40,6 +43,10 @@ import {
   CatalogLoader,
   Catalog
 } from '@cloudnativetoolkit/iascable';
+import catalogConfig from '../config/catalog.config'
+
+import fetch from 'node-fetch';
+import AdmZip = require("adm-zip");
 
 import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler, File} from '../types';
@@ -50,11 +57,12 @@ import Jimp from "jimp";
 import fs from "fs";
 
 import { ArchitecturesController, DiagramType } from './architectures.controller'
-import catalogConfig from '../config/catalog.config'
 
 const catalogUrl = catalogConfig.url;
+const latestReleaseUrl = catalogConfig.latestReleaseUrl;
 
 /* eslint-disable no-throw-literal */
+/* eslint-disable @typescript-eslint/naming-convention */
 
 const loadAndValidateBomYaml = (yamlString:string) => {
   const doc = yaml.load(yamlString);
@@ -62,6 +70,83 @@ const loadAndValidateBomYaml = (yamlString:string) => {
   if (!doc.metadata.name) throw new YAMLException("YAML property 'metadata.name' must be set.");
   if (!doc?.spec?.modules.length) throw new YAMLException("YAML property 'spec.modules' must be a list of valid terraform modules.");
   return doc;
+}
+
+export const importYaml = async (
+  yamlString:string,
+  arch_id:string,
+  overwrite: string,
+  catalog: Catalog,
+  userRepository:UserRepository,
+  architecturesRepository: ArchitecturesRepository,
+  servicesRepository: ServicesRepository,
+  moduleSelector: ModuleSelector,
+  publicArch: boolean,
+  email?: string,
+) => {
+  const doc = loadAndValidateBomYaml(yamlString);
+  // Try to get corresponding architecture
+  let arch: Architectures;
+  let archExists = false;
+  try {
+    if (email) arch = (await userRepository.architectures(email).find({where: {arch_id: arch_id}}))[0];
+    else arch = await architecturesRepository.findById(arch_id);
+    if (!arch) throw new Error();
+    archExists = true;
+  } catch (getArchError) {
+    // Arch does not exist, create new
+    const newArch:Architectures = new Architectures({
+      arch_id: arch_id,
+      name: arch_id,
+      short_desc: `${doc.metadata.name} Architecture.`,
+      long_desc: `${doc.metadata.name} FS Architecture.`,
+      public: publicArch
+    });
+    if (email) arch = await userRepository.architectures(email).create(newArch);
+    else arch = await architecturesRepository.create(newArch);
+  }
+  // Do not delete the architecture document accept it and love it and just update the variable
+  if (archExists && !overwrite) throw { message: `Architecture ${arch_id} already exists. Set 'overwrite' parameter to overwrite.` };
+  // Delete existing BOMs
+  await architecturesRepository.boms(arch.arch_id).delete();
+  // Set architecture automation variables
+  await architecturesRepository.updateById(arch.arch_id, {
+    automation_variables: yaml.dump({variables: doc.spec.variables}),
+    public: publicArch
+  });
+  // Import automation modules
+  for (const module of doc.spec.modules) {
+    // Validate module
+    try {
+      await moduleSelector.validateBillOfMaterialModuleConfigYaml(catalog, module.name, yaml.dump(module));
+    } catch (error) {
+      throw {
+        message: `YAML module config error for module ${module.name}`,
+        architecture: arch.arch_id,
+        details: error
+      }
+    }
+    const services = await servicesRepository.find({ where: { cloud_automation_id: module.name } });
+    if (!services.length) throw {message: `No service matching automation ID ${module.name}`};
+    const newBom = new Bom({
+      arch_id: arch.arch_id,
+      service_id: services[0].service_id,
+      desc: module.alias || module.name
+    });
+    if (module.alias && module.variables && module.dependencies) {
+      newBom.automation_variables = yaml.dump({alias: module.alias, variables: module.variables, dependencies: module.dependencies});
+    } else if (module.alias && module.variables) {
+      newBom.automation_variables = yaml.dump({alias: module.alias, variables: module.variables});
+    } else if (module.alias && module.dependencies) {
+      newBom.automation_variables = yaml.dump({alias: module.alias, dependencies: module.dependencies});
+    } else if (module.alias) {
+      newBom.automation_variables = yaml.dump({alias: module.alias});
+    } else if (module.variables) {
+      newBom.automation_variables = yaml.dump({variables: module.variables});
+    }
+    await architecturesRepository.boms(arch.arch_id).create(newBom);
+  }
+  return arch;
 }
 
 /* eslint-disable @typescript-eslint/naming-convention */
@@ -88,6 +173,7 @@ export class ArchitecturesBomController {
     @repository(ControlMappingRepository) protected cmRepository: ControlMappingRepository,
     @repository(ServicesRepository) protected servicesRepository: ServicesRepository,
     @repository(UserRepository) protected userRepository: UserRepository,
+    @repository(AutomationReleaseRepository) protected automationReleaseRepository: AutomationReleaseRepository,
     @repository(ControlDetailsRepository) protected controlDetailsRepository: ControlDetailsRepository,
     @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler
   ) {
@@ -411,67 +497,7 @@ export class ArchitecturesBomController {
               if (file.size > 102400) throw {message: "Files must me <= 100Ko."};
             }
             for (const file of files) {
-              const doc = loadAndValidateBomYaml(file.buffer.toString());
-              // Try to get corresponding architecture
-              let arch: Architectures;
-              let archExists = false;
-              try {
-                if (email) arch = (await this.userRepository.architectures(email).find({where: {arch_id: arch_id}}))[0];
-                else arch = await this.architecturesRepository.findById(arch_id);
-                if (!arch) throw new Error();
-                archExists = true;
-              } catch (getArchError) {
-                // Arch does not exist, create new
-                const newArch:Architectures = new Architectures({
-                  arch_id: arch_id,
-                  name: arch_id,
-                  short_desc: `${doc.metadata.name} Architecture.`,
-                  long_desc: `${doc.metadata.name} FS Architecture.`,
-                  public: false
-                });
-                if (email) arch = await this.userRepository.architectures(email).create(newArch);
-                else arch = await this.architecturesRepository.create(newArch);
-              }
-              // Do not delete the architecture document accept it and love it and just update the variable
-              if (archExists && !overwrite) throw { message: `Architecture ${arch_id} already exists. Set 'overwrite' parameter to overwrite.` };
-              // Delete existing BOMs
-              await this.architecturesRepository.boms(arch.arch_id).delete();
-              // Set architecture automation variables
-              await this.architecturesRepository.updateById(arch.arch_id, {
-                automation_variables: yaml.dump({variables: doc.spec.variables})
-              });
-              // Import automation modules
-              for (const module of doc.spec.modules) {
-                // Validate module
-                try {
-                  await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, module.name, yaml.dump(module));
-                } catch (error) {
-                  throw {
-                    message: `YAML module config error for module ${module.name}`,
-                    architecture: arch.arch_id,
-                    details: error
-                  }
-                }
-                const services = await this.servicesRepository.find({ where: { cloud_automation_id: module.name } });
-                if (!services.length) throw {message: `No service matching automation ID ${module.name}`};
-                const newBom = new Bom({
-                  arch_id: arch.arch_id,
-                  service_id: services[0].service_id,
-                  desc: module.alias || module.name
-                });
-                if (module.alias && module.variables && module.dependencies) {
-                  newBom.automation_variables = yaml.dump({alias: module.alias, variables: module.variables, dependencies: module.dependencies});
-                } else if (module.alias && module.variables) {
-                  newBom.automation_variables = yaml.dump({alias: module.alias, variables: module.variables});
-                } else if (module.alias && module.dependencies) {
-                  newBom.automation_variables = yaml.dump({alias: module.alias, dependencies: module.dependencies});
-                } else if (module.alias) {
-                  newBom.automation_variables = yaml.dump({alias: module.alias});
-                } else if (module.variables) {
-                  newBom.automation_variables = yaml.dump({variables: module.variables});
-                }
-                await this.architecturesRepository.boms(arch.arch_id).create(newBom);
-              }
+              const arch = await importYaml(file.buffer.toString(), arch_id, overwrite, this.catalog, this.userRepository, this.architecturesRepository, this.servicesRepository, this.moduleSelector, false, email);
               success.push(arch);
             }
           }
@@ -482,6 +508,87 @@ export class ArchitecturesBomController {
         });
       });
     });
+  }
+
+  @post('/architectures/public/sync')
+  async syncRefArchs(
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<object|void> {
+    if (!this.catalog) {
+      this.catalog = await this.loader.loadCatalog(catalogUrl);
+    }
+    // Get latest iascable release 
+    const release = await (await fetch(latestReleaseUrl)).json();
+    try {
+      const curRelease = await this.automationReleaseRepository.findById('current');
+      if (curRelease.tagName === release.tag_name) return res.status(400).send({
+        error: {message: `iascable is up to date: version ${release.tag_name}`}
+      });
+    } catch (error) {
+      console.log(error);
+    }
+    
+    // Get latest release ZIP archive
+    const zip = new AdmZip(await (await fetch(release.zipball_url)).buffer());
+    const zipEntries = zip.getEntries();
+    const success:Architectures[] = [];
+    for (const zipEntry of zipEntries) {
+      // Get ref-arch BOMs
+      if (!zipEntry.isDirectory && zipEntry.entryName.match(/.*\/ref-arch\/.*.yaml$/g)) {
+        // console.log(zipEntry.getData().toString());
+        const arch_id = zipEntry.name.split(".yaml")[0];
+        console.log(arch_id);
+        let arch:Architectures;
+        try {
+          arch = await this.architecturesRepository.findById(arch_id);
+        } catch (error) {
+          console.log(`Architecture ${arch_id} does not exist, create it`);
+        }
+        try {
+          arch = await importYaml(
+            zipEntry.getData().toString().replace(/\n *- name: authorize_kms\n.*\n( *)/gi, "\n$1"),
+            arch_id,
+            "true",
+            this.catalog,
+            this.userRepository,
+            this.architecturesRepository,
+            this.servicesRepository,
+            this.moduleSelector,
+            true
+          );
+          success.push(arch);
+        } catch (error) {
+          console.log(error);
+          return res.status(400).send({error: error});
+        }
+      }
+    }
+
+    // Set current release
+    try {
+      await this.automationReleaseRepository.deleteById('current');
+    } catch (error) {
+      console.log(error);
+    }
+    const newRelease = await this.automationReleaseRepository.create({
+      id: 'current',
+      url: release.url,
+      tagName: release.tag_name,
+      name: release.name,
+      createdAt: release.created_at,
+      publishedAt: release.published_at,
+      zipballUrl: release.zipball_url,
+      body: release.body,
+    });
+    res.json({
+      release: newRelease,
+      refArchs: success
+    });
+  }
+
+  @get('/architectures/public/version')
+  async getAutomationRelease(): Promise<AutomationRelease>{
+    return this.automationReleaseRepository.findById('current');
   }
 
   @patch('/architectures/{id}/boms', {
