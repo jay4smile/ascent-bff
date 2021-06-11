@@ -41,6 +41,7 @@ const catalogUrl = catalogConfig.url;
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-throw-literal */
 
 export class ServicesController {
 
