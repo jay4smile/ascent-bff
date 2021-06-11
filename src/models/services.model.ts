@@ -31,15 +31,15 @@ export class Services extends Entity {
   desc?: string;
 
   @property({
+    type: 'boolean'
+  })
+  fs_validated: boolean;
+
+  @property({
     type: 'string',
     required: true,
   })
   deployment_method: string;
-
-  @property({
-    type: 'boolean'
-  })
-  fs_certified: boolean;
 
   @property({
     type: 'string',
@@ -61,6 +61,11 @@ export class Services extends Entity {
     type: 'string',
   })
   hybrid_automation_id?: string;
+
+  @property({
+    type: 'string'
+  })
+  default_automation_variables: string;
 
   // Indexer property to allow additional data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

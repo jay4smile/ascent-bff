@@ -40,7 +40,7 @@ describe('Services', () => {
                 "ibm_catalog_service": "string",
                 "desc": "string",
                 "deployment_method": "string",
-                "fs_certified": true,
+                "fs_validated": true,
                 "compliance_status": "string",
                 "provision": "string",
                 "cloud_automation_id": "string",
