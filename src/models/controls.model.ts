@@ -29,6 +29,11 @@ export class Controls extends Entity {
     type: 'boolean'
   })
   base_control: boolean;
+  
+  @property({
+    type: 'boolean'
+  })
+  control_item: boolean;
 
   @property({
     type: 'string'
