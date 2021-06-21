@@ -189,7 +189,7 @@ export class BomController {
   ): Promise<Count|Response> {
     if (bom.automation_variables) {
       return res.status(400).send({error: {
-        message: `You cannot update all automation IDs.`
+        message: `You cannot update all automation variables.`
       }});
     }
     return this.bomRepository.updateAll(bom, where);
