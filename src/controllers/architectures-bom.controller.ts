@@ -446,6 +446,7 @@ export class ArchitecturesBomController {
                 try {
                   await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, module.name, yaml.dump(module));
                 } catch (error) {
+                console.error(error)
                   throw {
                     message: `YAML module config error for module ${module.name}`,
                     architecture: arch.arch_id,
@@ -459,17 +460,15 @@ export class ArchitecturesBomController {
                   service_id: services[0].service_id,
                   desc: module.alias || module.name
                 });
-                if (module.alias && module.variables && module.dependencies) {
-                  newBom.automation_variables = yaml.dump({alias: module.alias, variables: module.variables, dependencies: module.dependencies});
-                } else if (module.alias && module.variables) {
-                  newBom.automation_variables = yaml.dump({alias: module.alias, variables: module.variables});
-                } else if (module.alias && module.dependencies) {
-                  newBom.automation_variables = yaml.dump({alias: module.alias, dependencies: module.dependencies});
-                } else if (module.alias) {
-                  newBom.automation_variables = yaml.dump({alias: module.alias});
-                } else if (module.variables) {
-                  newBom.automation_variables = yaml.dump({variables: module.variables});
+                const automationVars = {
+                  alias: module.alias || undefined,
+                  variables: module.variables || undefined,
+                  dependencies: module.dependencies || undefined
                 }
+                if (!automationVars.alias) delete automationVars.alias;
+                if (!automationVars.variables) delete automationVars.variables;
+                if (!automationVars.dependencies) delete automationVars.dependencies;
+                newBom.automation_variables = yaml.dump(automationVars);
                 await this.architecturesRepository.boms(arch.arch_id).create(newBom);
               }
               success.push(arch);
