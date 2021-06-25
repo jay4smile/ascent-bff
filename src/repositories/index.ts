@@ -10,3 +10,4 @@ export * from './mapping-goals.repository';
 export * from './user.repository';
 export * from './user-architectures.repository';
 export * from './control-details.repository';
+export * from './automation-release.repository';
