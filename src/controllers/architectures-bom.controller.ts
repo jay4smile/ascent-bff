@@ -118,7 +118,7 @@ export const importYaml = async (
   for (const module of doc.spec.modules) {
     // Validate module
     try {
-      if (module.name !== "scc-collector") await moduleSelector.validateBillOfMaterialModuleConfigYaml(catalog, module.name, yaml.dump(module));
+      await moduleSelector.validateBillOfMaterialModuleConfigYaml(catalog, module.name, yaml.dump(module));
     } catch (error) {
       throw {
         message: `YAML module config error for module ${module.name}`,
