@@ -11,3 +11,4 @@ export * from './user.model';
 export * from './user-architectures.model';
 export * from './control-details.model';
 export * from './automation-release.model';
+export * from './on-boarding-stage.model';
