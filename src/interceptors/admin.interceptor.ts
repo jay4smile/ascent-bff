@@ -12,6 +12,11 @@ import {
   // List of protected resources
   const protectedTargets = [
     'ArchitecturesBomController.prototype.syncRefArchs',
+    'OnBoardingStageController.prototype.create',
+    'OnBoardingStageController.prototype.updateAll',
+    'OnBoardingStageController.prototype.updateById',
+    'OnBoardingStageController.prototype.replaceById',
+    'OnBoardingStageController.prototype.deleteById'
   ]
   
   /**
@@ -30,7 +35,7 @@ import {
         const request:any = await ctx.get(RestBindings.Http.REQUEST);
         const response = await ctx.get(RestBindings.Http.RESPONSE);
     
-        if (protectedTargets.includes(ctx.targetName) && !request?.appIdAuthorizationContext?.accessTokenPayload?.scope?.split(" ")?.includes("super_edit")) {
+        if (!['dev', 'test'].includes(process.env.NODE_ENV || '') && protectedTargets.includes(ctx.targetName) && !request?.appIdAuthorizationContext?.accessTokenPayload?.scope?.split(" ")?.includes("super_edit")) {
             return response.status(401).send({error: {
               message: `Must have administrator privilege to perform this request.`
             }});

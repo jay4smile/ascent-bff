@@ -38,7 +38,7 @@ describe('OnBoardingStage', () => {
             'label': 'test stage',
             'secondary_label': 'Test controls',
             'position': 0,
-            'content': 'Test content'
+            'content': '{"id":"AC-14","children":[{"id":"AC-17 (9)","children":[{"id":"AC-19 (5)","children":[{"id":"AC-20"},{"id":"SC-12"}]},{"id":"AC-21","children":[{"id":"AC-5"}]}]}]}'
           })
           .expect(200)
           .expect('Content-Type', /application\/json/)

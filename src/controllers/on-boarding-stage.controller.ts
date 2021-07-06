@@ -6,6 +6,7 @@ import {
   repository,
   Where,
 } from '@loopback/repository';
+import {inject} from "@loopback/core";
 import {
   post,
   param,
@@ -16,15 +17,53 @@ import {
   del,
   requestBody,
   response,
+  RestBindings,
+  Response
 } from '@loopback/rest';
-import {OnBoardingStage} from '../models';
-import {OnBoardingStageRepository} from '../repositories';
+import {
+  OnBoardingStage,
+  Controls
+} from '../models';
+import {
+  OnBoardingStageRepository,
+  ControlsRepository
+} from '../repositories';
+
+/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable no-throw-literal */
+
+interface stageTree {
+  id: string,
+  children: stageTree[]
+}
 
 export class OnBoardingStageController {
   constructor(
     @repository(OnBoardingStageRepository)
     public onBoardingStageRepository : OnBoardingStageRepository,
+    @repository(ControlsRepository)
+    public controlsRepository : ControlsRepository,
   ) {}
+  
+  validateTreeWorker(tree: stageTree, controls: Controls[]): string[] {
+    const invalidIds = []
+    if (controls.findIndex(control => control.id === tree.id) === -1) invalidIds.push(tree.id);
+    if (tree.children) {
+      for (const child of tree.children) {
+        for (const invadidId of this.validateTreeWorker(child, controls)) {
+          invalidIds.push(invadidId)
+        }
+      }
+    }
+    return invalidIds;
+  }
+
+  async validateTree(treeString: string): Promise<void> {
+    const tree:stageTree = JSON.parse(treeString);
+    const controls = await this.controlsRepository.find();
+    const invalidIds = this.validateTreeWorker(tree, controls);
+    if (invalidIds.length) throw `Control ID(s): ${invalidIds.join(', ')} are not valid!`;
+  }
 
   @post('/on-boarding-stages')
   @response(200, {
@@ -43,7 +82,17 @@ export class OnBoardingStageController {
       },
     })
     onBoardingStage: Omit<OnBoardingStage, 'id'>,
-  ): Promise<OnBoardingStage> {
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<OnBoardingStage|object> {
+    if (onBoardingStage.content) {
+      try {
+        await this.validateTree(onBoardingStage.content);
+      } catch (error) {
+        return res.status(400).send({error: {
+          message: error
+        }})
+      }
+    }
     return this.onBoardingStageRepository.create(onBoardingStage);
   }
 
@@ -90,8 +139,18 @@ export class OnBoardingStageController {
       },
     })
     onBoardingStage: OnBoardingStage,
+    @inject(RestBindings.Http.RESPONSE) res: Response,
     @param.where(OnBoardingStage) where?: Where<OnBoardingStage>,
-  ): Promise<Count> {
+  ): Promise<Count|object> {
+    if (onBoardingStage.content) {
+      try {
+        await this.validateTree(onBoardingStage.content);
+      } catch (error) {
+        return res.status(400).send({error: {
+          message: error
+        }})
+      }
+    }
     return this.onBoardingStageRepository.updateAll(onBoardingStage, where);
   }
 
@@ -125,7 +184,17 @@ export class OnBoardingStageController {
       },
     })
     onBoardingStage: OnBoardingStage,
-  ): Promise<OnBoardingStage> {
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<OnBoardingStage|object> {
+    if (onBoardingStage.content) {
+      try {
+        await this.validateTree(onBoardingStage.content);
+      } catch (error) {
+        return res.status(400).send({error: {
+          message: error
+        }})
+      }
+    }
     await this.onBoardingStageRepository.updateById(id, onBoardingStage)
     return this.onBoardingStageRepository.findById(id);
   }
@@ -137,7 +206,17 @@ export class OnBoardingStageController {
   async replaceById(
     @param.path.string('id') id: string,
     @requestBody() onBoardingStage: OnBoardingStage,
-  ): Promise<void> {
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<void|object> {
+    if (onBoardingStage.content) {
+      try {
+        await this.validateTree(onBoardingStage.content);
+      } catch (error) {
+        return res.status(400).send({error: {
+          message: error
+        }})
+      }
+    }
     await this.onBoardingStageRepository.replaceById(id, onBoardingStage);
   }
 
