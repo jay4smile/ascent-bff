@@ -12,3 +12,4 @@ export * from './user-architectures.repository';
 export * from './control-details.repository';
 export * from './automation-release.repository';
 export * from './on-boarding-stage.repository';
+export * from './user-on-boarding.repository';
