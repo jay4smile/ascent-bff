@@ -13,3 +13,4 @@ export * from './profile.controller';
 export * from './mapping-goals.controller';
 export * from './user.controller';
 export * from './on-boarding-stage.controller';
+export * from './user-on-boarding.controller';
