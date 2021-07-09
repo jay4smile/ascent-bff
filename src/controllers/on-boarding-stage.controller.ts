@@ -59,6 +59,7 @@ export class OnBoardingStageController {
   }
 
   async validateTree(treeString: string): Promise<void> {
+    return;
     const tree:stageTree = JSON.parse(treeString);
     const controls = await this.controlsRepository.find();
     const invalidIds = this.validateTreeWorker(tree, controls);
