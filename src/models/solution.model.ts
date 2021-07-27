@@ -1,5 +1,10 @@
 import {Entity, model, property, hasMany} from '@loopback/repository';
-import {Architectures, SolutionArchitectures} from '../models/';
+import {
+  Architectures,
+  SolutionArchitectures,
+  User,
+  UserSolutions
+} from '../models/';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -30,9 +35,9 @@ export class Solution extends Entity {
   long_desc?: string;
 
   @property({
-    type: 'string',
+    type: 'boolean',
   })
-  readme?: string;
+  public?: boolean;
 
   @hasMany(() => Architectures, {
     through: {
@@ -42,6 +47,15 @@ export class Solution extends Entity {
     }
   })
   architectures: Architectures[];
+
+  @hasMany(() => User, {
+    through: {
+      model: () => UserSolutions,
+      keyFrom: 'solution_id',
+      keyTo: 'email'
+    }
+  })
+  owners: User[];
 
   constructor(data?: Partial<Solution>) {
     super(data);

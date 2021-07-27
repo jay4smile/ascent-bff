@@ -12,3 +12,4 @@ export * from './user-architectures.model';
 export * from './control-details.model';
 export * from './solution.model';
 export * from './solution-architectures.model';
+export * from './user-solutions.model';

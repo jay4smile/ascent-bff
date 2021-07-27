@@ -12,3 +12,4 @@ export * from './user-architectures.repository';
 export * from './control-details.repository';
 export * from './solution.repository';
 export * from './solution-architectures.repository';
+export * from './user-solutions.repository';

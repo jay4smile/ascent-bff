@@ -33,8 +33,9 @@ describe('Solution', () => {
     it('POST a solution', async () => {
         await client
             .post('/solutions').send({
-                "id": testSolutionId,
-                "name": "Test Solution"
+                solution: {"id": testSolutionId,
+                "name": "Test Solution"},
+                architectures: []
             })
             .expect(200)
             .expect('Content-Type', /application\/json/);

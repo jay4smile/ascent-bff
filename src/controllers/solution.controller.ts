@@ -16,15 +16,66 @@ import {
   del,
   requestBody,
   response,
+  RestBindings,
+  Request,
+  Response
 } from '@loopback/rest';
-import {Solution} from '../models';
-import {SolutionRepository} from '../repositories';
+import {inject} from "@loopback/core";
+
+import * as _ from 'lodash';
+import assert from "assert";
+import * as Storage from "ibm-cos-sdk"
+import util from 'util';
+
+import {Services} from '../appenv';
+
+import {Architectures, Solution} from '../models';
+import {SolutionRepository, UserRepository} from '../repositories';
+import {FILE_UPLOAD_SERVICE} from '../keys';
+import {FileUploadHandler, File} from '../types';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+interface PostBody {
+  solution: Solution,
+  architectures: Architectures[]
+}
 
 export class SolutionController {
+
+  private cos : Storage.S3;
+
   constructor(
     @repository(SolutionRepository)
     public solutionRepository : SolutionRepository,
-  ) {}
+    @repository(UserRepository)
+    public userRepository : UserRepository,
+    @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler,
+  ) {
+    // Load Information from Environment
+    const services = Services.getInstance();
+
+    // The services object is a map named by service so we extract the one for MongoDB
+    const storageServices:any = services.getService('storage');
+
+    // This check ensures there is a services for MongoDB databases
+    assert(!_.isUndefined(storageServices), 'backend must be bound to storage service');
+
+    if (_.isUndefined(storageServices)){
+      console.log("Failed to load Storage sdk")
+      return;
+    }
+
+    // Connect to Object Storage
+    const config = {
+      endpoint: storageServices.endpoints,
+      apiKeyId: storageServices.apikey,
+      serviceInstanceId: storageServices.resource_instance_id,
+      signatureVersion: 'iam',
+    };
+
+    this.cos = new Storage.S3(config);
+  }
 
   @post('/solutions')
   @response(200, {
@@ -35,16 +86,99 @@ export class SolutionController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Solution, {
-            title: 'NewSolution',
-            
-          }),
+          schema: {
+            solution: getModelSchemaRef(Solution),
+            architectures: getModelSchemaRef(Architectures)
+          },
         },
       },
     })
-    solution: Solution,
-  ): Promise<Solution> {
-    return this.solutionRepository.create(solution);
+    body: PostBody,
+    @inject(RestBindings.Http.REQUEST) req: any,
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<Solution|object> {
+    const user:any = req?.user;
+    const email:string = user?.email;
+    let newSolution:Solution;
+    try {
+      if (email) newSolution = await this.userRepository.solutions(email).create(body.solution);
+      else newSolution = await this.solutionRepository.create(body.solution);
+    } catch (error) {
+      console.log(error)
+      return res.status(400).send({error: {message: error?.code === 11000 ? `Solution ${body.solution.id} already exists.` : "Error creating solution", details: error}});
+    }
+    for (const arch of body.architectures) {
+      await this.solutionRepository.architectures(newSolution.id).link(arch.arch_id);
+    }
+    return this.solutionRepository.findById(newSolution.id, {include: ['architectures']});
+  }
+
+  @post('/solutions/{id}/files')
+  @response(204, {
+    description: 'Files upload success',
+  })
+  async uploadFiles(
+    @param.path.string('id') id: string,
+    @requestBody.file() request: Request,
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<void> {
+    await this.solutionRepository.findById(id, {include: ['owners']});
+    return new Promise((resolve, reject) => {
+      this.fileHandler(request, res, (err: unknown) => {
+        if (err) reject({error: err});
+        else {
+          const uploadedFiles = request.files;
+          const mapper = (f: globalThis.Express.Multer.File) => ({
+            mimetype: f.mimetype,
+            buffer: f.buffer,
+            size: f.size,
+            fieldname: f.fieldname,
+            name: f.originalname
+          });
+          let files: File[] = [];
+          if (Array.isArray(uploadedFiles)) {
+            files = uploadedFiles.map(mapper);
+          } else {
+            for (const filename in uploadedFiles) {
+              files.push(...uploadedFiles[filename].map(mapper));
+            }
+          }
+          console.log(files);
+          // Create Buckett and upload files to COS
+          this.cos.createBucket({
+            Bucket: id,
+            CreateBucketConfiguration: {
+              LocationConstraint: 'eu-geo'
+            }
+          }).promise()
+            .then(() => {
+              console.log(`Bucket ${id} created.`);
+            })
+            .catch(function(createBucketErr) {
+              console.error(util.inspect(createBucketErr));
+            })
+            .finally(() => {
+              let fileIx = 0;
+              const errors:object[] = [];
+              for (const file of files) {
+                this.cos.putObject({
+                  Bucket: id,
+                  Key: `${file.name}`,
+                  Body: file.buffer
+                }, (putObjErr) => {
+                  if (err) {
+                    errors.push(putObjErr);
+                  }
+                  if (++fileIx === files.length) {
+                    if (err) return reject({error: errors});
+                    return resolve();
+                  }
+                });
+              }
+            })
+        }
+      });
+    });
   }
 
   @get('/solutions/count')
