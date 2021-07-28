@@ -33,6 +33,7 @@ import {Architectures, Solution} from '../models';
 import {SolutionRepository, UserRepository} from '../repositories';
 import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler, File} from '../types';
+import { ListObjectsOutput } from 'ibm-cos-sdk/clients/s3';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -143,7 +144,6 @@ export class SolutionController {
               files.push(...uploadedFiles[filename].map(mapper));
             }
           }
-          console.log(files);
           // Create Buckett and upload files to COS
           this.cos.createBucket({
             Bucket: id,
@@ -280,6 +280,20 @@ export class SolutionController {
     description: 'Solution DELETE success',
   })
   async deleteById(@param.path.string('id') id: string): Promise<void> {
+    try {
+      // Delete all objects in solution bucket
+      const objs = (await this.cos.listObjects({Bucket: id}).promise()).Contents?.filter(obj => obj.Key);
+      if (objs) await this.cos.deleteObjects({Bucket: id, Delete: { Objects: objs.map((obj => ({ Key: obj.Key || '' }))) }}).promise();
+      await this.cos.deleteBucket({
+        Bucket: id
+      }).promise();
+    } catch (error) {
+      console.log(error);
+    }
+    // console.log(res.$response.data);
+    for (const arch of await this.solutionRepository.architectures(id).find()) {
+      await this.solutionRepository.architectures(id).unlink(arch.arch_id);
+    }
     await this.solutionRepository.deleteById(id);
   }
 }
