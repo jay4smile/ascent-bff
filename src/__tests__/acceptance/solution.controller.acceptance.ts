@@ -15,14 +15,6 @@ describe('Solution', () => {
         await app.stop();
     });
 
-    it('GET solution count', async () => {
-        await client
-            .get('/solutions/count')
-            .expect(200)
-            .expect('Content-Type', /application\/json/)
-            .expect(/{"count":\d+}/);
-    });
-
     it('GET all solution', async () => {
         await client
             .get('/solutions')
@@ -51,7 +43,8 @@ describe('Solution', () => {
     it('PATCH a solution', async () => {
         await client
             .patch(`/solutions/${testSolutionId}`).send({
-                "name": "Test name updated"
+                solution: {"name": "Test name updated"},
+                architectures: []
             })
             .expect(200)
             .expect('Content-Type', /application\/json/)
@@ -64,16 +57,6 @@ describe('Solution', () => {
         await client
             .delete(`/solutions/${testSolutionId}`)
             .expect(204);
-    });
-
-    it('PATCH all solution', async () => {
-        await client
-            .patch(`/solutions`).send({
-                "name": "Test name updated"
-            })
-            .expect(200)
-            .expect('Content-Type', /application\/json/)
-            .expect(/{"count":\d+}/);
     });
 
 });

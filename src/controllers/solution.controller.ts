@@ -1,10 +1,7 @@
 import {
-  Count,
-  CountSchema,
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
 } from '@loopback/repository';
 import {
   post,
@@ -12,8 +9,8 @@ import {
   get,
   getModelSchemaRef,
   patch,
-  put,
   del,
+  oas,
   requestBody,
   response,
   RestBindings,
@@ -27,13 +24,24 @@ import assert from "assert";
 import * as Storage from "ibm-cos-sdk"
 import util from 'util';
 
+import  AdmZip = require("adm-zip");
+
+import { AutomationCatalogController } from '../controllers';
+
 import {Services} from '../appenv';
 
-import {Architectures, Solution} from '../models';
-import {SolutionRepository, UserRepository} from '../repositories';
+import {
+  Architectures,
+  Solution
+} from '../models';
+import {
+  SolutionRepository,
+  UserRepository,
+  ServicesRepository,
+  ArchitecturesRepository
+} from '../repositories';
 import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler, File} from '../types';
-import { ListObjectsOutput } from 'ibm-cos-sdk/clients/s3';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -45,14 +53,22 @@ interface PostBody {
 export class SolutionController {
 
   private cos : Storage.S3;
+  private automationCatalogController: AutomationCatalogController;
 
   constructor(
     @repository(SolutionRepository)
     public solutionRepository : SolutionRepository,
     @repository(UserRepository)
     public userRepository : UserRepository,
+    @repository(ArchitecturesRepository)
+    public architecturesRepository : ArchitecturesRepository,
+    @repository(ServicesRepository)
+    public servicesRepository : ServicesRepository,
     @inject(FILE_UPLOAD_SERVICE) private fileHandler: FileUploadHandler,
   ) {
+
+    this.automationCatalogController = new AutomationCatalogController(this.architecturesRepository, this.servicesRepository, this.userRepository, this.fileHandler);
+
     // Load Information from Environment
     const services = Services.getInstance();
 
@@ -181,17 +197,6 @@ export class SolutionController {
     });
   }
 
-  @get('/solutions/count')
-  @response(200, {
-    description: 'Solution model count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async count(
-    @param.where(Solution) where?: Where<Solution>,
-  ): Promise<Count> {
-    return this.solutionRepository.count(where);
-  }
-
   @get('/solutions')
   @response(200, {
     description: 'Array of Solution model instances',
@@ -210,25 +215,6 @@ export class SolutionController {
     return this.solutionRepository.find(filter);
   }
 
-  @patch('/solutions')
-  @response(200, {
-    description: 'Solution PATCH success count',
-    content: {'application/json': {schema: CountSchema}},
-  })
-  async updateAll(
-    @requestBody({
-      content: {
-        'application/json': {
-          schema: getModelSchemaRef(Solution, {partial: true}),
-        },
-      },
-    })
-    solution: Solution,
-    @param.where(Solution) where?: Where<Solution>,
-  ): Promise<Count> {
-    return this.solutionRepository.updateAll(solution, where);
-  }
-
   @get('/solutions/{id}')
   @response(200, {
     description: 'Solution model instance',
@@ -241,38 +227,114 @@ export class SolutionController {
   async findById(
     @param.path.string('id') id: string,
     @param.filter(Solution, {exclude: 'where'}) filter?: FilterExcludingWhere<Solution>
-  ): Promise<Solution> {
-    return this.solutionRepository.findById(id, filter);
+  ): Promise<any> {
+    const solution:any = JSON.parse(JSON.stringify(await this.solutionRepository.findById(id, filter)));
+    try {
+      solution.files = (await this.cos.listObjects({Bucket: id}).promise()).Contents;
+    } catch (error) {
+      console.log(error);
+    }
+    console.log(solution);
+    return solution;
+  }
+
+  @get('/solutions/{id}/automation')
+  @response(200, {
+    description: 'Download Terraform Package for solution',
+  })
+  @oas.response.file()
+  async downloadAutomationZip(
+      @param.path.string('id') id: string,
+      @inject(RestBindings.Http.RESPONSE) res: Response,
+  ) {
+
+    // Check if we have a bom ID
+    if (_.isUndefined(id)) {
+      return res.sendStatus(404);
+    }
+
+    // Read the Architecture Data
+    const solution = await this.solutionRepository.findById(id, { include: ['architectures'] });
+
+    if (_.isEmpty(solution)) {
+      return res.sendStatus(404);
+    }
+
+    try {
+
+      // Create zip
+      const zip = new AdmZip();
+
+      // Build automation for each ref. arch
+      if (solution.architectures) for (const arch of solution.architectures) {
+        console.log(`Building automation for ${arch.arch_id}`);
+        // zip.addFile(`${arch.arch_id}/`, null);
+        const archZipBuffer = await this.automationCatalogController.downloadAutomationZip(arch.arch_id, res);
+        if (archZipBuffer instanceof Buffer) {
+          const archZip = new AdmZip(archZipBuffer);
+          for (const entry of archZip.getEntries()) {
+            zip.addFile(`${arch.arch_id}/${entry.name}`, entry.getData());
+          }
+        } else {
+          return res.status(400).send({error: {message: `Error loading zip for architecture ${arch.arch_id}`}});
+        }
+      }
+
+      // Add files from COS
+      try {
+        const objects = (await this.cos.listObjects({Bucket: id}).promise()).Contents;
+        if (objects) for (const object of objects) {
+          if (object.Key) {
+            const cosObj = (await this.cos.getObject({Bucket: id, Key: object.Key}).promise()).Body;
+            if (cosObj) zip.addFile(object.Key, new Buffer(cosObj.toString()));
+          }
+        }
+      } catch (error) {
+        console.log(error);
+      }
+
+      console.log(zip.getEntries().map(entry => entry.entryName));
+
+      return zip.toBuffer();
+
+    } catch (e) {
+      console.log(e);
+      return res.status(409).send(e.message);
+    }
+
   }
 
   @patch('/solutions/{id}')
   @response(200, {
-    description: 'Solution PATCH success',
+    description: 'Solution model instance',
+    content: {'application/json': {schema: getModelSchemaRef(Solution)}},
   })
   async updateById(
     @param.path.string('id') id: string,
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Solution, {partial: true}),
+          schema: {
+            solution: getModelSchemaRef(Solution),
+            architectures: getModelSchemaRef(Architectures)
+          },
         },
       },
     })
-    solution: Solution,
-  ): Promise<Solution> {
-    await this.solutionRepository.updateById(id, solution);
-    return this.solutionRepository.findById(id);
-  }
-
-  @put('/solutions/{id}')
-  @response(204, {
-    description: 'Solution PUT success',
-  })
-  async replaceById(
-    @param.path.string('id') id: string,
-    @requestBody() solution: Solution,
-  ): Promise<void> {
-    await this.solutionRepository.replaceById(id, solution);
+    body: PostBody,
+    @inject(RestBindings.Http.REQUEST) req: any,
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<Solution|object> {
+    await this.solutionRepository.updateById(id, body.solution);
+    if (body.architectures?.length) {
+      for (const arch of await this.solutionRepository.architectures(id).find()) {
+        await this.solutionRepository.architectures(id).unlink(arch.arch_id);
+      }
+      for (const arch of body.architectures) {
+        await this.solutionRepository.architectures(id).link(arch.arch_id);
+      }
+    }
+    return this.solutionRepository.findById(id, {include: ['architectures']});
   }
 
   @del('/solutions/{id}')
@@ -283,7 +345,7 @@ export class SolutionController {
     try {
       // Delete all objects in solution bucket
       const objs = (await this.cos.listObjects({Bucket: id}).promise()).Contents?.filter(obj => obj.Key);
-      if (objs) await this.cos.deleteObjects({Bucket: id, Delete: { Objects: objs.map((obj => ({ Key: obj.Key || '' }))) }}).promise();
+      if (objs) await this.cos.deleteObjects({Bucket: id, Delete: { Objects: objs.map((obj => ({ Key: obj.Key ?? '' }))) }}).promise();
       await this.cos.deleteBucket({
         Bucket: id
       }).promise();
