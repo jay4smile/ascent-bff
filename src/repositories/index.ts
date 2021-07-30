@@ -13,3 +13,6 @@ export * from './control-details.repository';
 export * from './solution.repository';
 export * from './solution-architectures.repository';
 export * from './user-solutions.repository';
+export * from './automation-release.repository';
+export * from './on-boarding-stage.repository';
+export * from './user-on-boarding.repository';

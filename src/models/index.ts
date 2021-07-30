@@ -13,3 +13,6 @@ export * from './control-details.model';
 export * from './solution.model';
 export * from './solution-architectures.model';
 export * from './user-solutions.model';
+export * from './automation-release.model';
+export * from './on-boarding-stage.model';
+export * from './user-on-boarding.model';
