@@ -5,10 +5,19 @@ import {
   repository
 } from '@loopback/repository';
 import {MongodbDataSource} from '../datasources';
-import {User, UserRelations, Architectures, UserArchitectures} from '../models';
+import {
+  User,
+  UserRelations,
+  Architectures,
+  UserArchitectures,
+  Solution,
+  UserSolutions
+} from '../models';
 import {
   ArchitecturesRepository,
-  UserArchitecturesRepository
+  UserArchitecturesRepository,
+  SolutionRepository,
+  UserSolutionsRepository
 } from '../repositories';
 
 export class UserRepository extends DefaultCrudRepository<
@@ -24,12 +33,23 @@ export class UserRepository extends DefaultCrudRepository<
     typeof UserArchitectures.prototype.id
   >;
 
+  public readonly solutions: HasManyThroughRepositoryFactory<
+    Solution,
+    typeof Solution.prototype.id,
+    UserSolutions,
+    typeof UserSolutions.prototype.id
+  >;
+
   constructor(
     @inject('datasources.mongodb') dataSource: MongodbDataSource,
     @repository.getter('ArchitecturesRepository')
     protected architecturesRepositoryGetter: Getter<ArchitecturesRepository>,
     @repository.getter('UserArchitecturesRepository')
-    protected userArchitecturesRepositoryGetter: Getter<UserArchitecturesRepository>
+    protected userArchitecturesRepositoryGetter: Getter<UserArchitecturesRepository>,
+    @repository.getter('SolutionRepository')
+    protected solutionRepositoryGetter: Getter<SolutionRepository>,
+    @repository.getter('UserSolutionsRepository')
+    protected userSolutionsRepositoryGetter: Getter<UserSolutionsRepository>
   ) {
     super(User, dataSource);
 
@@ -39,5 +59,12 @@ export class UserRepository extends DefaultCrudRepository<
       userArchitecturesRepositoryGetter
     );
     this.registerInclusionResolver('architectures', this.architectures.inclusionResolver);
+
+    this.solutions = this.createHasManyThroughRepositoryFactoryFor(
+      'solutions',
+      solutionRepositoryGetter,
+      userSolutionsRepositoryGetter
+    );
+    this.registerInclusionResolver('solutions', this.solutions.inclusionResolver);
   }
 }

@@ -1,5 +1,5 @@
 import {Entity, model, property, hasMany} from '@loopback/repository';
-import {Architectures, UserArchitectures} from '../models/';
+import {Architectures, UserArchitectures, Solution, UserSolutions} from '../models/';
 
 @model()
 export class User extends Entity {
@@ -19,6 +19,15 @@ export class User extends Entity {
     }
   })
   architectures: Architectures[];
+
+  @hasMany(() => Solution, {
+    through: {
+      model: () => UserSolutions,
+      keyFrom: 'email',
+      keyTo: 'solution_id'
+    }
+  })
+  solutions: Solution[];
 
   constructor(data?: Partial<User>) {
     super(data);

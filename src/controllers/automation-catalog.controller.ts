@@ -199,7 +199,7 @@ export class AutomationCatalogController  {
               _errors.push({id:service.cloud_automation_id, message:e.message});
           }
 
-          console.log(catentry.id);
+          //console.log(catentry.id);
         } else {
           console.log("Catalog entry not found "+service.cloud_automation_id);
         }
@@ -222,9 +222,9 @@ export class AutomationCatalogController  {
 
       // Lets build a BOM file from the BOM builder
       const bomContents: string = jsYaml.dump(bom);
-      console.log('=====');
-      console.log(bomContents);
-      console.log('=====');
+      // console.log('=====');
+      // console.log(bomContents);
+      // console.log('=====');
 
       const modules: SingleModuleVersion[] = await this.moduleSelector.resolveBillOfMaterial(this.catalog, bom);
       const terraformComponent: TerraformComponent = await this.terraformBuilder.buildTerraformComponent(modules);
@@ -272,7 +272,7 @@ export class AutomationCatalogController  {
         };
 
         let contents : string | Buffer  = "";
-        console.log(file.name);
+        //console.log(file.name);
         if (file.type === "documentation") {
           try {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -299,7 +299,7 @@ export class AutomationCatalogController  {
             console.log("failed to load contents from ",file.name);
           }
         }
-        console.log(file.name);
+        //console.log(file.name);
 
         // Load Contents into the Zip
         if (contents !== "") {
