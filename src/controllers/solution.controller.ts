@@ -238,6 +238,26 @@ export class SolutionController {
     return solution;
   }
 
+  @get('/solutions/{id}/files/{key}')
+  @response(200, {
+    description: 'Get solution file by name',
+  })
+  @oas.response.file()
+  async getFile(
+    @param.path.string('id') id: string,
+    @param.path.string('key') key: string,
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<any> {
+    try {
+      return (await this.cos.getObject({Bucket: id, Key: key}).promise()).Body;
+    } catch (error) {
+      return res.status(400).send({error: {
+        message: `Error retrieving diagram`,
+        details: error
+      }})
+    }
+  }
+
   @get('/solutions/{id}/automation')
   @response(200, {
     description: 'Download Terraform Package for solution',

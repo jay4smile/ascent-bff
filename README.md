@@ -133,9 +133,9 @@ yarn start:dev
       3. In the **Applications** section, copy your app credentials. **If none**:
          1. Create one with following scopes: `edit`, `view_controls`, `super_edit`.
          2. Create Roles
-            1. `editor` with scopes: `edit`
-            2. `admin` with scopes: `edit`, `super_edit`
-            3. `fs-controls-viewer` with scopes: `view_controls`
+            1. `editor` with scopes: `read`, `edit`
+            2. `admin` with scopes: `read`, `edit`, `super_edit`
+            3. `fs-controls-viewer` with scopes: `read`, `view_controls`
          3. Assign Roles
    2. In the `mapper-dev` project, update the AppId secrets to add the new `binding-application` key with the value you just copied:
       1. In the **Workloads > Secrets** section, select the `binding-dev-mapper` secret (`dev-mapper` being the name of our AppId service).
