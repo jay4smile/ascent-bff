@@ -67,7 +67,7 @@ import {
           if (id) {
             try {
               const solution = await this.solutionRepository.findById(id, {include: ['owners']});
-              if (!(request?.appIdAuthorizationContext?.accessTokenPayload?.scope?.split(" ")?.includes("super_edit") || ((request.method === "GET" || ctx.targetName === "SolutionsController.prototype.duplicate") && solution.public) || solution?.owners?.find(owner => owner.email === email))) {
+              if (!(request?.scopes?.includes("super_edit") || ((request.method === "GET" || ctx.targetName === "SolutionsController.prototype.duplicate") && solution.public) || solution?.owners?.find(owner => owner.email === email))) {
                 return response.status(401).send({error: {
                   message: `User ${email} must be owner of solution ${id} to perform this request.`
                 }});
