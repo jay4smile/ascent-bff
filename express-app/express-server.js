@@ -36,11 +36,11 @@ if (process.env.NODE_ENV !== "dev" && process.env.NODE_ENV !== "test") {
 
     const editorMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
     app.use((req, res, next) => {
-        if (!process.env.OCP_API_URL) {
+        if (process.env.OCP_API_URL) {
             request({
                 url: `${process.env.OCP_API_URL}/apis/user.openshift.io/v1/users/~`,
                 headers: {
-                    'Authorization': req.headers['Authorization']
+                    'Authorization': req.headers['authorization']
                 }
             }, (err, response, body) => {
                 const user = JSON.parse(body);
@@ -63,7 +63,6 @@ if (process.env.NODE_ENV !== "dev" && process.env.NODE_ENV !== "test") {
                         }
                     });
                 }
-                done(err, user);
             });
         } else {
             req.scopes = req?.appIdAuthorizationContext?.accessTokenPayload?.scope?.split(" ");
