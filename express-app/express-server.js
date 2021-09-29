@@ -36,7 +36,7 @@ if (process.env.NODE_ENV !== "dev" && process.env.NODE_ENV !== "test") {
 
     const editorMethods = ['POST', 'PUT', 'DELETE', 'PATCH'];
     app.use((req, res, next) => {
-        if (process.env.OCP_API_URL) {
+        if (process.env.OCP_API_URL && req.headers['authorization']) {
             request({
                 url: `${process.env.OCP_API_URL}/apis/user.openshift.io/v1/users/~`,
                 headers: {
@@ -62,6 +62,12 @@ if (process.env.NODE_ENV !== "dev" && process.env.NODE_ENV !== "test") {
                             message: "You must have editor role to perform this request."
                         }
                     });
+                }
+            });
+        } else if (process.env.OCP_API_URL) {
+            res.status(401).json({
+                error: {
+                    message: "You must set a valid token (missing authorization header)."
                 }
             });
         } else {
