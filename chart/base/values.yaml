@@ -40,7 +40,10 @@ vcsInfo:
   repoUrl: ""
   branch: ""
 
-partOf: ""
+authentication:
+  provider: "openshift"
+
+partOf: "ascent"
 
 connectsTo: ""
 
