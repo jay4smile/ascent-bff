@@ -67,18 +67,18 @@ spec:
             - name: DATABASE
               valueFrom:
                 secretKeyRef:
-                  name: binding-builder-mongodb
+                  name: ascent-mongo-config
                   key: binding
             - name: STORAGE
               valueFrom:
                 secretKeyRef:
-                  name: binding-dev-mapper-storage
+                  name: ascent-cos-config
                   key: binding
             {{- if eq .Values.authentication.provider "appid" }}
             - name: APPID_OAUTH_SERVER_URL
               valueFrom:
                 secretKeyRef:
-                  name: binding-dev-mapper
+                  name: ascent-appid-config
                   key: oauthServerUrl
             {{- end }}
             {{- if eq .Values.authentication.provider "openshift" }}
