@@ -54,7 +54,7 @@ export class ControlDetailsInterceptor implements Provider<Interceptor> {
       
       if (email && protectedControlTargets.includes(invocationCtx.targetName)) {
         if (((request?.query?.filter && JSON.parse(request.query.filter)?.include?.includes("controlDetails")) || invocationCtx.targetName === 'ArchitecturesBomController.prototype.downloadComplianceReport')
-           && !request?.appIdAuthorizationContext?.accessTokenPayload?.scope?.split(" ")?.includes("view_controls")) {
+           && !request?.scopes?.includes("view_controls")) {
             return response.status(401).send({error: {
               message: `User ${email} cannot perform this request.`
             }});

@@ -88,8 +88,8 @@ export class ArchitecturesController {
 
     this.cos = new Storage.S3(config);
     this.bucketNames = {
-      drawio: "architecture-diagrams-drawio",
-      png: "architecture-diagrams-images"
+      drawio: "ascent-architecture-diagrams-drawio",
+      png: "ascent-architecture-diagrams-images"
     }
     this.cos.listBuckets().promise()
       .then(data => {

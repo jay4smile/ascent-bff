@@ -162,13 +162,13 @@ export class SolutionController {
           }
           // Create Buckett and upload files to COS
           this.cos.createBucket({
-            Bucket: id,
+            Bucket: `ascent-${id}`,
             CreateBucketConfiguration: {
               LocationConstraint: 'eu-geo'
             }
           }).promise()
             .then(() => {
-              console.log(`Bucket ${id} created.`);
+              console.log(`Bucket ascent-${id} created.`);
             })
             .catch(function(createBucketErr) {
               console.error(util.inspect(createBucketErr));
@@ -178,7 +178,7 @@ export class SolutionController {
               const errors:object[] = [];
               for (const file of files) {
                 this.cos.putObject({
-                  Bucket: id,
+                  Bucket: `ascent-${id}`,
                   Key: `${file.name}`,
                   Body: file.buffer
                 }, (putObjErr) => {
@@ -230,7 +230,7 @@ export class SolutionController {
   ): Promise<any> {
     const solution:any = JSON.parse(JSON.stringify(await this.solutionRepository.findById(id, filter)));
     try {
-      solution.files = (await this.cos.listObjects({Bucket: id}).promise()).Contents;
+      solution.files = (await this.cos.listObjects({Bucket: `ascent-${id}`}).promise()).Contents;
     } catch (error) {
       console.log(error);
     }
@@ -249,7 +249,7 @@ export class SolutionController {
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<any> {
     try {
-      return (await this.cos.getObject({Bucket: id, Key: key}).promise()).Body;
+      return (await this.cos.getObject({Bucket: `ascent-${id}`, Key: key}).promise()).Body;
     } catch (error) {
       return res.status(400).send({error: {
         message: `Error retrieving diagram`,
@@ -302,10 +302,10 @@ export class SolutionController {
 
       // Add files from COS
       try {
-        const objects = (await this.cos.listObjects({Bucket: id}).promise()).Contents;
+        const objects = (await this.cos.listObjects({Bucket: `ascent-${id}`}).promise()).Contents;
         if (objects) for (const object of objects) {
           if (object.Key) {
-            const cosObj = (await this.cos.getObject({Bucket: id, Key: object.Key}).promise()).Body;
+            const cosObj = (await this.cos.getObject({Bucket: `ascent-${id}`, Key: object.Key}).promise()).Body;
             if (cosObj) zip.addFile(object.Key, new Buffer(cosObj.toString()));
           }
         }
@@ -364,10 +364,10 @@ export class SolutionController {
   async deleteById(@param.path.string('id') id: string): Promise<void> {
     try {
       // Delete all objects in solution bucket
-      const objs = (await this.cos.listObjects({Bucket: id}).promise()).Contents?.filter(obj => obj.Key);
-      if (objs) await this.cos.deleteObjects({Bucket: id, Delete: { Objects: objs.map((obj => ({ Key: obj.Key ?? '' }))) }}).promise();
+      const objs = (await this.cos.listObjects({Bucket: `ascent-${id}`}).promise()).Contents?.filter(obj => obj.Key);
+      if (objs) await this.cos.deleteObjects({Bucket: `ascent-${id}`, Delete: { Objects: objs.map((obj => ({ Key: obj.Key ?? '' }))) }}).promise();
       await this.cos.deleteBucket({
-        Bucket: id
+        Bucket: `ascent-${id}`
       }).promise();
     } catch (error) {
       console.log(error);
