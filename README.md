@@ -118,23 +118,63 @@ yarn start:dev
     ❯ oc project ascent-dev
     ```
 
-### Bind IBM CLoud Services
+### Set up Cloud Object Storage
 
-3. Bind your IBM Cloud services (MongoDB, AppId, and COS) to your namespaces:
+3. Bind your IBM Cloud Object Storage service to your namespaces:
     ```sh
     ❯ icc <your-cluster> # Log in to cluster using "icc" or "oc login" command
     ❯ export CLUSTER_NAME="dev-mapper-ocp" # Name of your IBM Cloud MongoDB service
-    ❯ export MONGO_SERVICE_NAME="builder-mongodb" # Name of your IBM Cloud MongoDB service
     ❯ export COS_SERVICE_NAME="dev-mapper-storage" # Name of your IBM Cloud MongoDB service
-    ❯ ic oc cluster service bind --cluster $CLUSTER_NAME --service $MONGO_SERVICE_NAME -n ascent-dev # MongoDB
-    ❯ oc get secret binding-$MONGO_SERVICE_NAME -n ascent-dev -o yaml | sed "s/binding-${MONGO_SERVICE_NAME}/ascent-mongo-config/g" | oc create -f - # Rename Mongo secret 
-    ❯ oc get secret ascent-mongo-config -n ascent-dev -o yaml | sed 's/ascent-dev/ascent-test/g' | oc create -f - # Copy Mongo secret to ascent-test namespace
-    ❯ oc get secret ascent-mongo-config -n ascent-dev -o yaml | sed 's/ascent-dev/ascent-staging/g' | oc create -f - # Copy Mongo secret to ascent-staging namespace
     ❯ ic oc cluster service bind --cluster $CLUSTER_NAME --service $COS_SERVICE_NAME -n ascent-dev # COS
     ❯ oc get secret binding-$COS_SERVICE_NAME -n ascent-dev -o yaml | sed "s/binding-${COS_SERVICE_NAME}/ascent-cos-config/g" | oc create -f - # Rename COS secret 
     ❯ oc get secret ascent-cos-config -n ascent-dev -o yaml | sed 's/ascent-dev/ascent-test/g' | oc create -f - # Copy COS secret to ascent-test namespace
     ❯ oc get secret ascent-cos-config -n ascent-dev -o yaml | sed 's/ascent-dev/ascent-staging/g' | oc create -f - # Copy COS secret to ascent-staging namespace
     ```
+
+### Set up MongoDB database
+
+Follow either of the steps below depending on the type of MongoDB service you are going to use.
+
+#### IBM Cloud service: Databases for MongoDB
+
+4. Bind your Databases for MongoDB services to your namespaces:
+    ```sh
+    ❯ icc <your-cluster> # Log in to cluster using "icc" or "oc login" command
+    ❯ export CLUSTER_NAME="dev-mapper-ocp" # Name of your IBM Cloud MongoDB service
+    ❯ export MONGO_SERVICE_NAME="builder-mongodb" # Name of your IBM Cloud MongoDB service
+    ❯ ic oc cluster service bind --cluster $CLUSTER_NAME --service $MONGO_SERVICE_NAME -n ascent-dev # MongoDB
+    ❯ oc get secret binding-$MONGO_SERVICE_NAME -n ascent-dev -o yaml | sed "s/binding-${MONGO_SERVICE_NAME}/ascent-mongo-config/g" | oc create -f - # Rename Mongo secret 
+    ❯ oc get secret ascent-mongo-config -n ascent-dev -o yaml | sed 's/ascent-dev/ascent-test/g' | oc create -f - # Copy Mongo secret to ascent-test namespace
+    ❯ oc get secret ascent-mongo-config -n ascent-dev -o yaml | sed 's/ascent-dev/ascent-staging/g' | oc create -f - # Copy Mongo secret to ascent-staging namespace
+    ```
+
+#### Self-Managed MongoDB
+
+4. Provision a self-managed DB using Helm Chart (**Note:** Repeat for `ascent-dev`, `ascent-test` and `ascent-staging` namespaces):
+   1. Get the chart values:
+      ```sh
+      ❯ helm show values stable/mongodb > mongo.values.yaml
+      ```
+   2. Update the following values in `mongo.values.yaml`:
+      ```yaml
+      ... ommited ...
+      mongodbUsername: ascent-admin
+      mongodbPassword: <YOUR_PASSWORD>
+      mongodbDatabase: ascent-db
+      ... ommited ...
+      securityContext:
+         enabled: false
+      ... ommited ...
+      ```
+   3. Install the chart:
+      ```sh
+      ❯ helm install ascent-mongodb stable/mongodb --values mongo.values.yaml
+      ```
+   4. Create the `ascent-mongo-config` connection secret:
+      ```sh
+      ❯ export MONGODB_PASSWORD=<YOUR_PASSWORD>
+      ❯ oc create secret generic ascent-mongo-config --from-literal=binding="{\"connection\":{\"mongodb\":{\"composed\":[\"mongodb://ascent-admin:${MONGODB_PASSWORD}@ascent-mongodb:27017/ascent-db\"],\"authentication\":{\"username\":\"ascent-admin\",\"password\":\"${MONGODB_PASSWORD}\"},\"database\":\"ascent-db\",\"hosts\":[{\"hostname\":\"localhost\",\"port\":27017}]}}}"
+      ```
 
 ### Set Up Authentication
 
@@ -201,9 +241,9 @@ Follow either of the steps below depending on the authentication provider you wa
 
 5. Create a configmap in each project for the ui:
     ```sh
-    ❯ oc create configmap ascent --from-literal=route=https://ascent-dev.openfn.co --from-literal=api-host=todo -n ascent-dev
-    ❯ oc create configmap ascent --from-literal=route=https://ascent-test.openfn.co --from-literal=api-host=todo -n ascent-test
-    ❯ oc create configmap ascent --from-literal=route=https://ascent.openfn.co --from-literal=api-host=todo -n ascent-staging
+    ❯ oc create configmap ascent --from-literal=route=https://ascent-dev.openfn.co --from-literal=api-host=todo --from-literal=instance-id=$(date +%s | sha256sum | head -c 16 ; echo) -n ascent-dev
+    ❯ oc create configmap ascent --from-literal=route=https://ascent-test.openfn.co --from-literal=api-host=todo --from-literal=instance-id=$(date +%s | sha256sum | head -c 16 ; echo) -n ascent-test
+    ❯ oc create configmap ascent --from-literal=route=https://ascent.openfn.co --from-literal=api-host=todo --from-literal=instance-id=$(date +%s | sha256sum | head -c 16 ; echo) -n ascent-staging
     ```
     - **Note**: We'll update the `api-host` value once we've deployed the BFF APIs.
 6. Create the pipeline for the BFF
@@ -246,7 +286,7 @@ Follow either of the steps below depending on the authentication provider you wa
       ❯ oc create configmap ascent \
         --from-literal=route=https://ascent-dev.openfn.co \
         --from-literal=api-host=https://$(oc get routes/architecture-builder-bff -n ascent-dev -o jsonpath='{.spec.host}') \
-        -n ascent-dev
+        --from-literal=instance-id=$(date +%s | sha256sum | head -c 16 ; echo)  -n ascent-dev
       ❯ cd path/to/architecture-builder-ui
       ❯ oc pipeline --tekton -n ascent-dev
       ```

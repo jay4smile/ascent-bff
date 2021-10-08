@@ -18,9 +18,6 @@ assert(!_.isUndefined(mongodbServices), 'backend must be bound to mongodb servic
 const mongodbConn = mongodbServices.connection.mongodb;
 const mongodbComposed = mongodbConn.composed[0];
 
-// Read the CA certificate and assign that to the CA variable
-const ca = [Buffer.from(mongodbConn.certificate.certificate_base64, 'base64')];
-
 // Extract the database username and password
 const authentication = mongodbConn.authentication;
 const username: string = authentication.username;
@@ -41,12 +38,12 @@ const config = {
   password : password,
   host: connectionPath[0].hostname,
   database: mongodbConn.database,
-  authSource: 'admin',
+  authSource: mongodbConn?.query_options?.authSource,
   useNewUrlParser: true,
-  ssl: true,
-  sslValidate: true,
+  ssl: mongodbConn?.certificate?.certificate_base64 ? true : false,
+  sslValidate: mongodbConn?.certificate?.certificate_base64 ? true : false,
   checkServerIdentity: false,
-  sslCA: ca,
+  sslCA: mongodbConn?.certificate?.certificate_base64 ? [Buffer.from(mongodbConn?.certificate?.certificate_base64, 'base64')] : [],
 };
 
 // Observe application's life cycle to disconnect the datasource when

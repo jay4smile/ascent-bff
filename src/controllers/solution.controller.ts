@@ -22,7 +22,6 @@ import {inject} from "@loopback/core";
 import * as _ from 'lodash';
 import assert from "assert";
 import * as Storage from "ibm-cos-sdk"
-import util from 'util';
 
 import  AdmZip = require("adm-zip");
 
@@ -44,6 +43,9 @@ import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler, File} from '../types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+const INSTANCE_ID = process.env.INSTANCE_ID;
+const BUCKET_NAME = `ascent-storage-${INSTANCE_ID}`;
 
 interface PostBody {
   solution: Solution,
@@ -161,37 +163,23 @@ export class SolutionController {
             }
           }
           // Create Buckett and upload files to COS
-          this.cos.createBucket({
-            Bucket: `ascent-${id}`,
-            CreateBucketConfiguration: {
-              LocationConstraint: 'eu-geo'
-            }
-          }).promise()
-            .then(() => {
-              console.log(`Bucket ascent-${id} created.`);
-            })
-            .catch(function(createBucketErr) {
-              console.error(util.inspect(createBucketErr));
-            })
-            .finally(() => {
-              let fileIx = 0;
-              const errors:object[] = [];
-              for (const file of files) {
-                this.cos.putObject({
-                  Bucket: `ascent-${id}`,
-                  Key: `${file.name}`,
-                  Body: file.buffer
-                }, (putObjErr) => {
-                  if (err) {
-                    errors.push(putObjErr);
-                  }
-                  if (++fileIx === files.length) {
-                    if (err) return reject({error: errors});
-                    return resolve();
-                  }
-                });
+          let fileIx = 0;
+          const errors:object[] = [];
+          for (const file of files) {
+            this.cos.putObject({
+              Bucket: BUCKET_NAME,
+              Key: `solutions/${id}/${file.name}`,
+              Body: file.buffer
+            }, (putObjErr) => {
+              if (err) {
+                errors.push(putObjErr);
               }
-            })
+              if (++fileIx === files.length) {
+                if (err) return reject({error: errors});
+                return resolve();
+              }
+            });
+          }
         }
       });
     });
@@ -230,7 +218,14 @@ export class SolutionController {
   ): Promise<any> {
     const solution:any = JSON.parse(JSON.stringify(await this.solutionRepository.findById(id, filter)));
     try {
-      solution.files = (await this.cos.listObjects({Bucket: `ascent-${id}`}).promise()).Contents;
+      let solObjects = (await this.cos.listObjects({Bucket: BUCKET_NAME}).promise()).Contents;
+      if (solObjects) {
+        solObjects = solObjects.filter(obj => obj.Key?.startsWith(`solutions/${id}/`));
+        for (const obj of solObjects) {
+          obj.Key = obj.Key?.replace(`solutions/${id}/`, '');
+        }
+      }
+      solution.files = solObjects;
     } catch (error) {
       console.log(error);
     }
@@ -238,18 +233,21 @@ export class SolutionController {
     return solution;
   }
 
-  @get('/solutions/{id}/files/{key}')
+  @get('/solutions/{id}/files/{filename}')
   @response(200, {
     description: 'Get solution file by name',
   })
   @oas.response.file()
   async getFile(
     @param.path.string('id') id: string,
-    @param.path.string('key') key: string,
+    @param.path.string('filename') filename: string,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<any> {
     try {
-      return (await this.cos.getObject({Bucket: `ascent-${id}`, Key: key}).promise()).Body;
+      return (await this.cos.getObject({
+        Bucket: BUCKET_NAME,
+        Key: `solutions/${id}/${filename}`
+      }).promise()).Body;
     } catch (error) {
       return res.status(400).send({error: {
         message: `Error retrieving diagram`,
@@ -302,10 +300,18 @@ export class SolutionController {
 
       // Add files from COS
       try {
-        const objects = (await this.cos.listObjects({Bucket: `ascent-${id}`}).promise()).Contents;
+        let objects = (await this.cos.listObjects({
+          Bucket: BUCKET_NAME
+        }).promise()).Contents;
+        if (objects) {
+          objects = objects.filter(file => file.Key?.startsWith(`solutions/${id}/`));
+        }
         if (objects) for (const object of objects) {
           if (object.Key) {
-            const cosObj = (await this.cos.getObject({Bucket: `ascent-${id}`, Key: object.Key}).promise()).Body;
+            const cosObj = (await this.cos.getObject({
+              Bucket: BUCKET_NAME,
+              Key: object.Key
+            }).promise()).Body;
             if (cosObj) zip.addFile(object.Key, new Buffer(cosObj.toString()));
           }
         }
@@ -364,10 +370,14 @@ export class SolutionController {
   async deleteById(@param.path.string('id') id: string): Promise<void> {
     try {
       // Delete all objects in solution bucket
-      const objs = (await this.cos.listObjects({Bucket: `ascent-${id}`}).promise()).Contents?.filter(obj => obj.Key);
-      if (objs) await this.cos.deleteObjects({Bucket: `ascent-${id}`, Delete: { Objects: objs.map((obj => ({ Key: obj.Key ?? '' }))) }}).promise();
-      await this.cos.deleteBucket({
-        Bucket: `ascent-${id}`
+      const objs = (await this.cos.listObjects({
+        Bucket: BUCKET_NAME
+      }).promise()).Contents?.filter(obj => obj.Key?.startsWith(`solutions/${id}/`))?.filter(obj => obj.Key);
+      if (objs) await this.cos.deleteObjects({
+        Bucket: BUCKET_NAME,
+        Delete: {
+          Objects: objs.map((obj => ({ Key: obj.Key ?? '' })))
+        }
       }).promise();
     } catch (error) {
       console.log(error);
