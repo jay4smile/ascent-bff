@@ -46,13 +46,12 @@ export enum DiagramType {
   PNG = "png"
 }
 
+const INSTANCE_ID = process.env.INSTANCE_ID;
+
 export class ArchitecturesController {
 
   private cos : Storage.S3;
-  private bucketNames: {
-    drawio: Storage.S3.BucketName,
-    png: Storage.S3.BucketName
-  };
+  private bucketName: Storage.S3.BucketName;
 
   constructor(
     @repository(ArchitecturesRepository)
@@ -87,35 +86,18 @@ export class ArchitecturesController {
     };
 
     this.cos = new Storage.S3(config);
-    this.bucketNames = {
-      drawio: "ascent-architecture-diagrams-drawio",
-      png: "ascent-architecture-diagrams-images"
-    }
+    this.bucketName = `ascent-storage-${INSTANCE_ID}`;
     this.cos.listBuckets().promise()
       .then(data => {
-        if (!data?.Buckets?.find(bucket => bucket.Name === this.bucketNames.drawio)) {
+        if (!data?.Buckets?.find(bucket => bucket.Name === this.bucketName)) {
           this.cos.createBucket({
-            Bucket: this.bucketNames.drawio,
+            Bucket: this.bucketName,
             CreateBucketConfiguration: {
               LocationConstraint: 'eu-geo'
             }
           }).promise()
             .then(() => {
-              console.log(`Bucket ${this.bucketNames.drawio} created.`);
-            })
-            .catch(function(err) {
-              console.error(util.inspect(err));
-            });
-        }
-        if (!data?.Buckets?.find(bucket => bucket.Name === this.bucketNames.png)) {
-          this.cos.createBucket({
-            Bucket: this.bucketNames.png,
-            CreateBucketConfiguration: {
-              LocationConstraint: 'eu-geo'
-            }
-          }).promise()
-            .then(() => {
-              console.log(`Bucket ${this.bucketNames.png} created.`);
+              console.log(`Bucket ${this.bucketName} created.`);
             })
             .catch(function(err) {
               console.error(util.inspect(err));
@@ -130,8 +112,8 @@ export class ArchitecturesController {
   public async getDiagram(arch_id: string, diagramType: DiagramType, small=false): Promise<Storage.S3.Body> {
     return new Promise((resolve, reject) => {
       this.cos.getObject({
-        Bucket: this.bucketNames[diagramType],
-        Key: `${small ? "small-" : ""}${arch_id}-diagram.${diagramType}`
+        Bucket: this.bucketName,
+        Key: `diagrams/${diagramType}/${small ? "small-" : ""}${arch_id}-diagram.${diagramType}`
       }).promise()
         .then((data) => {
           if (data?.Body) {
@@ -144,8 +126,8 @@ export class ArchitecturesController {
         }, (error) => {
           if (error?.code === "NoSuchKey") {
             return this.cos.getObject({
-              Bucket: this.bucketNames[diagramType],
-              Key: `${small ? "small-" : ""}placeholder.${diagramType}`
+              Bucket: this.bucketName,
+              Key: `diagrams/${diagramType}/${small ? "small-" : ""}placeholder.${diagramType}`
             }).promise()
               .then((data) => {
                 if (data?.Body) {
@@ -238,8 +220,8 @@ export class ArchitecturesController {
       const errors:object[] = [];
       for (const file of files) {
         this.cos.putObject({
-          Bucket: file.fieldname === "drawio" ? this.bucketNames.drawio : this.bucketNames.png,
-          Key: `${(file.name === "png-small") ? "small-" : ""}${arch_id}-diagram.${file.fieldname}`,
+          Bucket: this.bucketName,
+          Key: `diagrams/${file.fieldname}/${(file.name === "png-small") ? "small-" : ""}${arch_id}-diagram.${file.fieldname}`,
           Body: file.buffer
         }, (err) => {
           if (err) {
@@ -517,30 +499,30 @@ export class ArchitecturesController {
     }
     // Duplicate architecture diagrams
     const diagramPng = await this.cos.getObject({
-      Bucket: this.bucketNames.png,
-      Key: `${arch_id}-diagram.png`
+      Bucket: this.bucketName,
+      Key: `diagrams/png/${arch_id}-diagram.png`
     }).promise();
     const diagramPngSmall = await this.cos.getObject({
-      Bucket: this.bucketNames.png,
-      Key: `small-${arch_id}-diagram.png`
+      Bucket: this.bucketName,
+      Key: `diagrams/png/small-${arch_id}-diagram.png`
     }).promise();
     const diagramDrawio = await this.cos.getObject({
-      Bucket: this.bucketNames.drawio,
-      Key: `${arch_id}-diagram.drawio`
+      Bucket: this.bucketName,
+      Key: `diagrams/drawio/${arch_id}-diagram.drawio`
     }).promise();
     await this.cos.putObject({
-      Bucket: this.bucketNames.png,
-      Key: `${archDetails.arch_id}-diagram.png`,
+      Bucket: this.bucketName,
+      Key: `diagrams/png/${archDetails.arch_id}-diagram.png`,
       Body: diagramPng.Body
     }).promise();
     await this.cos.putObject({
-      Bucket: this.bucketNames.png,
-      Key: `small-${archDetails.arch_id}-diagram.png`,
+      Bucket: this.bucketName,
+      Key: `diagrams/png/small-${archDetails.arch_id}-diagram.png`,
       Body: diagramPngSmall.Body
     }).promise();
     await this.cos.putObject({
-      Bucket: this.bucketNames.drawio,
-      Key: `${archDetails.arch_id}-diagram.drawio`,
+      Bucket: this.bucketName,
+      Key: `diagrams/drawio/${archDetails.arch_id}-diagram.drawio`,
       Body: diagramDrawio.Body
     }).promise();
     return newArch;

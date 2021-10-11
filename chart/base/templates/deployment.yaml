@@ -74,6 +74,11 @@ spec:
                 secretKeyRef:
                   name: ascent-cos-config
                   key: binding
+            - name: INSTANCE_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: ascent
+                  key: instance-id
             {{- if eq .Values.authentication.provider "appid" }}
             - name: APPID_OAUTH_SERVER_URL
               valueFrom:
