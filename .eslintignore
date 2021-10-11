@@ -4,3 +4,4 @@ dist
 express-app
 
 *.ignore.js
+scripts/*.js
