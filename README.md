@@ -126,7 +126,7 @@ yarn start:dev
     ❯ export CLUSTER_NAME="dev-mapper-ocp" # Name of your IBM Cloud MongoDB service
     ❯ export COS_SERVICE_NAME="dev-mapper-storage" # Name of your IBM Cloud MongoDB service
     ❯ ic oc cluster service bind --cluster $CLUSTER_NAME --service $COS_SERVICE_NAME -n ascent-dev # COS
-    ❯ oc get secret binding-$COS_SERVICE_NAME -n ascent-dev -o yaml | sed "s/binding-${COS_SERVICE_NAME}/ascent-cos-config/g" | oc create -f - # Rename COS secret 
+    ❯ kubectl get secret binding-$COS_SERVICE_NAME -n ascent-dev -o yaml | sed "s/binding-${COS_SERVICE_NAME}/ascent-cos-config/g" | oc create -f - # Rename COS secret 
     ❯ oc get secret ascent-cos-config -n ascent-dev -o yaml | sed 's/ascent-dev/ascent-test/g' | oc create -f - # Copy COS secret to ascent-test namespace
     ❯ oc get secret ascent-cos-config -n ascent-dev -o yaml | sed 's/ascent-dev/ascent-staging/g' | oc create -f - # Copy COS secret to ascent-staging namespace
     ```
@@ -220,8 +220,8 @@ Follow either of the steps below depending on the authentication provider you wa
    grantMethod: auto
    kind: OAuthClient
    metadata:
-   name: ascent
-   selfLink: /apis/oauth.openshift.io/v1/oauthclients/ascent
+      name: ascent
+      selfLink: /apis/oauth.openshift.io/v1/oauthclients/ascent
    redirectURIs:
    - http://localhost:3000/login/callback
    secret: <YOUR_CLIENT_SECRET>
