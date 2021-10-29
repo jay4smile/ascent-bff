@@ -37,12 +37,13 @@ function filewalker(dir, done) {
     });
 };
 
-const ext = ['.csv', '.json', '.xlsx', '.xls', '.ipynb']
-filewalker('./data/source', function(err, data){
+const ext = ['.csv', '.json', '.xlsx', '.xls', '.ipynb', 'txt']
+filewalker(`${__dirname}/../data`, function(err, data){
     if(err){
         throw err;
     }
-    data = data.map(filename => filename.replace(`${__dirname}/`, ''))
+    const toReplace = __dirname.split('/').slice(0,-1).join('/');
+    data = data.map(filename => filename.replace(`${toReplace}/`, ''))
     console.log(data);
     data.forEach((filename) => {
         if (ext.includes(path.extname(filename))) {
