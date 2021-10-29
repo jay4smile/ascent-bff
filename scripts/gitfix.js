@@ -37,7 +37,7 @@ function filewalker(dir, done) {
     });
 };
 
-const ext = ['.csv', '.json', '.xlsx', '.xls', '.ipynb', 'txt']
+const ext = ['.csv', '.json', '.xlsx', '.xls', '.ipynb', '.txt']
 filewalker(`${__dirname}/../data`, function(err, data){
     if(err){
         throw err;
