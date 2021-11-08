@@ -498,33 +498,45 @@ export class ArchitecturesController {
       await this.architecturesRepository.boms(archDetails.arch_id).create(bom);
     }
     // Duplicate architecture diagrams
-    const diagramPng = await this.cos.getObject({
-      Bucket: this.bucketName,
-      Key: `diagrams/png/${arch_id}-diagram.png`
-    }).promise();
-    const diagramPngSmall = await this.cos.getObject({
-      Bucket: this.bucketName,
-      Key: `diagrams/png/small-${arch_id}-diagram.png`
-    }).promise();
-    const diagramDrawio = await this.cos.getObject({
-      Bucket: this.bucketName,
-      Key: `diagrams/drawio/${arch_id}-diagram.drawio`
-    }).promise();
-    await this.cos.putObject({
-      Bucket: this.bucketName,
-      Key: `diagrams/png/${archDetails.arch_id}-diagram.png`,
-      Body: diagramPng.Body
-    }).promise();
-    await this.cos.putObject({
-      Bucket: this.bucketName,
-      Key: `diagrams/png/small-${archDetails.arch_id}-diagram.png`,
-      Body: diagramPngSmall.Body
-    }).promise();
-    await this.cos.putObject({
-      Bucket: this.bucketName,
-      Key: `diagrams/drawio/${archDetails.arch_id}-diagram.drawio`,
-      Body: diagramDrawio.Body
-    }).promise();
+    try {
+      const diagramPng = await this.cos.getObject({
+        Bucket: this.bucketName,
+        Key: `diagrams/png/${arch_id}-diagram.png`
+      }).promise();
+      await this.cos.putObject({
+        Bucket: this.bucketName,
+        Key: `diagrams/png/${archDetails.arch_id}-diagram.png`,
+        Body: diagramPng.Body
+      }).promise();
+    } catch (error) {
+      console.log(`Error duplicating ${arch_id} PNG diagram: `, error);
+    }
+    try {
+      const diagramPngSmall = await this.cos.getObject({
+        Bucket: this.bucketName,
+        Key: `diagrams/png/small-${arch_id}-diagram.png`
+      }).promise();
+      await this.cos.putObject({
+        Bucket: this.bucketName,
+        Key: `diagrams/png/small-${archDetails.arch_id}-diagram.png`,
+        Body: diagramPngSmall.Body
+      }).promise();
+    } catch (error) {
+      console.log(`Error duplicating ${arch_id} small PNG diagram: `, error);
+    }
+    try {
+      const diagramDrawio = await this.cos.getObject({
+        Bucket: this.bucketName,
+        Key: `diagrams/drawio/${arch_id}-diagram.drawio`
+      }).promise();
+      await this.cos.putObject({
+        Bucket: this.bucketName,
+        Key: `diagrams/drawio/${archDetails.arch_id}-diagram.drawio`,
+        Body: diagramDrawio.Body
+      }).promise();
+    } catch (error) {
+      console.log(`Error duplicating ${arch_id} DRAWIO diagram: `, error);
+    }
     return newArch;
   }
 }
