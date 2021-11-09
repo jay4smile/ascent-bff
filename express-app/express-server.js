@@ -55,6 +55,8 @@ if (process.env.NODE_ENV !== "dev" && process.env.NODE_ENV !== "test") {
                     req.scopes.push("super_edit");
                 }
                 if (!editorMethods.includes(req.method) || req.scopes.includes("edit")) {
+                    req.user = user;
+                    req.user.email = req.user?.metadata?.name;
                     next();
                 } else {
                     res.status(401).json({
