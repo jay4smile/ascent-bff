@@ -352,11 +352,7 @@ export class ArchitecturesBomController {
         controlCell.destination(control.id);
         controlCell.text(`${(control.name && (control.id + " " + control.name)) || control.id}`, { fontSize: 20 });
         controlCell.text(`Description`, { fontSize: 16 });
-        controlCell.text(`${controlDetails.description
-          .replace(/\n\*\*([a-zA-Z1-9\(\)]+)\*\*/gi, '\n$1')
-          .replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n')
-          .replace(/\*\*Note\*\*/gi, 'Note')
-          .replace(/\*\*Note:\*\*/gi, 'Note:')}`);
+        controlCell.text(`${controlDetails.requirements.map(req => req.id + ':\n' + req.description + '\n\n')}`);
         // if (control.parent_control) controlCell.text(`- Parent control: ${control.parent_control}`);
         if (controlDetails.fs_guidance) {
           controlCell.text(`Additionnal FS Guidance`, { fontSize: 14 });
@@ -367,7 +363,7 @@ export class ArchitecturesBomController {
             .replace(/\*\*Note:\*\*/gi, 'Note:'));
         }
         controlCell.text(`Parameters`, { fontSize: 16 });
-        controlCell.text(`${controlDetails.parameters?.replace(/\*/gi, '')}`);
+        controlCell.text(`${controlDetails.fs_params?.replace(/\*/gi, '')}`);
         controlCell.text(`Solution and Implementation`, { fontSize: 16 });
         const implemParts = controlDetails.implementation
           ?.replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n').replace(/\n\n/gi, '\n')
