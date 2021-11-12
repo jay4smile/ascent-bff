@@ -87,7 +87,8 @@
     "pdfjs": "^2.4.3",
     "redis": "^3.1.0",
     "tedis": "^0.1.12",
-    "tslib": "^2.0.0"
+    "tslib": "^2.0.0",
+    "xlsx": "^0.17.3"
   },
   "devDependencies": {
     "@loopback/build": "^6.3.1",
