@@ -31,6 +31,11 @@ export class Services extends Entity {
   desc?: string;
 
   @property({
+    type: 'any',
+  })
+  supported_platforms?: string[];
+
+  @property({
     type: 'boolean'
   })
   fs_validated: boolean;
