@@ -21,6 +21,11 @@ export class Architectures extends Entity {
 
   @property({
     type: 'string',
+  })
+  platform?: string;
+
+  @property({
+    type: 'string',
     required: true,
   })
   short_desc: string;

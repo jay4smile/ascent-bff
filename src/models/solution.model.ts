@@ -27,6 +27,11 @@ export class Solution extends Entity {
   @property({
     type: 'string',
   })
+  platform?: string;
+
+  @property({
+    type: 'string',
+  })
   short_desc?: string;
 
   @property({
