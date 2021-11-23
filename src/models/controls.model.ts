@@ -17,7 +17,7 @@ export class Controls extends Entity {
   @property({
     type: 'string'
   })
-  family: string;
+  family?: string;
 
   @property({
     type: 'string',
@@ -28,42 +28,17 @@ export class Controls extends Entity {
   @property({
     type: 'boolean'
   })
-  base_control: boolean;
+  base_control?: boolean;
   
   @property({
     type: 'boolean'
   })
-  control_item: boolean;
+  control_item?: boolean;
 
   @property({
     type: 'string'
   })
-  parent_control: string;
-
-  @property({
-    type: 'string'
-  })
-  existing_scc_goals?: string;
-
-  @property({
-    type: 'string'
-  })
-  human_or_automated?: string;
-
-  @property({
-    type: 'string'
-  })
-  frequency?: string;
-
-  @property({
-    type: 'string'
-  })
-  org_defined_parameter?: string;
-
-  @property({
-    type: 'string'
-  })
-  create_document?: string;
+  parent_control?: string;
 
   @hasOne(() => ControlDetails, {keyTo: 'id'})
   controlDetails: ControlDetails;
