@@ -313,7 +313,7 @@ export class ControlsController {
                   id: parsedItem.id,
                   family: curFamily || existingControl?.family,
                   name: parsedItem.name,
-                  base_control: match !== null,
+                  base_control: match === null,
                   control_item: false,
                   parent_control: match !== null ? match[1] : undefined
                 });
@@ -329,23 +329,7 @@ export class ControlsController {
                   fs_params: parsedItem.fs_params,
                   nist_guidance: parsedItem.nist_guidance,
                   implementation: existingControl?.controlDetails?.implementation,
-                  requirements: [ {
-                    id: parsedItem.requirement_id ?? "",
-                    description: parsedItem.requirement_description,
-                    risk_rating: parsedItem.requirement_risk_rating,
-                    control_type_1: parsedItem.requirement_control_type_1,
-                    control_type_2: parsedItem.requirement_control_type_2,
-                    control_type_3: parsedItem.requirement_control_type_3,
-                    ibm_public_cloud_scope: parsedItem.ibm_public_cloud_scope,
-                    ibm_public_cloud_resp: parsedItem.ibm_public_cloud_resp,
-                    developer_scope: parsedItem.developer_scope,
-                    developer_resp: parsedItem.developer_resp,
-                    operator_scope: parsedItem.operator_scope,
-                    operator_resp: parsedItem.operator_resp,
-                    consumer_scope: parsedItem.consumer_scope,
-                    consumer_resp: parsedItem.consumer_resp,
-                    scc: parsedItem.scc,
-                  } ]
+                  requirements: []
                 });
               }
               if (parsedItem.requirement_id && curControl) curControlDetails?.requirements?.push({

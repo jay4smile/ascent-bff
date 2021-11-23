@@ -16,7 +16,8 @@ import {
     'OnBoardingStageController.prototype.updateAll',
     'OnBoardingStageController.prototype.updateById',
     'OnBoardingStageController.prototype.replaceById',
-    'OnBoardingStageController.prototype.deleteById'
+    'OnBoardingStageController.prototype.deleteById',
+    'ControlsController.prototype.importControls'
   ]
   
   /**
