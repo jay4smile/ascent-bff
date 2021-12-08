@@ -26,8 +26,6 @@ import {
   CatalogLoader,
   Catalog
 } from '@cloudnativetoolkit/iascable';
-import catalogConfig from '../config/catalog.config'
-import yaml from 'js-yaml';
 
 import { Services } from '../models';
 import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository, UserRepository } from '../repositories';
@@ -37,11 +35,8 @@ import { AutomationCatalogController } from '.';
 import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler} from '../types';
 
-const catalogUrl = catalogConfig.url;
-
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-throw-literal */
 
 export class ServicesController {
 
@@ -87,22 +82,6 @@ export class ServicesController {
     service: Services,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Services|object> {
-    if (service.default_automation_variables) {
-      if (!this.catalog) {
-        this.catalog = await this.loader.loadCatalog(catalogUrl);
-      }
-      // Validate default_automation_variables yaml
-      try {
-        if(!service.cloud_automation_id) throw { message: `Service ${service.ibm_catalog_service} is missing automation ID. You cannot set default automation variable.` };
-        yaml.load(service.default_automation_variables);
-        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, service.cloud_automation_id, service.default_automation_variables);
-      } catch (error) {
-        return res.status(400).send({error: {
-          message: `YAML automation variables config error.`,
-          details: error
-        }});
-      }
-    }
     return this.servicesRepository.create(service);
   }
 
@@ -154,13 +133,11 @@ export class ServicesController {
     const jsonObj = [];
     for await (const p of services) {
       // Get automation data
-      if (p.cloud_automation_id) {
-        try {
-          p.automation = await this.automationCatalogController.automationById(p.cloud_automation_id);
-        }
-        catch(e) {
-          console.error(e);
-        }
+      try {
+        p.automation = await this.automationCatalogController.automationById(p.service_id);
+      }
+      catch(e) {
+        console.error(e);
       }
       // Get catalog data
       try {
@@ -192,11 +169,6 @@ export class ServicesController {
     @inject(RestBindings.Http.RESPONSE) res: Response,
     @param.where(Services) where?: Where<Services>,
   ): Promise<Count|object> {
-    if (services.default_automation_variables) {
-      return res.status(400).send({error: {
-        message: `You cannot update all services default automation variables.`
-      }});
-    }
     return this.servicesRepository.updateAll(services, where);
   }
 
@@ -237,23 +209,6 @@ export class ServicesController {
     service: Services,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Services|object> {
-    if (service.default_automation_variables) {
-      if (!this.catalog) {
-        this.catalog = await this.loader.loadCatalog(catalogUrl);
-      }
-      // Validate default_automation_variables yaml
-      const curService = await this.servicesRepository.findById(id);
-      try {
-        if(!curService.cloud_automation_id) throw { message: `Service ${curService.ibm_catalog_service} is missing automation ID. You cannot set default automation variable.` };
-        yaml.load(service.default_automation_variables);
-        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, curService.cloud_automation_id, service.default_automation_variables);
-      } catch (error) {
-        return res.status(400).send({error: {
-          message: `YAML automation variables config error.`,
-          details: error
-        }});
-      }
-    }
     await this.servicesRepository.updateById(id, service);
     return this.servicesRepository.findById(id);
   }

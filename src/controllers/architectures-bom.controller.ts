@@ -26,6 +26,7 @@ import {
   Architectures,
   AutomationRelease,
   Bom,
+  Services
 } from '../models';
 import {
   ArchitecturesRepository,
@@ -126,11 +127,18 @@ export const importYaml = async (
         details: error
       }
     }
-    const services = await servicesRepository.find({ where: { cloud_automation_id: module.name } });
-    if (!services.length) throw {message: `No service matching automation ID ${module.name}`};
+    let service:Services;
+    try {
+      service = await servicesRepository.findById(module.name);
+    } catch (error) {
+      service = await servicesRepository.create({
+        service_id: module.name,
+        fs_validated: false,
+      });
+    }
     const newBom = new Bom({
       arch_id: arch.arch_id,
-      service_id: services[0].service_id,
+      service_id: service.service_id,
       desc: module.alias || module.name
     });
     const automationVars = {
@@ -264,7 +272,7 @@ export class ArchitecturesBomController {
     });
     let serviceIx = 0;
     for await (const service of services) {
-      if (service) doc.text(`    ${tocIx}.${++serviceIx}.  ${service.ibm_catalog_service ?? service.service_id}`, {
+      if (service) doc.text(`    ${tocIx}.${++serviceIx}.  ${service.name ?? service.service_id}`, {
         goTo: service.service_id
       });
     }
@@ -284,7 +292,7 @@ export class ArchitecturesBomController {
     bomCell.text(`Bill of Materials`, { fontSize: 24 });
     for await (const p of archBom) {
       bomCell.text(`- ${p.desc}:`)
-        .append(` ${p.service.ibm_catalog_service ?? p.service.service_id}`, {
+        .append(` ${p.service.name ?? p.service.service_id}`, {
           goTo: p.service.service_id,
           underline: true,
           color: 0x569cd6
@@ -298,7 +306,7 @@ export class ArchitecturesBomController {
         const serviceCell = servicesCell.cell({ paddingBottom: 0.5*cm });
         const catalog = archBom.find(elt => elt.service.service_id === service.service_id)?.catalog;
         serviceCell.destination(service.service_id);
-        serviceCell.text(`${service.ibm_catalog_service ?? service.service_id}`, { fontSize: 20 });
+        serviceCell.text(`${service.name ?? service.service_id}`, { fontSize: 20 });
         serviceCell.text(`Description`, { fontSize: 16 });
         serviceCell.text(`${catalog?.overview_ui?.en?.long_description ?? catalog?.overview_ui?.en?.description ?? service.desc}`);
         if (catalog?.provider?.name) serviceCell.text(`- Provider: ${catalog?.provider?.name}`);
@@ -418,10 +426,8 @@ export class ArchitecturesBomController {
         this.catalog = await this.loader.loadCatalog(catalogUrl);
       }
       // Validate automation_variables yaml
-      const service = await this.servicesRepository.findById(bom.service_id);
       try {
-        if(!service.cloud_automation_id) throw { message: `Service ${service.ibm_catalog_service} is missing automation ID .` };
-        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, service.cloud_automation_id, bom.automation_variables);
+        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, bom.service_id, bom.automation_variables);
       } catch (error) {
         console.log(error);
         return res.status(400).send({error: {

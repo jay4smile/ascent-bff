@@ -20,15 +20,9 @@ MongoClient.connect(mongodbComposed, { ssl: true, sslCA: ca }, (err, client) => 
             .then(catalog => {
                 const newServices = [];
                 catalog.modules.forEach(module => {
-                    if (!items.find(service => service.cloud_automation_id === module.name)) {
+                    if (!items.find(service => service.service_id === module.name)) {
                         newServices.push({
                             "_id" : module.name,
-                            "grouping" : "Compute",
-                            "ibm_catalog_service" : module.name,
-                            "desc" : module.description,
-                            "deployment_method" : "terraform",
-                            "provision" : "Terraform",
-                            "cloud_automation_id" : module.name,
                             "fs_validated" : false
                         });
                     }

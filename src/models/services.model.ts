@@ -26,7 +26,7 @@ export class Services extends Entity {
   @property({
     type: 'boolean'
   })
-  fs_validated: boolean;
+  fs_validated?: boolean;
 
   // Indexer property to allow additional data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
