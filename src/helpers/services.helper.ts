@@ -6,17 +6,13 @@ import {
     Module,
 } from '@cloudnativetoolkit/iascable';
 
-import { repository } from '@loopback/repository';
-
-import { ControlMappingRepository } from '../repositories';
-
 import {
     createNodeRedisClient,
     WrappedNodeRedisClient
 } from 'handy-redis';
 
 import catalogConfig from '../config/catalog.config'
-import { Controls } from '../models';
+import { Controls, Services } from '../models';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -24,18 +20,19 @@ import { Controls } from '../models';
 const catalogUrl = catalogConfig.url;
 
 export interface Service extends Module {
+    service_id?: string;
+    fullname?: string;
+    ibm_catalog_id?: string;
+    fs_validated?: boolean;
     controls?: Controls[]
 }
 
-export class ServiceHelper {
+export class ServicesHelper {
     @Inject loader!: CatalogLoader;
     client: WrappedNodeRedisClient;
     catalog: Catalog;
 
-    constructor(
-        @repository(ControlMappingRepository)
-        protected controlMappingRepository: ControlMappingRepository,
-    ) {
+    constructor() {
         this.client = createNodeRedisClient(6379, "localhost");
     }
 
@@ -73,26 +70,13 @@ export class ServiceHelper {
         });
     }
 
-    getService(id: string, filter?: any): Promise<Service> {
+    getService(id: string): Promise<Service> {
         return new Promise((resolve, reject) => {
             this.getServices()
                 .then(modules => {
                     const module = modules.find(m => m.name === id);
                     if (module) {
-                        if (filter?.include?.includes('controls')) {
-                            const service: Service = module;
-                            this.controlMappingRepository.find({ where: { service_id: { eq: module.name } }, include: ['control'] })
-                                .then(mappings => {
-                                    const flags: { [id: string]: boolean } = {};
-                                    service.controls = mappings.map(m => m.control).filter(function (control) {
-                                        if (flags[control.id]) {
-                                            return false;
-                                        }
-                                        flags[control.id] = true;
-                                        return true;
-                                    });
-                                }).catch(err => reject(err));
-                        } else resolve(module);
+                        resolve(module);
                     } else reject(`Service ${id} not found`);
                 })
                 .catch(err => reject(err));

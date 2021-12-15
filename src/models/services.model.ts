@@ -16,7 +16,7 @@ export class Services extends Entity {
   @property({
     type: 'string'
   })
-  name?: string;
+  fullname?: string;
 
   @property({
     type: 'string'

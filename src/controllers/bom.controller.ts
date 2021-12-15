@@ -134,7 +134,7 @@ export class BomController {
         }});
       }
     }
-    await this.servicesRepository.findById(bom['service_id']);
+    await this.servicesController.findById(bom['service_id']);
     return this.bomRepository.create(bom);
   }
 

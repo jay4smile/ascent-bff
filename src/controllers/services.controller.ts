@@ -24,7 +24,8 @@ import {inject} from "@loopback/core";
 import {
   ModuleSelector,
   CatalogLoader,
-  Catalog
+  Catalog,
+  Module
 } from '@cloudnativetoolkit/iascable';
 
 import { Services } from '../models';
@@ -34,16 +35,16 @@ import { AutomationCatalogController } from '.';
 
 import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler} from '../types';
+import { ServicesHelper, Service } from '../helpers/services.helper';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export class ServicesController {
 
-  @Inject
-  moduleSelector!: ModuleSelector;
-  @Inject
-  loader!: CatalogLoader;
+  @Inject moduleSelector!: ModuleSelector;
+  @Inject loader!: CatalogLoader;
+  @Inject serviceHelper!: ServicesHelper;
   catalog: Catalog;
   automationCatalogController: AutomationCatalogController;
   catalogController: CatalogController;
@@ -90,10 +91,11 @@ export class ServicesController {
     description: 'Services model count',
     content: { 'application/json': { schema: CountSchema } },
   })
-  async count(
-    @param.where(Services) where?: Where<Services>,
-  ): Promise<Count> {
-    return this.servicesRepository.count(where);
+  async count(): Promise<Count> {
+    const services = await this.serviceHelper.getServices();
+    return {
+      count: services.length
+    }
   }
 
   @get('/services')
@@ -110,8 +112,13 @@ export class ServicesController {
   })
   async find(
     @param.filter(Services) filter?: Filter<Services>,
-  ): Promise<Services[]> {
-    return this.servicesRepository.find(filter);
+  ): Promise<Service[]> {
+    const records = await this.servicesRepository.find(filter);
+    const services:Service[] = await this.serviceHelper.getServices();
+    for (let index = 0; index < services.length; index++) {
+      services[index] = {...services[index], ...records.find(r => r.service_id === services[index].name)};
+    }
+    return services;
   }
 
   @get('/services/composite')
@@ -184,8 +191,15 @@ export class ServicesController {
   async findById(
     @param.path.string('id') id: string,
     @param.filter(Services, { exclude: 'where' }) filter?: FilterExcludingWhere<Services>
-  ): Promise<Services> {
-    return this.servicesRepository.findById(id, filter);
+  ): Promise<Service> {
+    let service = await this.serviceHelper.getService(id);
+    try {
+      const serviceDetails = await this.servicesRepository.findById(id, filter);
+      service = {...service, ...serviceDetails};
+    } catch (error) {
+      console.log(error);
+    }
+    return service;
   }
 
   @patch('/services/{id}')
@@ -235,21 +249,20 @@ export class ServicesController {
     let jsonObj = {};
     try {
 
-      const serv_res = this.findById(serviceId);
-      const service_id = (await serv_res).service_id;
+      const service = await this.findById(serviceId);
 
-      if (service_id !== serviceId) {
-        throw new Error("There is no services id corresponding to this bom id" + serviceId);
+      if (!service?.ibm_catalog_id) {
+        throw new Error(`Service ${serviceId} does not have a catalog id`);
       }
 
-      const automation_res = await this.catalogController.catalogById(serviceId);
+      const automation_res = await this.catalogController.catalogById(service.ibm_catalog_id);
 
       const data = JSON.parse(automation_res);
       let found = false;
       // eslint-disable-next-line @typescript-eslint/prefer-for-of
       for (let index = 0; index < data.resources.length; index++) {
         const element = data.resources[index];
-        if (element.name === serviceId || element.id === serviceId) {
+        if (element.id === service.ibm_catalog_id) {
           jsonObj = element;
           found = true;
         }
@@ -277,11 +290,10 @@ export class ServicesController {
     const bomServiceid = (await bom_res).service_id;
 
 
-    const serv_res = this.findById(bomServiceid);
-    const serviceid = (await serv_res).service_id;
+    const service = await this.findById(bomServiceid);
 
-    if (serviceid !== bomServiceid) {
-      throw new Error("There is no services id corresponding to this bom id" + bomId);
+      if (!service?.ibm_catalog_id) {
+      throw new Error(`BOM ${bomId} does not have a catalog id`);
     }
 
     const automation_res = await this.catalogController.catalogById(bomServiceid);
