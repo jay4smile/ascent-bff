@@ -32,7 +32,7 @@ export class ServicesHelper {
     catalog: Catalog;
 
     constructor() {
-        this.client = createNodeRedisClient(6379, "localhost");
+        if (process.env.NODE_ENV !== "test") this.client = createNodeRedisClient(6379, "localhost");
     }
 
     getCatalog(): Promise<Catalog> {
@@ -52,20 +52,28 @@ export class ServicesHelper {
 
     getServices(): Promise<Module[]> {
         return new Promise((resolve, reject) => {
-            this.client.get("automation-modules")
-                .then(modules => {
-                    if (modules) {
-                        return resolve(JSON.parse(modules));
-                    } else {
-                        this.getCatalog()
-                            .then(catalog => {
-                                this.client.set("automation-modules", JSON.stringify(catalog.modules))
-                                    .finally(() => resolve(catalog.modules));
-                            })
-                            .catch(err => reject(err));
-                    }
-                })
-                .catch(err => reject(err));
+            if (this.client) {
+                this.client.get("automation-modules")
+                    .then(modules => {
+                        if (modules) {
+                            return resolve(JSON.parse(modules));
+                        } else {
+                            this.getCatalog()
+                                .then(catalog => {
+                                    this.client.set("automation-modules", JSON.stringify(catalog.modules))
+                                        .finally(() => resolve(catalog.modules));
+                                })
+                                .catch(err => reject(err));
+                        }
+                    })
+                    .catch(err => reject(err));
+            } else {
+                this.getCatalog()
+                    .then(catalog => {
+                        resolve(catalog.modules);
+                    })
+                    .catch(err => reject(err));
+            }
         });
     }
 
