@@ -24,8 +24,7 @@ import {inject} from "@loopback/core";
 import {
   ModuleSelector,
   CatalogLoader,
-  Catalog,
-  Module
+  Catalog
 } from '@cloudnativetoolkit/iascable';
 
 import { Services } from '../models';
@@ -36,6 +35,8 @@ import { AutomationCatalogController } from '.';
 import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler} from '../types';
 import { ServicesHelper, Service } from '../helpers/services.helper';
+
+import { serviceMapping } from '../service-mapping';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -83,6 +84,7 @@ export class ServicesController {
     service: Services,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Services|object> {
+    service.ibm_catalog_id = serviceMapping.find(m => m.name === service.service_id)?.ibm_catalog_id;
     return this.servicesRepository.create(service);
   }
 
@@ -116,7 +118,15 @@ export class ServicesController {
     const records = await this.servicesRepository.find(filter);
     const services:Service[] = await this.serviceHelper.getServices();
     for (let index = 0; index < services.length; index++) {
-      services[index] = {...services[index], ...records.find(r => r.service_id === services[index].name)};
+      let service = records.find(r => r.service_id === services[index].name);
+      if (!service) {
+        service = await this.servicesRepository.create({
+          service_id: services[index].name,
+          ibm_catalog_id: serviceMapping.find(m => m.name === services[index].name)?.ibm_catalog_id,
+          fs_validated: false
+        })
+      }
+      services[index] = {...services[index], ...service};
     }
     return services;
   }

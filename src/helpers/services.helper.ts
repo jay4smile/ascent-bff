@@ -12,10 +12,9 @@ import {
 } from 'handy-redis';
 
 import catalogConfig from '../config/catalog.config'
-import { Controls, Services } from '../models';
+import { Controls } from '../models';
 
 /* eslint-disable @typescript-eslint/naming-convention */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 const catalogUrl = catalogConfig.url;
 
