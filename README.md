@@ -73,36 +73,33 @@ managed MongoDB instance. Take the binding value and configure it as a environme
 
 A script has been provided to simplify this process. The steps to run the script are as follows:
 
-1. Log into the IBM Cloud account using the ibmcloud cli
+1. Log into the IBM Cloud account using the ibmcloud cli, for example running:
+    ```shell
+    ❯ ibmcloud login --apikey <APIKEY>
+    ```
 2. Find the names of the MongoDB and Object Storage instances:
-   
     ```shell
-    ibmcloud resource service-instances
+    ❯ ibmcloud resource service-instances
     ```
-   
 3. Source the setup-environment script to create the environment variables, passing the names of the services:
-   
     ```shell
-    source ./scripts/setup-environment.sh {MONGODB_NAME} {COS_NAME}
+    ❯ export MONGO_NAME="MONGO_NAME" # e.g. builder-mongodb
+    ❯ export COS_NAME="COS_NAME" # e.g. dev-mapper-storage
+    ❯ export APPID_NAME="APPID_NAME" # e.g. dev-mapper
+    ❯ export INSTANCE_ID="INSTANCE_ID"
+    ❯ source ./scripts/setup-environment.sh $MONGO_NAME $COS_NAME $APPID_NAME
     ```
-   
 4. Verify the environment variables have been created by running the following:
-
     ```shell
-    echo $DATABASE_DEV
-    echo $STORAGE
+    ❯ echo $DATABASE_DEV
+    ❯ echo $STORAGE
+    ❯ echo $APPID_OAUTH_SERVER_URL
     ```
-
-5. The BFF also integrates with App ID protect API resources. Export a variable for AppID:
-```sh
-export APPID_OAUTH_SERVER_URL="https://<REGION>.appid.cloud.ibm.com/oauth/v4/<ID>"
-```
-
-6. Once these values are set it is now possible to run the application:
-```sh
-yarn install
-yarn start:dev
-```
+5. Once these values are set it is now possible to run the application:
+    ```shell
+    ❯ npm install
+    ❯ npm run start:dev
+    ```
 
 ## Deploy on OpenShift
 
