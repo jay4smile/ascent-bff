@@ -39,7 +39,6 @@ const catalogUrl = catalogConfig.url;
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-throw-literal */
 
 export interface BomComposite {
   _id?: string,
@@ -126,10 +125,8 @@ export class BomController {
         this.catalog = await this.loader.loadCatalog(catalogUrl);
       }
       // Validate automation_variables yaml
-      const service = await this.servicesRepository.findById(bom.service_id);
       try {
-        if(!service.cloud_automation_id) throw { message: `Service ${service.ibm_catalog_service} is missing automation ID .` };
-        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, service.cloud_automation_id, bom.automation_variables);
+        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, bom.service_id, bom.automation_variables);
       } catch (error) {
         return res.status(400).send({error: {
           message: `YAML automation variables config error.`,
@@ -137,7 +134,7 @@ export class BomController {
         }});
       }
     }
-    await this.servicesRepository.findById(bom['service_id']);
+    await this.servicesController.findById(bom['service_id']);
     return this.bomRepository.create(bom);
   }
 
@@ -230,7 +227,7 @@ export class BomController {
     // Get service data
     try {
       jsonObj.service = await this.servicesController.findById(bom.service_id, {"include":["controls"]});
-      jsonObj.automation = await this.automationCatalogController.automationById(jsonObj.service.cloud_automation_id);
+      jsonObj.automation = await this.automationCatalogController.automationById(bom.service_id);
     }
     catch(e) {
       console.error(e);
@@ -272,10 +269,8 @@ export class BomController {
       }
       // Validate automation_variables yaml
       const curBom = await this.bomRepository.findById(id, {include: ["service"]});
-      const service = curBom.service;
       try {
-        if(!service.cloud_automation_id) throw { message: `Service ${service.ibm_catalog_service} is missing automation ID .` };
-        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, service.cloud_automation_id, bom.automation_variables);
+        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, curBom.service_id, bom.automation_variables);
       } catch (error) {
         return res.status(400).send({error: {
           message: `YAML automation variables config error.`,
@@ -337,7 +332,7 @@ export class BomController {
       console.log("*******p.service_id*********"+p.service_id);
       // Get service data
       try {
-        p.automation = await this.automationCatalogController.automationById(p.service.cloud_automation_id);
+        p.automation = await this.automationCatalogController.automationById(p.service_id);
       }
       catch(e) {
         console.error(e);

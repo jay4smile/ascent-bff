@@ -35,7 +35,7 @@ import {
   ArchitecturesRepository,
   ServicesRepository,
   UserRepository } from "../repositories";
-import {Architectures, Bom, Services} from "../models";
+import {Architectures, Bom} from "../models";
 
 import {inject} from "@loopback/core";
 import {repository} from "@loopback/repository";
@@ -158,9 +158,6 @@ export class AutomationCatalogController  {
       return res.sendStatus(404);
     }
 
-    // Retrieve the Services
-    const serviceList: Services[] = await this.serviceRepository.find();
-
     // Load Catalog
     if (!this.catalog) {
       this.catalog = await this.loader.loadCatalog(catalogUrl);
@@ -185,27 +182,22 @@ export class AutomationCatalogController  {
     // From the BOM build an Automation BOM
     const _errors: Array<{id:string,message:string}> = [];
     automationBom.forEach(_bom => {
-      // from the bom look up service with id
-      const service = _.find(serviceList, { 'service_id': _bom.service_id });
-      if (!_.isUndefined(service)){
-        const catentry = _.find(catids,{name:service.cloud_automation_id});
-        if(!_.isUndefined(catentry) && !_.isUndefined(service.cloud_automation_id) ){
+    // from the bom look up service with id
+    const catentry = _.find(catids,{name:_bom.service_id});
+    if(!_.isUndefined(catentry)){
 
-          try {
-            bom.spec.modules.push(buildBomModule(this.catalog, service.cloud_automation_id, _bom.automation_variables));
-          }
-          catch (e) {
-              // Capture Errors
-              _errors.push({id:service.cloud_automation_id, message:e.message});
-          }
-
-          //console.log(catentry.id);
-        } else {
-          console.log("Catalog entry not found "+service.cloud_automation_id);
-        }
-      } else {
-        console.log("No Services found for "+_bom.service_id)
+      try {
+        bom.spec.modules.push(buildBomModule(this.catalog, _bom.service_id, _bom.automation_variables));
       }
+      catch (e) {
+          // Capture Errors
+          _errors.push({id: _bom.service_id, message:e.message});
+      }
+
+      //console.log(catentry.id);
+    } else {
+      console.log(`Catalog entry ${_bom.service_id} not found`);
+    }
 
     })
 

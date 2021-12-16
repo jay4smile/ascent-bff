@@ -21,15 +21,13 @@ describe('Architecture Bom', () => {
   it('POST a architecture bom', async () => {
     await client
       .post(`/architectures/${testArchId}/boms`).send({
-        "ibm_service": testBomId,
         "desc": "string",
-        "deployment_method": "string",
         'service_id': testBomId
       })
       .expect(200)
       .expect('Content-Type', /application\/json/)
       .then((res) => {
-        expect(res.body).to.containEql({'ibm_service': 'test_service'});
+        expect(res.body).to.containEql({'service_id': testBomId});
       });
   });
 

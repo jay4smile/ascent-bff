@@ -26,8 +26,6 @@ import {
   CatalogLoader,
   Catalog
 } from '@cloudnativetoolkit/iascable';
-import catalogConfig from '../config/catalog.config'
-import yaml from 'js-yaml';
 
 import { Services } from '../models';
 import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository, UserRepository } from '../repositories';
@@ -36,19 +34,18 @@ import { AutomationCatalogController } from '.';
 
 import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler} from '../types';
+import { ServicesHelper, Service } from '../helpers/services.helper';
 
-const catalogUrl = catalogConfig.url;
+import { serviceMapping } from '../service-mapping';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-throw-literal */
 
 export class ServicesController {
 
-  @Inject
-  moduleSelector!: ModuleSelector;
-  @Inject
-  loader!: CatalogLoader;
+  @Inject moduleSelector!: ModuleSelector;
+  @Inject loader!: CatalogLoader;
+  @Inject serviceHelper!: ServicesHelper;
   catalog: Catalog;
   automationCatalogController: AutomationCatalogController;
   catalogController: CatalogController;
@@ -87,22 +84,7 @@ export class ServicesController {
     service: Services,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Services|object> {
-    if (service.default_automation_variables) {
-      if (!this.catalog) {
-        this.catalog = await this.loader.loadCatalog(catalogUrl);
-      }
-      // Validate default_automation_variables yaml
-      try {
-        if(!service.cloud_automation_id) throw { message: `Service ${service.ibm_catalog_service} is missing automation ID. You cannot set default automation variable.` };
-        yaml.load(service.default_automation_variables);
-        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, service.cloud_automation_id, service.default_automation_variables);
-      } catch (error) {
-        return res.status(400).send({error: {
-          message: `YAML automation variables config error.`,
-          details: error
-        }});
-      }
-    }
+    service.ibm_catalog_id = serviceMapping.find(m => m.name === service.service_id)?.ibm_catalog_id;
     return this.servicesRepository.create(service);
   }
 
@@ -111,10 +93,11 @@ export class ServicesController {
     description: 'Services model count',
     content: { 'application/json': { schema: CountSchema } },
   })
-  async count(
-    @param.where(Services) where?: Where<Services>,
-  ): Promise<Count> {
-    return this.servicesRepository.count(where);
+  async count(): Promise<Count> {
+    const services = await this.serviceHelper.getServices();
+    return {
+      count: services.length
+    }
   }
 
   @get('/services')
@@ -131,8 +114,21 @@ export class ServicesController {
   })
   async find(
     @param.filter(Services) filter?: Filter<Services>,
-  ): Promise<Services[]> {
-    return this.servicesRepository.find(filter);
+  ): Promise<Service[]> {
+    const records = await this.servicesRepository.find(filter);
+    const services:Service[] = await this.serviceHelper.getServices();
+    for (let index = 0; index < services.length; index++) {
+      let service = records.find(r => r.service_id === services[index].name);
+      if (!service) {
+        service = await this.servicesRepository.create({
+          service_id: services[index].name,
+          ibm_catalog_id: serviceMapping.find(m => m.name === services[index].name)?.ibm_catalog_id,
+          fs_validated: false
+        })
+      }
+      services[index] = {...services[index], ...service};
+    }
+    return services;
   }
 
   @get('/services/composite')
@@ -154,13 +150,11 @@ export class ServicesController {
     const jsonObj = [];
     for await (const p of services) {
       // Get automation data
-      if (p.cloud_automation_id) {
-        try {
-          p.automation = await this.automationCatalogController.automationById(p.cloud_automation_id);
-        }
-        catch(e) {
-          console.error(e);
-        }
+      try {
+        p.automation = await this.automationCatalogController.automationById(p.service_id);
+      }
+      catch(e) {
+        console.error(e);
       }
       // Get catalog data
       try {
@@ -192,11 +186,6 @@ export class ServicesController {
     @inject(RestBindings.Http.RESPONSE) res: Response,
     @param.where(Services) where?: Where<Services>,
   ): Promise<Count|object> {
-    if (services.default_automation_variables) {
-      return res.status(400).send({error: {
-        message: `You cannot update all services default automation variables.`
-      }});
-    }
     return this.servicesRepository.updateAll(services, where);
   }
 
@@ -212,8 +201,15 @@ export class ServicesController {
   async findById(
     @param.path.string('id') id: string,
     @param.filter(Services, { exclude: 'where' }) filter?: FilterExcludingWhere<Services>
-  ): Promise<Services> {
-    return this.servicesRepository.findById(id, filter);
+  ): Promise<Service> {
+    let service = await this.serviceHelper.getService(id);
+    try {
+      const serviceDetails = await this.servicesRepository.findById(id, filter);
+      service = {...service, ...serviceDetails};
+    } catch (error) {
+      console.log(error);
+    }
+    return service;
   }
 
   @patch('/services/{id}')
@@ -237,23 +233,6 @@ export class ServicesController {
     service: Services,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Services|object> {
-    if (service.default_automation_variables) {
-      if (!this.catalog) {
-        this.catalog = await this.loader.loadCatalog(catalogUrl);
-      }
-      // Validate default_automation_variables yaml
-      const curService = await this.servicesRepository.findById(id);
-      try {
-        if(!curService.cloud_automation_id) throw { message: `Service ${curService.ibm_catalog_service} is missing automation ID. You cannot set default automation variable.` };
-        yaml.load(service.default_automation_variables);
-        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, curService.cloud_automation_id, service.default_automation_variables);
-      } catch (error) {
-        return res.status(400).send({error: {
-          message: `YAML automation variables config error.`,
-          details: error
-        }});
-      }
-    }
     await this.servicesRepository.updateById(id, service);
     return this.servicesRepository.findById(id);
   }
@@ -280,21 +259,20 @@ export class ServicesController {
     let jsonObj = {};
     try {
 
-      const serv_res = this.findById(serviceId);
-      const service_id = (await serv_res).service_id;
+      const service = await this.findById(serviceId);
 
-      if (service_id !== serviceId) {
-        throw new Error("There is no services id corresponding to this bom id" + serviceId);
+      if (!service?.ibm_catalog_id) {
+        throw new Error(`Service ${serviceId} does not have a catalog id`);
       }
 
-      const automation_res = await this.catalogController.catalogById(serviceId);
+      const automation_res = await this.catalogController.catalogById(service.ibm_catalog_id);
 
       const data = JSON.parse(automation_res);
       let found = false;
       // eslint-disable-next-line @typescript-eslint/prefer-for-of
       for (let index = 0; index < data.resources.length; index++) {
         const element = data.resources[index];
-        if (element.name === serviceId || element.id === serviceId) {
+        if (element.id === service.ibm_catalog_id) {
           jsonObj = element;
           found = true;
         }
@@ -322,11 +300,10 @@ export class ServicesController {
     const bomServiceid = (await bom_res).service_id;
 
 
-    const serv_res = this.findById(bomServiceid);
-    const serviceid = (await serv_res).service_id;
+    const service = await this.findById(bomServiceid);
 
-    if (serviceid !== bomServiceid) {
-      throw new Error("There is no services id corresponding to this bom id" + bomId);
+      if (!service?.ibm_catalog_id) {
+      throw new Error(`BOM ${bomId} does not have a catalog id`);
     }
 
     const automation_res = await this.catalogController.catalogById(bomServiceid);

@@ -22,52 +22,67 @@ Table control {
 
 Table controlDetails {
   id string [pk, ref: > control.id]
-  description string
+  name string
+  focus_area string
+  family string
+  nist_functions string
+  risk_desc string
+  objective string
   fs_guidance string
-  parameters string
+  fs_params string
+  nist_guidance string
   implementation string
+  requirements object[]
 }
 
-Table controlItem {
-  id string [pk, ref: > control.id]
-  parent_control string
+Enum ControlType1 {
+  "Preventative"
+  "Detective"
+  "Corrective"
+}
+Enum ControlType2 {
+  "Administrative"
+  "Technical"
+  "Physical"
+}
+Enum ControlType3 {
+  "Automated"
+  "Manual, Improbably Automated"
+  "Manual, Prospectively Automated"
+}
+Table controlRequirement {
+  id string [pk]
+  control_id string [ref: > controlDetails.id]
   description string
-  fs_guidance string
-  parameters string
-  implementation string
+  risk_rating string
+  control_type_1 ControlType1
+  control_type_2 ControlType2
+  control_type_3 ControlType3
+  ibm_public_cloud_scope string
+  ibm_public_cloud_resp string
+  developer_scope string
+  developer_resp string
+  operator_scope string
+  operator_resp string
+  consumer_scope string
+  consumer_resp string
 }
 
-Enum grouping {
-  "Security & Identity"
-  "Developer Tools"
-  "SRE Tools"
-  "Databases"
-  "Network"
-  "Storage"
-  "Compute"
-  "IBM Cloud Platform Services"
-}
-Enum deploymentMethod {
-  "Managed Service"
-  "Platform"
-  "Operator"
-  "Helm"
-}
-Enum provision {
-  "Terraform"
-  "Operator"
-  "Ansible"
-  "Helm"
+
+
+Table automationModule {
+  id string [pk]
+  name string
+  description string
+  alias string
+  tags string[]
+  versions automationModuleVersion[]
 }
 Table service {
-  service_id string [pk]
-  grouping grouping
-  ibm_catalog_service string
-  desc string
-  deployment_method deploymentMethod
-  provision provision
-  automation_id string
-  default_automation_variables string
+  service_id string [pk, ref: > automationModule.name]
+  name string
+  ibm_catalog_id string
+  fs_validated bool
 }
 
 Table controlMapping {
@@ -108,7 +123,7 @@ Table architecture {
   name string
   short_desc string
   long_desc string
-  public boolean
+  public booleanf
   production_ready boolean
   automation_variables string
 }
@@ -152,18 +167,17 @@ Table userArchitectures {
   // role userRole
 }
 
+Table userSolutions {
+  email string [pk, ref: > user.email]
+  solution_id string [pk, ref: > solution.id]
+  // role userRole
+}
+
 Table bom {
   service_id string [pk, ref: > service.service_id]
   arch_id string [pk, ref: > architecture.id]
   desc string
   automation_variables string
-}
-
-Table automation {
-  id string [pk, ref: > service.service_id]
-  type string
-  module_name string
-  module_location string
 }
 
 Table OnBoardingStages {

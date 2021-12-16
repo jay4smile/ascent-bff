@@ -14,63 +14,19 @@ export class Services extends Entity {
   service_id: string;
 
   @property({
-    type: 'string',
-    required: true,
+    type: 'string'
   })
-  grouping: string;
-
-  @property({
-    type: 'string',
-    required: true,
-  })
-  ibm_catalog_service: string;
-
-  @property({
-    type: 'string',
-  })
-  desc?: string;
-
-  @property({
-    type: 'any',
-  })
-  supported_platforms?: string[];
-
-  @property({
-    type: 'boolean'
-  })
-  fs_validated: boolean;
-
-  @property({
-    type: 'string',
-    required: true,
-  })
-  deployment_method: string;
-
-  @property({
-    type: 'string',
-  })
-  compliance_status?: string;
-
-  @property({
-    type: 'string',
-    required: true,
-  })
-  provision: string;
-
-  @property({
-    type: 'string',
-  })
-  cloud_automation_id?: string;
-
-  @property({
-    type: 'string',
-  })
-  hybrid_automation_id?: string;
+  fullname?: string;
 
   @property({
     type: 'string'
   })
-  default_automation_variables: string;
+  ibm_catalog_id?: string;
+
+  @property({
+    type: 'boolean'
+  })
+  fs_validated?: boolean;
 
   // Indexer property to allow additional data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

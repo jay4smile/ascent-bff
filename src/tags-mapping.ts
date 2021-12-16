@@ -7,126 +7,126 @@ export const tagsMapping = [
     },
     {
         "tag": "MONGODB",
-        "service_ids": ["databases-for-mongodb"]
+        "service_ids": ["ibm-mongodb", "ibm-hpdbaas-mongodb"]
     },
     {
         "tag": "IAM",
-        "service_ids": [""]
+        "service_ids": ["ibm-account-access-group", "ibm-access-group"]
     },
     {
         "tag": "ETCD",
-        "service_ids": ["databases-for-etcd-group"]
+        "service_ids": []
     },
     {
         "tag": "BAREMETAL",
-        "service_ids": ["bare-metal"]
+        "service_ids": []
     },
     {
         "tag": "ACL",
-        "service_ids": ["is.network-acl"]
+        "service_ids": []
     },
     {
         "tag": "IBM",
-        "service_ids": [""]
+        "service_ids": []
     },
     {
         "tag": "APPID",
-        "service_ids": ["appid"]
+        "service_ids": ["ibm-appid"]
     },
     {
         "tag": "ELASTIC",
-        "service_ids": ["databases-for-elasticsearch"]
+        "service_ids": []
     },
     {
         "tag": "ENTERPRISEDB",
-        "service_ids": ["databases-for-enterprisedb-group"]
+        "service_ids": []
     },
     {
         "tag": "ELASTICSEARCH",
-        "service_ids": ["databases-for-elasticsearch"]
+        "service_ids": []
     },
     {
         "tag": "CLOUDANT",
-        "service_ids": ["cloudantnosqldb"]
+        "service_ids": []
     },
     {
         "tag": "KEYPROTECT",
-        "service_ids": ["kms"]
+        "service_ids": ["ibm-kms", "ibm-kms-key"]
     },
     {
         "tag": "POSTGRESQL",
-        "service_ids": ["databases-for-postgresql-group"]
+        "service_ids": ["ibm-hbdbaas-postgresql"]
     },
     {
         "tag": "NETWORKING",
-        "service_ids": [""]
+        "service_ids": []
     },
     {
         "tag": "CCM",
-        "service_ids": ["cloudcerts"]
+        "service_ids": []
     },
     {
         "tag": "IKS",
-        "service_ids": ["containers-kubernetes"]
+        "service_ids": ["ibm-iks-vpc"]
     },
     {
         "tag": "REDIS",
-        "service_ids": ["databases-for-redis"]
+        "service_ids": ["ibm-redis"]
     },
     {
         "tag": "LOGDNA",
-        "service_ids": ["logdna"]
+        "service_ids": ["logdna", "ibm-logdna-bind"]
     },
     {
         "tag": "ACTIVITYTRACKER",
-        "service_ids": ["logdnaat"]
+        "service_ids": ["ibm-activity-tracker"]
     },
     {
         "tag": "CIS",
-        "service_ids": ["internet-svcs"]
+        "service_ids": []
     },
     {
         "tag": "VULNERABILITY_ADVISOR",
-        "service_ids": ["security-advisor"]
+        "service_ids": []
     },
     {
         "tag": "COS",
-        "service_ids": ["cloud-object-storage"]
+        "service_ids": ["ibm-object-storage", "ibm-object-storage-bucket"]
     },
     {
         "tag": "EVENTSTREAMS",
-        "service_ids": ["messagehub"]
+        "service_ids": ["ibm-event-streams", "ibm-event-streams-topic"]
     },
     {
         "tag": "ICD",
-        "service_ids": [""]
+        "service_ids": []
     },
     {
         "tag": "SECURITY_ADVISOR",
-        "service_ids": ["security-advisor"]
+        "service_ids": []
     },
     {
         "tag": "STORAGE",
-        "service_ids": ["block-storage-group", "is.volume"]
+        "service_ids": []
     },
     {
         "tag": "CLUSTER",
-        "service_ids": ["containers-kubernetes","openshift"]
+        "service_ids": ["ocp-cluster","ibm-ocp-vpc","ibm-iks-vpc"]
     },
     {
         "tag": "SECRETS_MANAGER",
-        "service_ids": ["secrets-manager"]
+        "service_ids": []
     },
     {
         "tag": "HYPERPROTECT",
-        "service_ids": ["hs-crypto"]
+        "service_ids": ["hpcs"]
     },
     {
         "tag": "TOOLCHAIN",
-        "service_ids": ["toolchain"]
+        "service_ids": []
     },
     {
         "tag": "SERVICES",
-        "service_ids": [""]
+        "service_ids": []
     }
 ]

@@ -36,16 +36,9 @@ describe('Services', () => {
         await client
             .post('/services').send({
                 "service_id": testServiceId,
-                "grouping": "string",
-                "ibm_catalog_service": "string",
-                "desc": "string",
-                "deployment_method": "string",
+                "name": "string",
+                "ibm_catalog_id": "string",
                 "fs_validated": true,
-                "compliance_status": "string",
-                "provision": "string",
-                "cloud_automation_id": "string",
-                "hybrid_automation_id": "string",
-                "_id": "string"
             })
             .expect(200)
             .expect('Content-Type', /application\/json/);
@@ -53,7 +46,7 @@ describe('Services', () => {
 
     it('GET service by id', async () => {
         await client
-            .get(`/services/${testServiceId}`)
+            .get(`/services/ibm-container-platform`)
             .expect(200)
             .expect('Content-Type', /application\/json/);
     });
