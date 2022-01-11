@@ -56,12 +56,13 @@ export class ServicesHelper {
                 this.client.get("automation-modules")
                     .then(modules => {
                         if (modules) {
-                            return resolve(JSON.parse(modules));
+                            const parsedModules:Module[] = JSON.parse(modules);
+                            return resolve(parsedModules.filter((m, ix) => parsedModules.findIndex(m2 => m2.name === m.name) === ix));
                         } else {
                             this.getCatalog()
                                 .then(catalog => {
                                     this.client.set("automation-modules", JSON.stringify(catalog.modules))
-                                        .finally(() => resolve(catalog.modules));
+                                        .finally(() => resolve(catalog.modules.filter((m, ix) => catalog.modules.findIndex(m2 => m2.name === m.name) === ix)));
                                 })
                                 .catch(err => reject(err));
                         }
@@ -69,9 +70,7 @@ export class ServicesHelper {
                     .catch(err => reject(err));
             } else {
                 this.getCatalog()
-                    .then(catalog => {
-                        resolve(catalog.modules);
-                    })
+                    .then(catalog => resolve(catalog.modules.filter((m, ix) => catalog.modules.findIndex(m2 => m2.name === m.name) === ix)))
                     .catch(err => reject(err));
             }
         });
