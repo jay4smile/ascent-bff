@@ -15,9 +15,20 @@ import {
 import catalogConfig from '../config/catalog.config'
 import { Controls } from '../models';
 
+import first from '../util/first';
+import {semanticVersionDescending, semanticVersionFromString} from '../util/semantic-version';
+
+
 /* eslint-disable @typescript-eslint/naming-convention */
 
 const catalogUrl = catalogConfig.url;
+
+const isPending = (versions: string[] = []): boolean => {
+    return versions.length === 0 || (versions.length === 1 && versions[0] === 'v0.0.0')
+}
+const isBeta = (versions: string[] = []): boolean => {
+    return first(versions.map(semanticVersionFromString).sort(semanticVersionDescending)).filter(ver => ver.major === 0).isPresent()
+}
 
 export interface CatExt extends CatalogCategoryModel {
     categoryName?: string;
@@ -30,7 +41,8 @@ export interface Service extends Module {
     fullname?: string;
     ibm_catalog_id?: string;
     fs_validated?: boolean;
-    controls?: Controls[]
+    status?: string;
+    controls?: Controls[];
 }
 
 const unique = (modules: Module[]) => {
@@ -42,8 +54,10 @@ const servicesFromCatalog = (catalog:Catalog) => {
     const services:Service[] = [];
     for (const cat of cats ) {
         if (cat.modules) for (const m of cat.modules) {
+            const versions = m.versions?.map(v => v.version);
             services.push({
                 ...m,
+                status: isPending(versions) ? 'pending' : isBeta(versions) ? 'beta' : 'released',
                 category: cat.category,
                 categoryName: cat.categoryName
             });
