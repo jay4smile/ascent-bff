@@ -96,12 +96,17 @@ export class ServicesHelper {
                 this.client.get("automation-modules")
                     .then(modules => {
                         if (modules) {
+                            console.log(`Automation Modules retrieved from the cache`);
                             const parsedModules:Module[] = JSON.parse(modules);
                             return resolve(parsedModules);
                         } else {
                             this.getCatalog()
                                 .then(catalog => {
                                     const services = servicesFromCatalog(catalog);
+                                    for (const s of services) {
+                                        this.client.set(`module-${s.name}`, JSON.stringify(s))
+                                            .finally(() => console.log(`Automation Module stored in cache -> ${s.name}`));
+                                    }
                                     this.client.set("automation-modules", JSON.stringify(services))
                                         .finally(() => resolve(services));
                                 })
@@ -119,14 +124,34 @@ export class ServicesHelper {
 
     getService(id: string): Promise<Service> {
         return new Promise((resolve, reject) => {
-            this.getServices()
-                .then(modules => {
-                    const module = modules.find(m => m.name === id);
-                    if (module) {
-                        resolve(module);
-                    } else reject(`Service ${id} not found`);
-                })
-                .catch(err => reject(err));
+            if (this.client) {
+                this.client.get(`module-${id}`)
+                    .then(service => {
+                        if (service) {
+                            console.log(`Automation Module retrieved from the cache -> ${id}`);
+                            return resolve(JSON.parse(service));
+                        } else {
+                            this.getServices()
+                                .then(modules => {
+                                    const module = modules.find(m => m.name === id);
+                                    if (module) {
+                                        resolve(module);
+                                    } else reject(`Module ${id} not found`);
+                                })
+                                .catch(err => reject(err));
+                        }
+                    })
+                    .catch(err => reject(err));
+            } else {
+                this.getServices()
+                    .then(modules => {
+                        const module = modules.find(m => m.name === id);
+                        if (module) {
+                            resolve(module);
+                        } else reject(`Module ${id} not found`);
+                    })
+                    .catch(err => reject(err));
+            }
         });
     }
 }
