@@ -64,7 +64,7 @@ export class CatalogController {
         
       const result = await client.get(key);
       jsonobj.push(result);
-      console.log("data retrieved from the cache-->"+key);
+      console.log(`IBM Catalog data retrieved from the cache -> ${key}`);
       } else {
         const url = new URL('https://globalcatalog.cloud.ibm.com/api/v1?_limit=100&complete=false&q=' + key);        
         const res = await fetch(url.toString());
