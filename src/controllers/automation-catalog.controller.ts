@@ -47,6 +47,8 @@ import { ArchitecturesController, DiagramType } from './architectures.controller
 import fs from "fs";
 import catalogConfig from '../config/catalog.config'
 
+import { ServicesHelper, Service } from '../helpers/services.helper';
+
 const catalogUrl = catalogConfig.url;
 
 export class AutomationCatalogController  {
@@ -57,6 +59,7 @@ export class AutomationCatalogController  {
   moduleSelector!: ModuleSelector;
   @Inject
   terraformBuilder!: TerraformBuilder;
+  @Inject serviceHelper!: ServicesHelper;
   catalog: Catalog;
   archController: ArchitecturesController;
 
@@ -113,20 +116,8 @@ export class AutomationCatalogController  {
   })
   async automationById(
     @param.path.string('id') id: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): Promise<any> {
-
-    const data:Object[] = []
-    if (!this.catalog) {
-      this.catalog = await this.loader.loadCatalog(catalogUrl);
-    }
-
-    this.catalog.modules.forEach(module => {
-      data.push(module);
-    })
-    const catentry = _.find(data,{name:id});
-
-    return catentry;
+  ): Promise<Service> {
+    return this.serviceHelper.getService(id);
   }
 
   @get('/automation/{bomid}')
