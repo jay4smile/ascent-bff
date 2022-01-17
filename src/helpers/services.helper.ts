@@ -1,10 +1,10 @@
 import { Inject } from 'typescript-ioc';
 
 import {
+    BillOfMaterialModule,
     Catalog,
     CatalogCategoryModel,
-    CatalogLoader,
-    Module,
+    CatalogLoader
 } from '@cloudnativetoolkit/iascable';
 
 import {
@@ -17,7 +17,6 @@ import { Controls } from '../models';
 
 import first from '../util/first';
 import {semanticVersionDescending, semanticVersionFromString} from '../util/semantic-version';
-
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -34,7 +33,24 @@ export interface CatExt extends CatalogCategoryModel {
     categoryName?: string;
 }
 
-export interface Service extends Module {
+export interface ModuleSummary {
+    id: string;
+    name: string;
+    alias?: string;
+    aliasIds?: string[];
+    category: string;
+    description?: string;
+    platforms: string[];
+    provider?: 'ibm' | 'k8s';
+    tags?: string[];
+    ibmCatalogId?: string;
+    fsReady?: string;
+    documentation?: string;
+    versions: string[];
+    bomModule?: BillOfMaterialModule;
+}
+
+export interface Service extends ModuleSummary {
     category: string;
     categoryName?: string;
     service_id?: string;
@@ -45,7 +61,7 @@ export interface Service extends Module {
     controls?: Controls[];
 }
 
-const unique = (modules: Module[]) => {
+const unique = (modules: ModuleSummary[]) => {
     return modules.filter((m, ix) => modules.findIndex(m2 => m2.name === m.name) === ix);
 }
 
@@ -55,8 +71,12 @@ const servicesFromCatalog = (catalog:Catalog) => {
     for (const cat of cats ) {
         if (cat.modules) for (const m of cat.modules) {
             const versions = m.versions?.map(v => v.version);
-            services.push({
+            const mSummary:ModuleSummary = {
                 ...m,
+                versions: m.versions.map(v => v.version)
+            }
+            services.push({
+                ...mSummary,
                 status: isPending(versions) ? 'pending' : isBeta(versions) ? 'beta' : 'released',
                 category: cat.category,
                 categoryName: cat.categoryName
@@ -97,7 +117,7 @@ export class ServicesHelper {
                     .then(modules => {
                         if (modules) {
                             console.log(`Automation Modules retrieved from the cache`);
-                            const parsedModules:Module[] = JSON.parse(modules);
+                            const parsedModules:ModuleSummary[] = JSON.parse(modules);
                             return resolve(parsedModules);
                         } else {
                             this.getCatalog()
