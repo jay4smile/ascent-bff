@@ -43,6 +43,7 @@ export interface ModuleSummary {
     platforms: string[];
     provider?: 'ibm' | 'k8s';
     tags?: string[];
+    displayName?: string;
     ibmCatalogId?: string;
     fsReady?: string;
     documentation?: string;
