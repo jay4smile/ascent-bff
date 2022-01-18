@@ -122,6 +122,7 @@ export class ServicesController {
       if (!service) {
         service = await this.servicesRepository.create({
           service_id: services[index].name,
+          fullname: services[index].displayName,
           ibm_catalog_id: serviceMapping.find(m => m.name === services[index].name)?.ibm_catalog_id,
           fs_validated: false
         })
