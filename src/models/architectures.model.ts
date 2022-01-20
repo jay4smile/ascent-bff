@@ -49,7 +49,7 @@ export class Architectures extends Entity {
   @property({
     type: 'string',
   })
-  automation_variables: string;
+  yaml: string;
 
   @hasMany(() => Bom, {keyTo: 'arch_id'})
   boms: Bom[];

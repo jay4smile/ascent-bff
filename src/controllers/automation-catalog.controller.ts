@@ -168,7 +168,7 @@ export class AutomationCatalogController  {
     //bom.spec.modules.push("github.com/ibm-garage-cloud/terraform-ibm-appid")
 
     // Pass Architecture Varables into the Bom
-    bom.spec.variables = buildBomVariables(architecture.automation_variables);
+    bom.spec.variables = buildBomVariables(jsYaml.dump(jsYaml.load(architecture.yaml)?.spec?.variables));
 
     // From the BOM build an Automation BOM
     const _errors: Array<{id:string,message:string}> = [];
@@ -178,7 +178,7 @@ export class AutomationCatalogController  {
     if(!_.isUndefined(catentry)){
 
       try {
-        bom.spec.modules.push(buildBomModule(this.catalog, _bom.service_id, _bom.automation_variables));
+        bom.spec.modules.push(buildBomModule(this.catalog, _bom.service_id, _bom.yaml));
       }
       catch (e) {
           // Capture Errors

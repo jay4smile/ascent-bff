@@ -125,7 +125,7 @@ Table architecture {
   long_desc string
   public booleanf
   production_ready boolean
-  automation_variables string
+  yaml string
 }
 
 Table solution {
@@ -177,7 +177,7 @@ Table bom {
   service_id string [pk, ref: > service.service_id]
   arch_id string [pk, ref: > architecture.id]
   desc string
-  automation_variables string
+  yaml string
 }
 
 Table OnBoardingStages {
