@@ -1,12 +1,23 @@
 import { Inject } from 'typescript-ioc';
 
+import * as Superagent from 'superagent';
+import AdmZip = require("adm-zip");
+import fs from "fs";
+
 import {
+    BillOfMaterial,
     billOfMaterialFromYaml,
+    BillOfMaterialModel,
     BillOfMaterialModule,
+    buildBomModule,
+    buildBomVariables,
     Catalog,
     CatalogCategoryModel,
     CatalogLoader,
-    ModuleSelector
+    ModuleSelector,
+    SingleModuleVersion,
+    TerraformBuilder,
+    TerraformComponent
 } from '@cloudnativetoolkit/iascable';
 
 import {
@@ -21,6 +32,7 @@ import { Architectures, Bom, Controls } from '../models';
 
 import first from '../util/first';
 import { semanticVersionDescending, semanticVersionFromString } from '../util/semantic-version';
+import { S3 } from 'ibm-cos-sdk';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-throw-literal */
@@ -29,13 +41,6 @@ const catalogUrl = catalogConfig.url;
 
 const CATALOG_KEY = 'automation-catalog';
 const MODULES_KEY = 'automation-modules';
-
-const isPending = (versions: string[] = []): boolean => {
-    return versions.length === 0 || (versions.length === 1 && versions[0] === 'v0.0.0')
-}
-const isBeta = (versions: string[] = []): boolean => {
-    return first(versions.map(semanticVersionFromString).sort(semanticVersionDescending)).filter(ver => ver.major === 0).isPresent()
-}
 
 export interface BomModule {
     name?: string;
@@ -77,10 +82,40 @@ export interface Service extends ModuleSummary {
     controls?: Controls[];
 }
 
+export interface CatalogId {
+    name: string;
+    id: string;
+}
+
+/**
+ * @param versions List of versions
+ * @returns true if module is in 'Pending' status
+ * (i.e. no versions, or latest is v0.0.0), false otherwise
+ */
+const isPending = (versions: string[] = []): boolean => {
+    return versions.length === 0 || (versions.length === 1 && versions[0] === 'v0.0.0')
+}
+/**
+ * @param versions List of versions
+ * @returns true if module, based of versions, is in 'Beta'status
+ * (i.e. no versions, or latest is v0.0.0), false otherwise
+ */
+const isBeta = (versions: string[] = []): boolean => {
+    return first(versions.map(semanticVersionFromString).sort(semanticVersionDescending)).filter(ver => ver.major === 0).isPresent()
+}
+
+/**
+ * @param modules list of ModuleSummary
+ * @returns Array of unique modules, based of key 'name'
+ */
 const unique = (modules: ModuleSummary[]) => {
     return modules.filter((m, ix) => modules.findIndex(m2 => m2.name === m.name) === ix);
 }
 
+/**
+ * @param catalog Automation Catalog
+ * @returns List of Services from catalog
+ */
 const servicesFromCatalog = (catalog: Catalog) => {
     const cats: CatExt[] = catalog.categories;
     const services: Service[] = [];
@@ -105,6 +140,7 @@ const servicesFromCatalog = (catalog: Catalog) => {
 export class ServicesHelper {
     @Inject loader!: CatalogLoader;
     @Inject moduleSelector!: ModuleSelector;
+    @Inject terraformBuilder!: TerraformBuilder;
     client: WrappedNodeRedisClient;
     catalog: Catalog;
 
@@ -156,64 +192,6 @@ export class ServicesHelper {
                 }
             }
         });
-    }
-
-    /**
-     * Parse BOM yaml
-     * @returns Arch and Boms models generated from yaml
-     */
-    async parseBomYaml(yamlString: string, publicArch: boolean): Promise<{ arch: Architectures, boms: Bom[] }> {
-        let bom;
-        try {
-            bom = billOfMaterialFromYaml(yamlString);
-        } catch (error) {
-            throw { message: `Failed to load bom yaml`, details: error };
-        }
-        const yamlBom = yaml.load(yamlString);
-        delete yamlBom.spec.modules;
-        const arch: Architectures = new Architectures({
-            arch_id: bom.metadata.name,
-            name: bom.metadata.annotations?.displayName ?? bom.metadata.name,
-            short_desc: bom.metadata.annotations?.description ?? `${bom.metadata.name} Bill of Materials.`,
-            long_desc: bom.metadata.annotations?.description ?? `${bom.metadata.name} Bill of Materials.`,
-            public: publicArch,
-            platform: bom.metadata.labels?.platform,
-            yaml: yaml.dump(yamlBom)
-        });
-        const bomYaml = yaml.load(yamlString);
-        const boms:Bom[] = [];
-        const bomModules:BomModule[] = bomYaml.spec.modules;
-        const catalog = await this.getCatalog();
-        for (const m of bom.spec.modules) {
-            if (typeof m === 'string') throw new Error('BOM modules must not be of type string.');
-            const bomModule = bomModules.find(m2 => m2.name === m.name);
-            try {
-                await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(catalog, m.name ?? '', yaml.dump(bomModule));
-            } catch (error) {
-                console.log(error);
-                throw { message: `Module ${m.name} yaml config validation failed.`, details: error };
-            }
-            boms.push(new Bom({
-                arch_id: arch.arch_id,
-                service_id: m.name,
-                desc: m.alias ?? m.name,
-                yaml: yaml.dump(bomModules.find(m2 => m2.name === m.name))
-            }));
-        }
-        return { arch: arch, boms: boms };
-    }
-
-    /**
-     * Validate BOM module yaml config
-     * @returns Arch and Boms models generated from yaml
-     */
-    async validateBomModuleYaml(yamlString: string, moduleRef: string): Promise<void> {
-        try {
-            const catalog = await this.getCatalog();
-            await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(catalog, moduleRef, yamlString);
-        } catch (error) {
-            throw { message: `Module ${moduleRef} yaml config validation failed.`, details: error };
-        }
     }
 
     /**
@@ -287,5 +265,192 @@ export class ServicesHelper {
                     .catch(err => reject(err));
             }
         });
+    }
+
+    /**
+     * Parse BOM yaml
+     * @returns Arch and Boms models generated from yaml
+     */
+    async parseBomYaml(yamlString: string, publicArch: boolean): Promise<{ arch: Architectures, boms: Bom[] }> {
+        let bom;
+        try {
+            bom = billOfMaterialFromYaml(yamlString);
+        } catch (error) {
+            throw { message: `Failed to load bom yaml`, details: error };
+        }
+        const yamlBom = yaml.load(yamlString);
+        delete yamlBom.spec.modules;
+        const arch: Architectures = new Architectures({
+            arch_id: bom.metadata.name,
+            name: bom.metadata.annotations?.displayName ?? bom.metadata.name,
+            short_desc: bom.metadata.annotations?.description ?? `${bom.metadata.name} Bill of Materials.`,
+            long_desc: bom.metadata.annotations?.description ?? `${bom.metadata.name} Bill of Materials.`,
+            public: publicArch,
+            platform: bom.metadata.labels?.platform,
+            yaml: yaml.dump(yamlBom)
+        });
+        const bomYaml = yaml.load(yamlString);
+        const boms: Bom[] = [];
+        const bomModules: BomModule[] = bomYaml.spec.modules;
+        const catalog = await this.getCatalog();
+        for (const m of bom.spec.modules) {
+            if (typeof m === 'string') throw new Error('BOM modules must not be of type string.');
+            const bomModule = bomModules.find(m2 => m2.name === m.name);
+            try {
+                await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(catalog, m.name ?? '', yaml.dump(bomModule));
+            } catch (error) {
+                console.log(error);
+                throw { message: `Module ${m.name} yaml config validation failed.`, details: error };
+            }
+            boms.push(new Bom({
+                arch_id: arch.arch_id,
+                service_id: m.name,
+                desc: m.alias ?? m.name,
+                yaml: yaml.dump(bomModules.find(m2 => m2.name === m.name))
+            }));
+        }
+        return { arch: arch, boms: boms };
+    }
+
+    /**
+     * Validate BOM module yaml config
+     * @returns Arch and Boms models generated from yaml
+     */
+    async validateBomModuleYaml(yamlString: string, moduleRef: string): Promise<void> {
+        try {
+            const catalog = await this.getCatalog();
+            await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(catalog, moduleRef, yamlString);
+        } catch (error) {
+            throw { message: `Module ${moduleRef} yaml config validation failed.`, details: error };
+        }
+    }
+
+    async buildTerraform(architecture: Architectures, boms: Bom[], drawio?: S3.Body, png?: S3.Body): Promise<Buffer> {
+        const catalog = await this.getCatalog();
+
+        // Get the smaller Catalog data
+        const catids: CatalogId[] = []
+        catalog.modules.forEach(module => {
+            catids.push({
+                name: module.name,
+                id: module.id
+            });
+        })
+
+        // Future : Push to Object Store, Git, Create a Tile Dynamically
+        const bom: BillOfMaterialModel = new BillOfMaterial(architecture.arch_id);
+
+        // Pass Architecture Varables into the Bom
+        bom.spec.variables = buildBomVariables(yaml.dump(yaml.load(architecture.yaml)?.spec?.variables));
+
+        // From the BOM build an Automation BOM
+        const errors: Array<{ id: string, message: string }> = [];
+        boms.forEach(bomItem => {
+            // from the bom look up service with id
+            const catentry = catids.find(catid => catid.name === bomItem.service_id);
+            if (catentry) {
+                try {
+                    bom.spec.modules.push(buildBomModule(this.catalog, bomItem.service_id, bomItem.yaml));
+                }
+                catch (e) {
+                    // Capture Errors
+                    errors.push({ id: bomItem.service_id, message: e.message });
+                }
+            } else {
+                console.log(`Catalog entry ${bomItem.service_id} not found`);
+            }
+        })
+
+        if (errors?.length) {
+            throw { message: `Error building some of the modules.`, details: errors };
+        }
+
+        // Lets build a BOM file from the BOM builder
+        const bomContents: string = yaml.dump(bom);
+        const modules: SingleModuleVersion[] = await this.moduleSelector.resolveBillOfMaterial(this.catalog, bom);
+        const terraformComponent: TerraformComponent = await this.terraformBuilder.buildTerraformComponent(modules);
+
+        // Write into a Buffer
+        // creating archives
+        const zip = new AdmZip();
+
+        if (!_.isUndefined(bomContents)) {
+            zip.addFile("bom.yaml", Buffer.alloc(bomContents.length, bomContents), "BOM Yaml contents");
+        }
+
+        // Add the Diagrams to the Zip Contents
+        // Add the Diagrams from the Architectures
+        if (architecture.arch_id) {
+            if (drawio) zip.addFile(`${architecture.arch_id}.drawio`, Buffer.alloc(drawio.toString().length, drawio.toString()), `Architecture diagram ${architecture.arch_id} .drawio file`);
+            if (png) {
+                fs.writeFileSync(`/tmp/${architecture.arch_id}.png`, png);
+                zip.addLocalFile(`/tmp/${architecture.arch_id}.png`);
+            }
+        }
+
+
+        let mdfiles = "";
+        terraformComponent.files.map(async (file: OutputFile) => {
+            if (file.type === "documentation") {
+                mdfiles += "- [" + file.name + "](" + file.name + ")\n";
+            }
+        });
+
+        // Load the Core ReadME
+        const readme = new UrlFile({ name: 'README.MD', type: OutputFileType.documentation, url: "https://raw.githubusercontent.com/ibm-gsi-ecosystem/ibm-enterprise-catalog-tiles/main/BUILD.MD" });
+        const newFiles = terraformComponent.files;
+        newFiles.push(readme);
+
+        await Promise.all(newFiles.map(async (file: OutputFile) => {
+
+            function getContents(url: string) {
+                // eslint-disable-next-line @typescript-eslint/no-misused-promises, no-async-promise-executor
+                return new Promise<string>(async (resolve) => {
+                    const req: Superagent.Response = await Superagent.get(url);
+
+                    resolve(req.text);
+                })
+            };
+
+            let contents: string | Buffer = "";
+            //console.log(file.name);
+            if (file.type === "documentation") {
+                try {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    contents = await getContents((file as any).url);
+
+                    // Replace Variables and add
+                    if (file.name === "README.MD") {
+                        // configure details of the reference architecture
+                        contents = contents.replace(new RegExp("{name}", "g"), architecture.name);
+                        contents = contents.replace(new RegExp("{short_desc}", "g"), architecture.short_desc);
+                        //contents = contents.replace(new RegExp("{long_desc}", "g"), architecture.long_desc);
+                        contents = contents.replace(new RegExp("{diagram}", "g"), `${architecture.arch_id}.png`);
+                        contents = contents.replace(new RegExp("{modules}", "g"), mdfiles);
+
+                    }
+
+                } catch (e) {
+                    console.log("failed to load contents from ", file.name);
+                }
+            } else {
+                try {
+                    contents = (await file.contents).toString();
+                } catch (e) {
+                    console.log("failed to load contents from ", file.name);
+                }
+            }
+            //console.log(file.name);
+
+            // Load Contents into the Zip
+            if (contents !== "") {
+                zip.addFile(file.name, Buffer.alloc(contents.length, contents), "entry comment goes here");
+            }
+
+        }));
+
+        // Add a Markdown file that has links to the Docs
+        return zip.toBuffer()
+
     }
 }
