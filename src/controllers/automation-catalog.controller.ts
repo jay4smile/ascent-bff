@@ -2,7 +2,7 @@
 
 // import {inject} from '@loopback/core';
 
-/* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Inject } from 'typescript-ioc';
 
@@ -109,11 +109,11 @@ export class AutomationCatalogController {
       return res.sendStatus(404);
     }
 
-    let drawio:S3.Body, png:S3.Body;
+    let drawio:S3.Body = '', png:S3.Body = '';
     try {
       drawio = await this.archController.getDiagram(architecture.arch_id, DiagramType.DRAWIO);
       png = await this.archController.getDiagram(architecture.arch_id, DiagramType.PNG);
-    } catch (error) {
+    } catch (error:any) {
       console.log(error);
     }
 

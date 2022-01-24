@@ -15,9 +15,12 @@ import {
     CatalogCategoryModel,
     CatalogLoader,
     ModuleSelector,
+    OutputFile,
+    OutputFileType,
     SingleModuleVersion,
     TerraformBuilder,
-    TerraformComponent
+    TerraformComponent,
+    UrlFile
 } from '@cloudnativetoolkit/iascable';
 
 import {
@@ -159,7 +162,7 @@ export class ServicesHelper {
                     console.log(`Automation Catalog fetched from ${catalogUrl}`);
                     if (this.client) this.client.set(CATALOG_KEY, catalog)
                         .finally(() => console.log(`Automation Catalog stored in cache`));
-                    this.catalog = this.loader.parseYaml(catalog);
+                    this.catalog = new Catalog(this.loader.parseYaml(catalog));
                     return resolve(this.catalog);
                 })
                 .catch(err => reject(err));
@@ -180,7 +183,7 @@ export class ServicesHelper {
                         .then(catalog => {
                             if (catalog) {
                                 console.log(`Automation Catalog retrieved from cache`);
-                                this.catalog = this.loader.parseYaml(catalog);
+                                this.catalog = new Catalog(this.loader.parseYaml(catalog));
                                 resolve(this.catalog);
                             } else {
                                 resolve(this.fetchCatalog());
@@ -330,10 +333,12 @@ export class ServicesHelper {
 
         // Get the smaller Catalog data
         const catids: CatalogId[] = []
-        catalog.modules.forEach(module => {
-            catids.push({
-                name: module.name,
-                id: module.id
+        catalog.categories.forEach(category => {
+            if (category.modules) category.modules.forEach((module) => {
+                catids.push({
+                    name: module.name,
+                    id: module.id
+                });
             });
         })
 
@@ -352,9 +357,10 @@ export class ServicesHelper {
                 try {
                     bom.spec.modules.push(buildBomModule(this.catalog, bomItem.service_id, bomItem.yaml));
                 }
-                catch (e) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                catch (e:any) {
                     // Capture Errors
-                    errors.push({ id: bomItem.service_id, message: e.message });
+                    errors.push({ id: bomItem.service_id, message: e?.message });
                 }
             } else {
                 console.log(`Catalog entry ${bomItem.service_id} not found`);
@@ -362,6 +368,7 @@ export class ServicesHelper {
         })
 
         if (errors?.length) {
+            console.log(errors);
             throw { message: `Error building some of the modules.`, details: errors };
         }
 
@@ -374,7 +381,7 @@ export class ServicesHelper {
         // creating archives
         const zip = new AdmZip();
 
-        if (!_.isUndefined(bomContents)) {
+        if (bomContents) {
             zip.addFile("bom.yaml", Buffer.alloc(bomContents.length, bomContents), "BOM Yaml contents");
         }
 

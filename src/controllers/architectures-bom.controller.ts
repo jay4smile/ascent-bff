@@ -456,7 +456,7 @@ export class ArchitecturesBomController {
         }
         try {
           arch = await this.importYaml(
-            zipEntry.getData().toString().replace(/\n *- name: authorize_kms\n.*\n( *)/gi, "\n$1"),
+            zipEntry.getData().toString(),
             "true",
             true
           );
