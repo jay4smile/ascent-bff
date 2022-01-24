@@ -376,8 +376,10 @@ export class ArchitecturesBomController {
     request: Request,
     @inject(RestBindings.Http.REQUEST) req: any,
     @inject(RestBindings.Http.RESPONSE) res: Response,
-    @param.query.string('overwrite') overwrite: string
+    @param.query.string('overwrite') overwrite: string,
+    @param.query.boolean('public') publicArch: boolean
   ): Promise<object> {
+    console.log(publicArch);
     const user:any = req?.user;
     const email:string = user?.email;
     return new Promise<object>((resolve, reject) => {
@@ -411,7 +413,7 @@ export class ArchitecturesBomController {
             }
             for (const file of files) {
               console.log(`Importing BOM ${file.name}`);
-              const arch = await this.importYaml(file.buffer.toString(), overwrite, true, email);
+              const arch = await this.importYaml(file.buffer.toString(), overwrite, publicArch, email);
               success.push(arch);
             }
           }
