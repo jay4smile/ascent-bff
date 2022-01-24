@@ -204,7 +204,7 @@ export class ArchitecturesController {
     if (pngIx >= 0) {
       // fs.writeFileSync('/tmp/arch.png', files[pngIx].buffer);
       const image = await Jimp.read(files[pngIx].buffer);
-      image.resize(370, 200);
+      image.resize(Jimp.AUTO, 200);
       const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
       files.push({
         mimetype: files[pngIx].mimetype,
