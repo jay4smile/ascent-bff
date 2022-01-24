@@ -122,7 +122,7 @@ export class SolutionController {
     try {
       if (email) newSolution = await this.userRepository.solutions(email).create(body.solution);
       else newSolution = await this.solutionRepository.create(body.solution);
-    } catch (error) {
+    } catch (error:any) {
       console.log(error)
       return res.status(400).send({error: {message: error?.code === 11000 ? `Solution ${body.solution.id} already exists.` : "Error creating solution", details: error}});
     }
@@ -323,9 +323,9 @@ export class SolutionController {
 
       return zip.toBuffer();
 
-    } catch (e) {
+    } catch (e:any) {
       console.log(e);
-      return res.status(409).send(e.message);
+      return res.status(409).send(e?.message);
     }
 
   }

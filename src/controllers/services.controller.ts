@@ -21,11 +21,6 @@ import {
 } from '@loopback/rest';
 import {inject} from "@loopback/core";
 
-import {
-  ModuleSelector,
-  CatalogLoader,
-  Catalog
-} from '@cloudnativetoolkit/iascable';
 
 import { Services } from '../models';
 import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMappingRepository, UserRepository } from '../repositories';
@@ -43,10 +38,7 @@ import { serviceMapping } from '../service-mapping';
 
 export class ServicesController {
 
-  @Inject moduleSelector!: ModuleSelector;
-  @Inject loader!: CatalogLoader;
   @Inject serviceHelper!: ServicesHelper;
-  catalog: Catalog;
   automationCatalogController: AutomationCatalogController;
   catalogController: CatalogController;
 
