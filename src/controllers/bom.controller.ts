@@ -28,14 +28,7 @@ import { ArchitecturesRepository, BomRepository, ServicesRepository, ControlMapp
 import {FILE_UPLOAD_SERVICE} from '../keys';
 import {FileUploadHandler} from '../types';
 
-import {
-  ModuleSelector,
-  CatalogLoader,
-  Catalog
-} from '@cloudnativetoolkit/iascable';
-import catalogConfig from '../config/catalog.config'
-
-const catalogUrl = catalogConfig.url;
+import { ServicesHelper } from '../helpers/services.helper';
 
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -45,7 +38,7 @@ export interface BomComposite {
   arch_id?: string,
   service_id: string,
   desc: string,
-  automation_variables: string,
+  yaml: string,
   service: Services,
   automation: object | undefined,
   catalog: {
@@ -76,12 +69,7 @@ export interface BomComposite {
 }
 
 export class BomController {
-
-  @Inject
-  moduleSelector!: ModuleSelector;
-  @Inject
-  loader!: CatalogLoader;
-  catalog: Catalog;
+  @Inject serviceHelper!: ServicesHelper;
   automationCatalogController: AutomationCatalogController;
   servicesController: ServicesController;
 
@@ -120,19 +108,8 @@ export class BomController {
     bom: Omit<Bom, '_id'>,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Bom|Response> {
-    if (bom.automation_variables) {
-      if (!this.catalog) {
-        this.catalog = await this.loader.loadCatalog(catalogUrl);
-      }
-      // Validate automation_variables yaml
-      try {
-        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, bom.service_id, bom.automation_variables);
-      } catch (error) {
-        return res.status(400).send({error: {
-          message: `YAML automation variables config error.`,
-          details: error
-        }});
-      }
+    if (bom.yaml) {
+      await this.serviceHelper.validateBomModuleYaml(bom.yaml, bom.service_id);
     }
     await this.servicesController.findById(bom['service_id']);
     return this.bomRepository.create(bom);
@@ -184,9 +161,9 @@ export class BomController {
     @inject(RestBindings.Http.RESPONSE) res: Response,
     @param.where(Bom) where?: Where<Bom>,
   ): Promise<Count|Response> {
-    if (bom.automation_variables) {
+    if (bom.yaml) {
       return res.status(400).send({error: {
-        message: `You cannot update all automation variables.`
+        message: `You cannot update all yaml configs.`
       }});
     }
     return this.bomRepository.updateAll(bom, where);
@@ -263,20 +240,8 @@ export class BomController {
     bom: Bom,
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Bom|Response> {
-    if (bom.automation_variables) {
-      if (!this.catalog) {
-        this.catalog = await this.loader.loadCatalog(catalogUrl);
-      }
-      // Validate automation_variables yaml
-      const curBom = await this.bomRepository.findById(id, {include: ["service"]});
-      try {
-        await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(this.catalog, curBom.service_id, bom.automation_variables);
-      } catch (error) {
-        return res.status(400).send({error: {
-          message: `YAML automation variables config error.`,
-          details: error
-        }});
-      }
+    if (bom.yaml) {
+      await this.serviceHelper.validateBomModuleYaml(bom.yaml, bom.service_id);
     }
     await this.bomRepository.updateById(id, bom);
     return this.bomRepository.findById(id);

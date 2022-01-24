@@ -300,9 +300,9 @@ export class ArchitecturesController {
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Architectures> {
     return new Promise((resolve, reject) => {
-      if (architectures.automation_variables) {
+      if (architectures.yaml) {
         try {
-          yaml.load(architectures.automation_variables);
+          yaml.load(architectures.yaml);
         } catch (error) {
           return reject(res.status(400).send({error: {
             message: "Wrong yaml format for automation variables",
@@ -368,9 +368,9 @@ export class ArchitecturesController {
     @param.where(Architectures) where?: Where<Architectures>,
   ): Promise<Count> {
     return new Promise((resolve, reject) => {
-      if (architectures.automation_variables) {
+      if (architectures.yaml) {
         try {
-          yaml.load(architectures.automation_variables);
+          yaml.load(architectures.yaml);
         } catch (error) {
           return reject(res.status(400).send({error: {
             message: "Wrong yaml format for automation variables",
@@ -420,9 +420,9 @@ export class ArchitecturesController {
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Architectures> {
     return new Promise((resolve, reject) => {
-      if (architectures.automation_variables) {
+      if (architectures.yaml) {
         try {
-          yaml.load(architectures.automation_variables);
+          yaml.load(architectures.yaml);
         } catch (error) {
           return reject(res.status(400).send({error: {
             message: "Wrong yaml format for automation variables",
@@ -466,7 +466,7 @@ export class ArchitecturesController {
         'application/json': {
           schema: getModelSchemaRef(Architectures, {
             partial: true,
-            exclude: ['short_desc','long_desc','public','production_ready','automation_variables']
+            exclude: ['short_desc','long_desc','public','production_ready','yaml']
           }),
         },
       },
@@ -484,7 +484,7 @@ export class ArchitecturesController {
       long_desc: existingArch.long_desc,
       public: false,
       production_ready: existingArch.production_ready,
-      automation_variables: existingArch.automation_variables
+      yaml: existingArch.yaml
     })
     const user:any = req?.user;
     const email:string = user?.email;

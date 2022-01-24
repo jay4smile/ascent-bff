@@ -33,7 +33,7 @@ export class Bom extends Entity {
   @property({
     type: 'string'
   })
-  automation_variables: string;
+  yaml: string;
 
   @hasOne(() => Services, {keyTo: 'service_id', keyFrom: 'service_id'})
   service: Services;
