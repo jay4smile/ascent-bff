@@ -241,7 +241,8 @@ export class BomController {
     @inject(RestBindings.Http.RESPONSE) res: Response,
   ): Promise<Bom|Response> {
     if (bom.yaml) {
-      await this.serviceHelper.validateBomModuleYaml(bom.yaml, bom.service_id);
+      const fullBom = await this.bomRepository.findById(id);
+      await this.serviceHelper.validateBomModuleYaml(bom.yaml, fullBom.service_id);
     }
     await this.bomRepository.updateById(id, bom);
     return this.bomRepository.findById(id);
