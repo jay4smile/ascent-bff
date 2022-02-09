@@ -441,6 +441,9 @@ export class ServicesHelper {
                     console.log("failed to load contents from ", file.name);
                 }
             } else {
+                if (file.type === 'terraform') {
+                    file.name = `terraform/${file.name}`;
+                }
                 try {
                     contents = (await file.contents).toString();
                 } catch (e) {
