@@ -285,7 +285,7 @@ export class ServicesHelper {
         delete yamlBom.spec.modules;
         const arch: Architectures = new Architectures({
             arch_id: bom.metadata.name,
-            name: bom.metadata.annotations?.displayName ?? bom.metadata.name,
+            name: `${bom.metadata.labels?.code ? `${bom.metadata.labels?.code} - `: ''}${bom.metadata.annotations?.displayName ?? bom.metadata.name}`,
             short_desc: bom.metadata.annotations?.description ?? `${bom.metadata.name} Bill of Materials.`,
             long_desc: bom.metadata.annotations?.description ?? `${bom.metadata.name} Bill of Materials.`,
             public: publicArch,
@@ -295,21 +295,22 @@ export class ServicesHelper {
         const bomYaml = yaml.load(yamlString);
         const boms: Bom[] = [];
         const bomModules: BomModule[] = bomYaml.spec.modules;
-        const catalog = await this.getCatalog();
+        // const catalog = await this.getCatalog();
         for (const m of bom.spec.modules) {
             if (typeof m === 'string') throw new Error('BOM modules must not be of type string.');
-            const bomModule = bomModules.find(m2 => m2.name === m.name);
-            try {
-                await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(catalog, m.name ?? '', yaml.dump(bomModule));
-            } catch (error) {
-                console.log(error);
-                throw { message: `Module ${m.name} yaml config validation failed.`, details: error };
-            }
+            const bomModule = bomModules.find(m2 => m.alias ? m2.alias === m.alias : !m2.alias && (m2.name === m.name));
+            // Skip yaml var validation for now
+            // try {
+            //     await this.moduleSelector.validateBillOfMaterialModuleConfigYaml(catalog, m.name ?? '', yaml.dump(bomModule));
+            // } catch (error) {
+            //     console.log(error);
+            //     throw { message: `Module ${m.name} yaml config validation failed.`, details: error };
+            // }
             boms.push(new Bom({
                 arch_id: arch.arch_id,
                 service_id: m.name,
                 desc: m.alias ?? m.name,
-                yaml: yaml.dump(bomModules.find(m2 => m2.name === m.name))
+                yaml: yaml.dump(bomModule)
             }));
         }
         return { arch: arch, boms: boms };
@@ -442,6 +443,7 @@ export class ServicesHelper {
                 }
             } else {
                 if (file.type === 'terraform') {
+                    if (file.name?.endsWith('.tfvars')) file.name = file.name.replace('terraform', `${bom.metadata.name}.auto`);
                     file.name = `terraform/${file.name}`;
                 }
                 try {
