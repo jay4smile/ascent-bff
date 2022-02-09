@@ -291,7 +291,7 @@ export class SolutionController {
         if (archZipBuffer instanceof Buffer) {
           const archZip = new AdmZip(archZipBuffer);
           for (const entry of archZip.getEntries()) {
-            zip.addFile(`${arch.arch_id}/${entry.name}`, entry.getData());
+            zip.addFile(`${arch.arch_id}/${entry.rawEntryName.toString()}`, entry.getData());
           }
         } else {
           return res.status(400).send({error: {message: `Error loading zip for architecture ${arch.arch_id}`}});
@@ -312,7 +312,7 @@ export class SolutionController {
               Bucket: BUCKET_NAME,
               Key: object.Key
             }).promise()).Body;
-            if (cosObj) zip.addFile(object.Key, new Buffer(cosObj.toString()));
+            if (cosObj) zip.addFile(object.Key?.replace(`solutions/${id}/`, ''), new Buffer(cosObj.toString()));
           }
         }
       } catch (error) {
