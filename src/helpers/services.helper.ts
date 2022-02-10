@@ -396,13 +396,16 @@ export class ServicesHelper {
             }
         }
 
-
         let mdfiles = "";
         terraformComponent.files.map(async (file: OutputFile) => {
             if (file.type === "documentation") {
                 mdfiles += "- [" + file.name + "](" + file.name + ")\n";
             }
         });
+
+        zip.addLocalFolder('./public/utils', 'utils');
+        zip.addLocalFile('./public/credentials.template')
+        zip.addLocalFile('./public/launch.sh')
 
         // Load the Core ReadME
         const readme = new UrlFile({ name: 'README.MD', type: OutputFileType.documentation, url: "https://raw.githubusercontent.com/ibm-gsi-ecosystem/ibm-enterprise-catalog-tiles/main/BUILD.MD" });
@@ -422,6 +425,8 @@ export class ServicesHelper {
 
             let contents: string | Buffer = "";
             //console.log(file.name);
+            if (file.name.endsWith('.tfvars')) file.name = `terraform/${file.name.replace('terraform', `${bom.metadata.name}.auto`)}`;
+            if (file.name.endsWith('.tf')) file.name = `terraform/${file.name}`;
             if (file.type === "documentation") {
                 try {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -442,10 +447,6 @@ export class ServicesHelper {
                     console.log("failed to load contents from ", file.name);
                 }
             } else {
-                if (file.type === 'terraform') {
-                    if (file.name?.endsWith('.tfvars')) file.name = file.name.replace('terraform', `${bom.metadata.name}.auto`);
-                    file.name = `terraform/${file.name}`;
-                }
                 try {
                     contents = (await file.contents).toString();
                 } catch (e) {
