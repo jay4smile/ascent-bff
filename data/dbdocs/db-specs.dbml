@@ -12,16 +12,17 @@ Table nist {
   parent_control string [ref: > nist.number]
 }
 
-Table control {
+Table Controls {
   id string [pk]
+  family string
   name string
   base_control boolean
-  parent_control string [ref: > control.id]
+  parent_control string [ref: > Controls.id]
   nist string [ref: > nist.number]
 }
 
-Table controlDetails {
-  id string [pk, ref: > control.id]
+Table ControlDetails {
+  id string [pk, ref: > Controls.id]
   name string
   focus_area string
   family string
@@ -52,7 +53,7 @@ Enum ControlType3 {
 }
 Table controlRequirement {
   id string [pk]
-  control_id string [ref: > controlDetails.id]
+  control_id string [ref: > ControlDetails.id]
   description string
   risk_rating string
   control_type_1 ControlType1
@@ -68,9 +69,7 @@ Table controlRequirement {
   consumer_resp string
 }
 
-
-
-Table automationModule {
+Table EXTERNAL_AutomationModule {
   id string [pk]
   name string
   description string
@@ -79,17 +78,17 @@ Table automationModule {
   versions automationModuleVersion[]
 }
 Table service {
-  service_id string [pk, ref: > automationModule.name]
-  name string
+  service_id string [pk, ref: > EXTERNAL_AutomationModule.name]
+  fullname string
   ibm_catalog_id string
   fs_validated bool
 }
 
-Table controlMapping {
-  _id string
-  control_id string [pk, ref: > control.id]
+Table ControlMapping {
+  id string
+  control_id string [pk, ref: > Controls.id]
   service_id string [pk, ref: > service.service_id]
-  arch_id string [pk, ref: > architecture.id]
+  arch_id string [pk, ref: > Architectures.arch_id]
   control_subsections string [pk, note: 'IBM SSP control sub section(s).']
   compliant string
   configuration string
@@ -99,8 +98,8 @@ Table controlMapping {
   comment string
 }
 
-Table goal {
-  id string [pk]
+Table Goal {
+  goal_id string [pk]
   description string
   parameters string
   parameters_default string
@@ -108,8 +107,8 @@ Table goal {
 }
 
 Table mappingGoals {
-  goal_id  string [pk, ref: > goal.id]
-  mapping_id string [pk, ref: > controlMapping._id]
+  goal_id  string [pk, ref: > Goal.goal_id]
+  mapping_id string [pk, ref: > ControlMapping.id]
 }
 
 Table profile {
@@ -118,9 +117,10 @@ Table profile {
   description string
 }
 
-Table architecture {
-  id string [pk]
+Table Architectures {
+  arch_id string [pk]
   name string
+  platform string
   short_desc string
   long_desc string
   public booleanf
@@ -137,7 +137,7 @@ Table solution {
 }
 
 Table SolutionArchitectures {
-  arch_id string [pk, ref: > architecture.id]
+  arch_id string [pk, ref: > Architectures.arch_id]
   solution_id string [pk, ref: > solution.id]
 }
 
@@ -152,7 +152,7 @@ Enum userControlStatus  {
   "complete"
 }
 Table userOnBoarding {
-  control_id string [pk, ref: > control.id]
+  control_id string [pk, ref: > Controls.id]
   user_id string [pk, ref: > user.email]
   status userControlStatus
 }
@@ -163,7 +163,7 @@ Enum userRole  {
 }
 Table userArchitectures {
   email string [pk, ref: > user.email]
-  arch_id string [pk, ref: > architecture.id]
+  arch_id string [pk, ref: > Architectures.arch_id]
   // role userRole
 }
 
@@ -173,14 +173,14 @@ Table userSolutions {
   // role userRole
 }
 
-Table bom {
+Table Bom {
   service_id string [pk, ref: > service.service_id]
-  arch_id string [pk, ref: > architecture.id]
+  arch_id string [pk, ref: > Architectures.arch_id]
   desc string
   yaml string
 }
 
-Table OnBoardingStages {
+Table OnBoardingStage {
   id string [pk]
   label string
   secondary_label string
