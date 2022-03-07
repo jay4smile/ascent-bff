@@ -17,9 +17,7 @@ import {
     ModuleSelector,
     OutputFile,
     OutputFileType,
-    SingleModuleVersion,
-    TerraformBuilder,
-    TerraformComponent,
+    CatalogBuilder,
     UrlFile
 } from '@cloudnativetoolkit/iascable';
 
@@ -143,7 +141,7 @@ const servicesFromCatalog = (catalog: Catalog) => {
 export class ServicesHelper {
     @Inject loader!: CatalogLoader;
     @Inject moduleSelector!: ModuleSelector;
-    @Inject terraformBuilder!: TerraformBuilder;
+    @Inject catalogBuilder!: CatalogBuilder;
     client: WrappedNodeRedisClient;
     catalog: Catalog;
 
@@ -160,8 +158,15 @@ export class ServicesHelper {
             this.loader.loadCatalogFromUrl(catalogUrl)
                 .then(catalog => {
                     console.log(`Automation Catalog fetched from ${catalogUrl}`);
-                    if (this.client) this.client.set(CATALOG_KEY, catalog)
-                        .finally(() => console.log(`Automation Catalog stored in cache`));
+                    if (this.client) {
+                        this.client.set(CATALOG_KEY, catalog)
+                            .finally(() => console.log(`Automation Catalog stored in cache`));
+                        const timeout = new Date();
+                        timeout.setHours(timeout.getHours()+2);
+                        this.client.set(`${CATALOG_KEY}-timeout`, Number(timeout).toString())
+                            .finally(() => console.log(`Automation Catalog timeout stored in cache`));
+                    }
+                    fs.writeFileSync(`${process.cwd()}/.catalog.ignore.yaml`, catalog);
                     this.catalog = new Catalog(this.loader.parseYaml(catalog));
                     return resolve(this.catalog);
                 })
@@ -179,17 +184,32 @@ export class ServicesHelper {
                 resolve(this.catalog);
             } else {
                 if (this.client) {
-                    this.client.get(CATALOG_KEY)
-                        .then(catalog => {
-                            if (catalog) {
-                                console.log(`Automation Catalog retrieved from cache`);
-                                this.catalog = new Catalog(this.loader.parseYaml(catalog));
-                                resolve(this.catalog);
+                    this.client.get(`${CATALOG_KEY}-timeout`)
+                        .then(timeoutString => {
+                            if (timeoutString) {
+                                const timeout = new Date(Number(timeoutString));
+                                if (timeout < new Date) {
+                                    console.log(`Catalog cache timed out, retrieving catalog...`);
+                                    resolve(this.fetchCatalog());
+                                } else {
+                                    this.client.get(CATALOG_KEY)
+                                        .then(catalog => {
+                                            if (catalog) {
+                                                console.log(`Automation Catalog retrieved from cache`);
+                                                this.catalog = new Catalog(this.loader.parseYaml(catalog));
+                                                resolve(this.catalog);
+                                            } else {
+                                                resolve(this.fetchCatalog());
+                                            }
+                                        })
+                                        .catch(err => reject(err));
+                                }
                             } else {
                                 resolve(this.fetchCatalog());
                             }
                         })
                         .catch(err => reject(err));
+                    
                 } else {
                     resolve(this.fetchCatalog());
                 }
@@ -374,9 +394,8 @@ export class ServicesHelper {
         }
 
         // Lets build a BOM file from the BOM builder
-        const bomContents: string = yaml.dump(bom);
-        const modules: SingleModuleVersion[] = await this.moduleSelector.resolveBillOfMaterial(this.catalog, bom);
-        const terraformComponent: TerraformComponent = await this.terraformBuilder.buildTerraformComponent(modules);
+        const iascableResult = await this.catalogBuilder.build(`file:/${process.cwd()}/.catalog.ignore.yaml`, bom);
+        const bomContents: string = yaml.dump(iascableResult.billOfMaterial);
 
         // Write into a Buffer
         // creating archives
@@ -397,7 +416,7 @@ export class ServicesHelper {
         }
 
         let mdfiles = "";
-        terraformComponent.files.map(async (file: OutputFile) => {
+        iascableResult.terraformComponent.files.map(async (file: OutputFile) => {
             if (file.type === "documentation") {
                 mdfiles += "- [" + file.name + "](" + file.name + ")\n";
             }
@@ -409,7 +428,7 @@ export class ServicesHelper {
 
         // Load the Core ReadME
         const readme = new UrlFile({ name: 'README.MD', type: OutputFileType.documentation, url: "https://raw.githubusercontent.com/ibm-gsi-ecosystem/ibm-enterprise-catalog-tiles/main/BUILD.MD" });
-        const newFiles = terraformComponent.files;
+        const newFiles = iascableResult.terraformComponent.files;
         newFiles.push(readme);
 
         await Promise.all(newFiles.map(async (file: OutputFile) => {
