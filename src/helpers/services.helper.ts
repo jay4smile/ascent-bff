@@ -302,7 +302,7 @@ export class ServicesHelper {
         const yamlBom:any = yaml.load(yamlString);
         delete yamlBom.spec.modules;
         const arch: Architectures = new Architectures({
-            arch_id: bom.metadata.name,
+            arch_id: `${bom.metadata.name}${bom.metadata.labels?.platform ? `-${bom.metadata.labels?.platform}` : ''}`,
             name: `${bom.metadata.labels?.code ? `${bom.metadata.labels?.code} - `: ''}${bom.metadata.annotations?.displayName ?? bom.metadata.name}`,
             short_desc: bom.metadata.annotations?.description ?? `${bom.metadata.name} Bill of Materials.`,
             long_desc: bom.metadata.annotations?.description ?? `${bom.metadata.name} Bill of Materials.`,
