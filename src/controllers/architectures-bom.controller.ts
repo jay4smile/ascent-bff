@@ -99,8 +99,7 @@ export class ArchitecturesBomController {
     let curArch:Architectures;
     let archExists = false;
     try {
-      if (email) curArch = (await this.userRepository.architectures(email).find({where: {arch_id: arch.arch_id}}))[0];
-      else curArch = await this.architecturesRepository.findById(arch.arch_id);
+      curArch = await this.architecturesRepository.findById(arch.arch_id);
       if (!curArch) throw new Error();
       archExists = true;
     } catch (getArchError) {
@@ -411,6 +410,7 @@ export class ArchitecturesBomController {
               if (file.mimetype !== "application/x-yaml" && file.mimetype !== "text/yaml") throw {message: "You must only upload YAML files."};
               if (file.size > 102400) throw {message: "Files must me <= 100Ko."};
             }
+            console.log(files);
             for (const file of files) {
               console.log(`Importing BOM ${file.name}`);
               const arch = await this.importYaml(file.buffer.toString(), overwrite, publicArch, email);
