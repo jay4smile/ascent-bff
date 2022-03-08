@@ -5,12 +5,9 @@ import AdmZip = require("adm-zip");
 import fs from "fs";
 
 import {
-    BillOfMaterial,
     billOfMaterialFromYaml,
     BillOfMaterialModel,
     BillOfMaterialModule,
-    buildBomModule,
-    buildBomVariables,
     Catalog,
     CatalogCategoryModel,
     CatalogLoader,
@@ -36,6 +33,7 @@ import { semanticVersionDescending, semanticVersionFromString } from '../util/se
 import { S3 } from 'ibm-cos-sdk';
 
 /* eslint-disable @typescript-eslint/naming-convention */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-throw-literal */
 
 const catalogUrl = catalogConfig.url;
@@ -301,7 +299,7 @@ export class ServicesHelper {
         } catch (error) {
             throw { message: `Failed to load bom yaml`, details: error };
         }
-        const yamlBom = yaml.load(yamlString);
+        const yamlBom:any = yaml.load(yamlString);
         delete yamlBom.spec.modules;
         const arch: Architectures = new Architectures({
             arch_id: bom.metadata.name,
@@ -312,7 +310,7 @@ export class ServicesHelper {
             platform: bom.metadata.labels?.platform,
             yaml: yaml.dump(yamlBom)
         });
-        const bomYaml = yaml.load(yamlString);
+        const bomYaml:any = yaml.load(yamlString);
         const boms: Bom[] = [];
         const bomModules: BomModule[] = bomYaml.spec.modules;
         // const catalog = await this.getCatalog();
@@ -364,10 +362,8 @@ export class ServicesHelper {
         })
 
         // Future : Push to Object Store, Git, Create a Tile Dynamically
-        const bom: BillOfMaterialModel = new BillOfMaterial(architecture.arch_id);
-
-        // Pass Architecture Varables into the Bom
-        bom.spec.variables = buildBomVariables(yaml.dump(yaml.load(architecture.yaml)?.spec?.variables));
+        const bomYaml:any = yaml.load(architecture.yaml);
+        bomYaml.spec.modules = [];
 
         // From the BOM build an Automation BOM
         const errors: Array<{ id: string, message: string }> = [];
@@ -376,9 +372,8 @@ export class ServicesHelper {
             const catentry = catids.find(catid => catid.name === bomItem.service_id);
             if (catentry) {
                 try {
-                    bom.spec.modules.push(buildBomModule(this.catalog, bomItem.service_id, bomItem.yaml));
+                    bomYaml.spec.modules.push(yaml.load(bomItem.yaml));
                 }
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 catch (e:any) {
                     // Capture Errors
                     errors.push({ id: bomItem.service_id, message: e?.message });
@@ -387,6 +382,8 @@ export class ServicesHelper {
                 console.log(`Catalog entry ${bomItem.service_id} not found`);
             }
         })
+
+        const bom: BillOfMaterialModel = billOfMaterialFromYaml(yaml.dump(bomYaml), architecture.arch_id);
 
         if (errors?.length) {
             console.log(errors);
@@ -448,7 +445,6 @@ export class ServicesHelper {
             if (file.name.endsWith('.tf')) file.name = `terraform/${file.name}`;
             if (file.type === "documentation") {
                 try {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     contents = await getContents((file as any).url);
 
                     // Replace Variables and add

@@ -17,7 +17,8 @@ import {
     'OnBoardingStageController.prototype.updateById',
     'OnBoardingStageController.prototype.replaceById',
     'OnBoardingStageController.prototype.deleteById',
-    'ControlsController.prototype.importControls'
+    'ControlsController.prototype.importControls',
+    'ArchitecturesBomController.prototype.uploadBomYaml',
   ]
   
   /**
