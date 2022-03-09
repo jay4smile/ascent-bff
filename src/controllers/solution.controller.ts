@@ -250,7 +250,45 @@ export class SolutionController {
       }).promise()).Body;
     } catch (error) {
       return res.status(400).send({error: {
-        message: `Error retrieving diagram`,
+        message: `Could not fetch file ${filename} for solution ${id}`,
+        details: error
+      }})
+    }
+  }
+
+  @get('/solutions/{id}/files.zip')
+  @response(200, {
+    description: 'Get solution file by name',
+  })
+  @oas.response.file()
+  async getFiles(
+    @param.path.string('id') id: string,
+    @inject(RestBindings.Http.RESPONSE) res: Response,
+  ): Promise<any> {
+    try {
+      const zip = new AdmZip();
+
+      // Add files from COS
+      let objects = (await this.cos.listObjects({
+        Bucket: BUCKET_NAME
+      }).promise()).Contents;
+      if (objects) {
+        objects = objects.filter(file => file.Key?.startsWith(`solutions/${id}/`));
+      }
+      if (objects) for (const object of objects) {
+        if (object.Key) {
+          const cosObj = (await this.cos.getObject({
+            Bucket: BUCKET_NAME,
+            Key: object.Key
+          }).promise()).Body;
+          if (cosObj) zip.addFile(object.Key?.replace(`solutions/${id}/`, ''), new Buffer(cosObj.toString()));
+        }
+      }
+
+      return zip.toBuffer();
+    } catch (error) {
+      return res.status(400).send({error: {
+        message: `Could not fetch files for solution ${id}`,
         details: error
       }})
     }
