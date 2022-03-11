@@ -110,6 +110,8 @@ export class BomController {
   ): Promise<Bom|Response> {
     if (bom.yaml) {
       await this.serviceHelper.validateBomModuleYaml(bom.yaml, bom.service_id);
+    } else {
+      bom.yaml = `name: ${bom.service_id}\n`
     }
     await this.servicesController.findById(bom['service_id']);
     return this.bomRepository.create(bom);
