@@ -352,6 +352,8 @@ export class ArchitecturesBomController {
   ): Promise<Bom|Response> {
     if (bom.yaml) {
       await this.serviceHelper.validateBomModuleYaml(bom.yaml, bom.service_id);
+    } else {
+      bom.yaml = `name: ${bom.service_id}\n`
     }
     return this.architecturesRepository.boms(id).create(bom);
   }
