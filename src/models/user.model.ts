@@ -1,6 +1,14 @@
 import {Entity, model, property, hasMany} from '@loopback/repository';
 import {Architectures, UserArchitectures, Solution, UserSolutions} from '../models/';
 
+export interface UserConfig {
+  complianceFeatures?: boolean,
+  builderFeatures?: boolean,
+  ibmContent?: boolean,
+  azureContent?: boolean,
+  awsContent?: boolean,
+}
+
 @model()
 export class User extends Entity {
   @property({
@@ -10,6 +18,11 @@ export class User extends Entity {
     required: true,
   })
   email: string;
+
+  @property({
+    type: 'object'
+  })
+  config?: UserConfig;
 
   @hasMany(() => Architectures, {
     through: {

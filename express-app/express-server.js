@@ -56,7 +56,7 @@ if (process.env.NODE_ENV !== "dev" && process.env.NODE_ENV !== "test") {
                 }
                 if (!editorMethods.includes(req.method) || req.scopes.includes("edit")) {
                     req.user = user;
-                    req.user.email = req.user?.metadata?.name;
+                    req.user.email = req.user?.metadata?.name?.replace('IAM#', '');
                     next();
                 } else {
                     res.status(401).json({

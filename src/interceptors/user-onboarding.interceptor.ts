@@ -45,7 +45,7 @@ import {
   
         const email:string = request?.user?.email;
   
-        if (email) {    
+        if (!['dev', 'test'].includes(process.env.NODE_ENV || '')) {    
             let wantedEmail = "";
             if (protectedTargets.includes(ctx.targetName)) {
                 wantedEmail = (await this.userOnBoardingRepository.findById(ctx.args[0])).user_id;
