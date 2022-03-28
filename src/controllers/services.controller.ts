@@ -108,7 +108,8 @@ export class ServicesController {
     @param.filter(Services) filter?: Filter<Services>,
   ): Promise<Service[]> {
     const records = await this.servicesRepository.find(filter);
-    const services:Service[] = await this.serviceHelper.getServices();
+    let services:Service[] = await this.serviceHelper.getServices();
+    if (filter) services = services.filter(service => records.findIndex(record => record.service_id === service.name) >= 0);
     for (let index = 0; index < services.length; index++) {
       let service = records.find(r => r.service_id === services[index].name);
       if (!service) {
