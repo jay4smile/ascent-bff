@@ -51,7 +51,7 @@ import {
   
         const email:string = request?.user?.email;
   
-        if (email) {
+        if (!['dev', 'test'].includes(process.env.NODE_ENV || '')) {
           try {
             await this.userRepository.findById(email);
           } catch (error) {
