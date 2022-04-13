@@ -126,8 +126,57 @@ export class SolutionController {
       console.log(error)
       return res.status(400).send({error: {message: error?.code === 11000 ? `Solution ${body.solution.id} already exists.` : "Error creating solution", details: error}});
     }
+
+    // Bind BOMs to solution
+    const archsWithDetails = [];
     for (const arch of body.architectures) {
       await this.solutionRepository.architectures(newSolution.id).link(arch.arch_id);
+      try {
+        archsWithDetails.push(await this.architecturesRepository.findById(arch.arch_id));
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    // Creates default README
+    const readme = `
+# Ascent Solution: ${newSolution.name}
+
+Please return to [your solution](https://ascent.cloudnativetoolkit.dev/solutions/${newSolution.id}) to make changes.
+
+This collection of IBM Cloud terraform automation bundles has been crafted from a set of Terraform modules created by Ecosytem Lab team part of the IBM Strategic Partnership. Please contact Matthew Perrins mjperrin@us.ibm.com, Sean Sundberg seansund@us.ibm.com, Andrew Trice amtrice@us.ibm.com or Noé Samaille noe.samaille@ibm.com for more details.
+
+## Change Log
+
+- **${new Date().toDateString()}** - Initial version
+
+## Description
+
+${newSolution.long_desc ? newSolution.long_desc : newSolution.short_desc ? newSolution.short_desc : 'Update this section to describe your solution'}
+
+## Bill Of Materials used in this solution
+
+| ID | Name | Description | 
+| -- | ---- | ----------- |
+${archsWithDetails.map(arch => `| ${arch.arch_id} | [${arch.name}](https://ascent.cloudnativetoolkit.dev/boms/${arch.arch_id}) | ${arch.short_desc} |`).join('\n')}
+
+    `
+    // Put default readme for solution
+    try {
+      await new Promise((resolve, reject) => {
+        this.cos.putObject({
+          Bucket: BUCKET_NAME,
+          Key: `solutions/${newSolution.id}/README.md`,
+          Body: Buffer.from(readme)
+        }, (putObjErr) => {
+          if (putObjErr) {
+            reject({error: putObjErr})
+          }
+          console.log('README added')
+          return resolve('ok');
+        });
+      });
+    } catch (error) {
+      console.log(error);
     }
     return this.solutionRepository.findById(newSolution.id, {include: ['architectures']});
   }
