@@ -249,7 +249,15 @@ ${archsWithDetails.map(arch => `| ${arch.arch_id} | [${arch.name}](https://ascen
   async find(
     @param.filter(Solution) filter?: Filter<Solution>,
   ): Promise<Solution[]> {
-    return this.solutionRepository.find(filter);
+    // Only get public solutions
+    const publicFilter = {
+      ...filter,
+      where: {
+        ...filter?.where,
+        public: true
+      }
+    }
+    return this.solutionRepository.find(publicFilter);
   }
 
   @get('/solutions/{id}')

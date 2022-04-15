@@ -13,6 +13,7 @@ import {
   const protectedTargets = [
     'UserController.prototype.getById',
     'UserController.prototype.findUserArchitecturesById',
+    'UserController.prototype.findUserSolutionsById',
     'UserController.prototype.updateById',
   ]
   
