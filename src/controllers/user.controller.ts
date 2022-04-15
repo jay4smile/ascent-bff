@@ -61,8 +61,13 @@ export class UserController {
   async findUserSolutionsById(
     @param.path.string('id') email: string,
   ): Promise<Solution[]> {
+    const publicFilter = {
+      where: {
+        public: false
+      }
+    }
     await this.userRepository.findById(email);
-    return this.userRepository.solutions(email).find();
+    return this.userRepository.solutions(email).find(publicFilter);
   }
 
   @patch('/users/{id}')
