@@ -4,7 +4,7 @@ import {
 import {
   param, get, response, getModelSchemaRef, patch, requestBody
 } from '@loopback/rest';
-import {Architectures, User} from '../models';
+import {Architectures, Solution, User} from '../models';
 import {UserRepository} from '../repositories';
 
 export class UserController {
@@ -44,6 +44,25 @@ export class UserController {
   ): Promise<Architectures[]> {
     await this.userRepository.findById(email);
     return this.userRepository.architectures(email).find();
+  }
+
+  @get('/users/{id}/solutions')
+  @response(200, {
+    description: 'User solutions',
+    content: {
+      'application/json': {
+        schema: {
+          type: 'array',
+          items: getModelSchemaRef(Architectures, {includeRelations: true}),
+        },
+      },
+    }
+  })
+  async findUserSolutionsById(
+    @param.path.string('id') email: string,
+  ): Promise<Solution[]> {
+    await this.userRepository.findById(email);
+    return this.userRepository.solutions(email).find();
   }
 
   @patch('/users/{id}')
