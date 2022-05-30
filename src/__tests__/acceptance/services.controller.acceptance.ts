@@ -46,7 +46,7 @@ describe('Services', () => {
 
     it('GET service by id', async () => {
         await client
-            .get(`/services/ibm-container-platform`)
+            .get(`/services/ocp-login`)
             .expect(200)
             .expect('Content-Type', /application\/json/);
     });
