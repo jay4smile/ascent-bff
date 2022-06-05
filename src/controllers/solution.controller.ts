@@ -143,7 +143,7 @@ export class SolutionController {
 
 Please return to [your solution](https://ascent.cloudnativetoolkit.dev/solutions/${newSolution.id}) to make changes.
 
-This collection of IBM Cloud terraform automation bundles has been crafted from a set of Terraform modules created by Ecosytem Lab team part of the IBM Strategic Partnership. Please contact Matthew Perrins mjperrin@us.ibm.com, Sean Sundberg seansund@us.ibm.com, Andrew Trice amtrice@us.ibm.com or Noé Samaille noe.samaille@ibm.com for more details.
+This collection of terraform automation bundles has been crafted from a set of Terraform modules created by Ecosytem Lab team part of the IBM Strategic Partnership. Please contact Matthew Perrins mjperrin@us.ibm.com, Sean Sundberg seansund@us.ibm.com, Andrew Trice amtrice@us.ibm.com or Noé Samaille noe.samaille@ibm.com for more details.
 
 ## Change Log
 
