@@ -481,4 +481,33 @@ export class ServicesHelper {
         return zip.toBuffer()
 
     }
+
+    /**
+     * Enrich BOM yaml
+     * @returns JSON object with BOM and enriched data for modules
+     */
+    async enrichBomYaml(yamlString: string): Promise<object> {
+        const catalog = await this.getCatalog();
+        let enrichedBom:any;
+        try {
+            const bom = billOfMaterialFromYaml(yamlString);
+            enrichedBom = bom;
+            for (const ix in bom.spec.modules) {
+                let moduleMetadata;
+                const m = bom.spec.modules[ix];
+                switch (typeof m) {
+                    case 'string':
+                        moduleMetadata = catalog.modules?.find(m2 => m2.name === m);
+                        break;
+                    default:
+                        moduleMetadata = catalog.modules?.find(m2 => m2.name === m.name);
+                        break;
+                }
+                enrichedBom.spec.modules[ix].enrichedMetadata = moduleMetadata?.versions[0];
+            }
+        } catch (error) {
+            throw { message: `Failed to load bom yaml`, details: error };
+        }
+        return { bom: enrichedBom };
+    }
 }
