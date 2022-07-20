@@ -1,0 +1,244 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Template to Create an EC2 instance.
+Parameters:
+  ImageId:
+    Type: String
+    Description: 'Linux 2 AMI for Ohio us-east2 Region'
+    Default: 'ami-064ff912f78e3e561'
+  InstanceType:
+    Type: String
+    Description: Choosing t2 micro because it is free
+    Default: t3.large
+  KeyPairName:
+    Description: SSH Keypair to login to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+  ClusterName:
+    Default: ""
+    Description: Custom cluster name for kubernetes.io/cluster/tags.
+    Type: String
+    AllowedPattern: ^[0-9a-z-]*$
+  AscentCFNBucketName:
+    Description: 'The name of the S3 bucket where logs are to be exported. The deployment logs provide a record of the boot strap scripting actions and are useful for problem determination if the deployment fails in some way.'
+    Type: String
+    Default: 'ascentcfn'
+  OpenshiftVersion:
+    Description: Choose Openshift Version
+    Type: String
+    Default: "4.8.11"
+  ExistingVPC:
+    Description: Choose yes to use existing VPC, No to create a new VPC.
+    Type: String
+    AllowedValues:
+      - "no"
+      - "yes"
+    Default: "no"
+
+Resources:
+  CPDIAMUser:
+    Type: 'AWS::IAM::User'
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+  CPDIAMUserAccessKey:
+    Type: 'AWS::IAM::AccessKey'
+    Properties:
+      UserName: !Ref CPDIAMUser
+  BootNodeIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: "Allow"
+          Principal:
+            Service:
+            - "ec2.amazonaws.com"
+          Action:
+          - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+        - arn:aws:iam::aws:policy/AWSCloudFormationReadOnlyAccess
+      Policies:
+      - PolicyName: bootnode-policy
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: "Allow"
+            Action: "ec2:Describe*"
+            Resource: "*"
+          - Effect: "Allow"
+            Action: "ec2:AttachVolume"
+            Resource: "*"
+          - Effect: "Allow"
+            Action: "ec2:DetachVolume"
+            Resource: "*"
+          - Effect: "Allow"
+            Action:
+            - "secretsmanager:GetSecretValue"
+            - "secretsmanager:UpdateSecret"
+            Resource:
+            - !Ref AWSCredentialSecret
+          - Effect: "Allow"
+            Action: "s3:ListBucket"
+            Resource: !Sub arn:aws:s3:::${AscentCFNBucketName}
+          - Effect: "Allow"
+            Action: "s3:PutObject"
+            Resource: !Sub arn:aws:s3:::${AscentCFNBucketName}/*
+          - Effect: Allow
+            Action:
+            - ssm:SendCommand
+            - ssm:PutParameter
+            - ssm:GetParameter
+            Resource:
+            - '*'
+  BootnodeInstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Path: "/"
+      Roles:
+      - Ref: "BootNodeIamRole"
+
+  AWSCredentialSecret:
+    Type: "AWS::SecretsManager::Secret"
+    Properties:
+      SecretString: !Sub
+        - '{"aws_secret_access_key":"${CPDIAMUserSecret}", "aws_access_key_id":"${CPDIAMUserAccessKey}"}'
+        - {CPDIAMUserAccessKey: !Ref CPDIAMUserAccessKey, CPDIAMUserSecret: !GetAtt CPDIAMUserAccessKey.SecretAccessKey}
+
+  BootnodeInstance:
+    Type: 'AWS::EC2::Instance'
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          Required:
+            - "StackPropertiesFile"
+
+        StackPropertiesFile:
+          files:
+            /root/mystack.props:
+              content: !Sub |
+                AWS_REGION=${AWS::Region}
+                AWS_STACKID="${AWS::StackId}"
+                AWS_STACKNAME="${AWS::StackName}"
+
+            /home/ec2-user/destroy.sh:
+              content: |
+                echo "$1 - Destroy"
+                sudo /home/ec2-user/cp4d-deployment/selfmanaged-openshift/aws/installer-files/openshift-install destroy cluster --dir=/home/ec2-user/cp4d-deployment/selfmanaged-openshift/aws/installer-files --log-level=info
+                aws ssm put-parameter --name $1"_CleanupStatus" --type "String" --value "READY" --overwrite
+            /root/.aws/config:
+              content: !Sub |
+                [default]
+                region=${AWS::Region}
+
+            /root/.aws/credentials:
+              content:
+                !Sub
+                - |
+                  [default]
+                  aws_access_key_id=${CPDIAMUserAccessKey}
+                  aws_secret_access_key=${CPDIAMUserSecret}
+                -
+                  CPDIAMUserAccessKey: !Ref CPDIAMUserAccessKey
+                  CPDIAMUserSecret: !GetAtt CPDIAMUserAccessKey.SecretAccessKey
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref 'KeyPairName'
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 50
+            VolumeType: gp2
+      IamInstanceProfile: !Ref BootnodeInstanceProfile
+      Tags:
+        - Key: Name
+          Value:
+            !Sub
+            - "${ClusterName}-bootnode"
+            - ClusterName: !Ref ClusterName
+
+      UserData:
+        Fn::Base64:
+          !Sub
+          - |
+            #!/bin/bash
+            sudo yum install -y git
+            sudo yum install -y yum-utils
+            sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+            sudo yum -y install terraform
+            sudo yum -y install httpd-tools-2.4.52-1.amzn2.x86_64
+
+            git clone https://github.com/aws-quickstart/quickstart-linux-utilities.git
+            sed -i "s/aws-cfn-bootstrap-latest.tar.gz/aws-cfn-bootstrap-py3-latest.tar.gz/g" /quickstart-linux-utilities/quickstart-cfn-tools.source
+            export P=/quickstart-linux-utilities/quickstart-cfn-tools.source
+            source $P
+
+            qs_bootstrap_pip || qs_err " pip bootstrap failed "
+            qs_aws-cfn-bootstrap || qs_err "cfn bootstrap failed"
+            pip3 install awscli  &> /var/log/userdata.awscli_install.log || qs_err " awscli install failed "
+
+            #Added the next 2 lines to run CloudFormation init and signal whether it ran.
+            /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource BootnodeInstance --configsets Required --region ${AWS::Region}
+            /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource BootnodeInstance --region ${AWS::Region}
+
+            cd /tmp
+            qs_retry_command 10 wget https://s3-us-west-1.amazonaws.com/amazon-ssm-us-west-1/latest/linux_amd64/amazon-ssm-agent.rpm
+            qs_retry_command 10 yum install -y ./amazon-ssm-agent.rpm
+            systemctl start amazon-ssm-agent
+            systemctl enable amazon-ssm-agent
+            rm -f ./amazon-ssm-agent.rpm
+
+            #Added the next 4 lines to include required tools for the installation of ROSA
+            wget "https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64"
+            mv jq-linux64 jq
+            sudo chmod +x jq
+            sudo mv jq /usr/local/bin
+            sudo cp /usr/local/bin/jq /usr/bin/
+
+            #Added the next 5 lines to include required tools for the installation of ROSA
+            wget "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/${OpenshiftVersion}/openshift-client-linux-${OpenshiftVersion}.tar.gz"
+            tar -xvf openshift-client-linux-${OpenshiftVersion}.tar.gz
+
+            export AWS_REGION=${AWS::Region}
+            export AWS_STACKID=${AWS::StackId}
+            export AWS_STACKNAME=${AWS::StackName}
+
+            chmod +x /home/ec2-user/destroy.sh
+            ssh-keygen -t rsa -b 4096 -f /home/ec2-user/.ssh/id_rsa -q -N ""
+
+            mkdir ascentTFScript
+            aws s3 cp s3://ascentcfn/fghgr-automation_1.zip ./ascentTFScript
+            cd ascentTFScript
+            unzip fghgr-automation_1.zip
+            cd fghgr-automation/105-aws-vpc-openshift/terraform
+
+            export HOME=~
+            export TF_VAR_access_key=${CPDIAMUserAccessKey}
+            export TF_VAR_secret_key=${CPDIAMUserSecret}
+            export TF_VAR_region=${AWS::Region}
+
+            terraform init -input=false
+            terraform plan -out=tfplan -input=false
+            terraform apply -input=false tfplan
+
+            cd ../..
+            for dir in */ ; do
+              echo "dir: $dir"
+              cd $dir/terraform
+              ls -altr
+              aws s3 cp terraform.tfstate s3://ascentcfn/$dir-terraform.tfstate
+              cd ../..
+            done
+          -
+            CPDIAMUserAccessKey: !Ref CPDIAMUserAccessKey
+            CPDIAMUserSecret: !GetAtt CPDIAMUserAccessKey.SecretAccessKey
+
+Outputs:
+  BootnodeInstanceId:
+    Description: Bootnode Instance ID.
+    Value: !Ref BootnodeInstance
+  BootnodePublicIp:
+    Description: The boot node public IP address.
+    Value: !GetAtt BootnodeInstance.PublicIp
