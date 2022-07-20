@@ -422,6 +422,7 @@ export class ServicesHelper {
         zip.addLocalFolder('./public/utils', 'utils');
         zip.addLocalFile('./public/credentials.template')
         zip.addLocalFile('./public/launch.sh')
+        zip.addLocalFile('./public/cfn.yaml')
 
         // Load the Core ReadME
         const readme = new UrlFile({ name: 'README.MD', type: OutputFileType.documentation, url: "https://raw.githubusercontent.com/ibm-gsi-ecosystem/ibm-enterprise-catalog-tiles/main/BUILD.MD" });

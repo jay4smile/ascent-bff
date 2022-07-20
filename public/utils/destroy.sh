@@ -1,6 +1,37 @@
 #! /bin/bash
+#Read options passed while execution
+while getopts f:c: option
+do
+    case "${option}"
+        in
+        f) RESOURCE_FILTER=${OPTARG};;
+        c) CREDENTIAL=${OPTARG};;
+    esac
+done
+#if flag c has been passed as a true then  read credential file to set key and secret to TF_VAR
+if [[ -n "${CREDENTIAL}" ]]; then
+echo ""
+echo "Reading credentials"
 
-RESOURCE_FILTER="$1"
+INI_FILE=~/.aws/credentials
+
+while IFS=' = ' read key value
+do
+    if [[ $key == \[*] ]]; then
+        section=$key
+    elif [[ $value ]] && [[ $section == '[default]' ]]; then
+        if [[ $key == 'aws_access_key_id' ]]; then
+            AWS_ACCESS_KEY_ID=$value
+        elif [[ $key == 'aws_secret_access_key' ]]; then
+            AWS_SECRET_ACCESS_KEY=$value
+        fi
+    fi
+done < $INI_FILE
+
+export TF_VAR_access_key=$AWS_ACCESS_KEY_ID
+export TF_VAR_secret_key=$AWS_SECRET_ACCESS_KEY
+
+fi
 
 echo ""
 echo "Listing current state"
@@ -36,4 +67,3 @@ else
   echo ""
   echo "Nothing to destroy!!"
 fi
-
